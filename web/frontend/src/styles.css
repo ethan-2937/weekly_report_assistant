@@ -71,15 +71,36 @@ textarea {
 }
 
 .brand-mark {
+  position: relative;
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 76px;
+  height: 46px;
+  overflow: hidden;
   place-items: center;
-  border-radius: 13px;
-  background: linear-gradient(135deg, var(--blue), #64a0ff);
-  color: white;
-  font-size: 18px;
-  font-weight: 900;
+  border: 1px solid rgba(26, 115, 232, 0.18);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 24% 20%, rgba(234, 67, 53, 0.18), transparent 34%),
+    radial-gradient(circle at 84% 80%, rgba(26, 115, 232, 0.22), transparent 38%),
+    rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(26, 115, 232, 0.14);
+}
+
+.brand-logo-wrap::after {
+  position: absolute;
+  inset: 7px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+  content: "";
+}
+
+.brand-logo-wrap img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 88%;
+  height: auto;
+  filter: drop-shadow(0 3px 5px rgba(32, 33, 36, 0.12));
 }
 
 .brand strong,
@@ -216,7 +237,66 @@ textarea {
 
 .hero-showcase {
   position: relative;
-  min-height: 230px;
+  min-height: 270px;
+}
+
+.hero-logo-card {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  z-index: 1;
+  display: grid;
+  width: min(260px, 54%);
+  gap: 12px;
+  padding: 18px 18px 16px;
+  border: 1px solid rgba(26, 115, 232, 0.16);
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.78)),
+    radial-gradient(circle at 12% 8%, rgba(234, 67, 53, 0.14), transparent 34%),
+    radial-gradient(circle at 92% 88%, rgba(26, 115, 232, 0.16), transparent 42%);
+  box-shadow: 0 24px 58px rgba(26, 115, 232, 0.13);
+  backdrop-filter: blur(18px);
+}
+
+.hero-logo-card::before,
+.hero-logo-card::after {
+  position: absolute;
+  border-radius: 999px;
+  content: "";
+}
+
+.hero-logo-card::before {
+  top: 14px;
+  left: 16px;
+  width: 72px;
+  height: 8px;
+  background: var(--red);
+}
+
+.hero-logo-card::after {
+  right: 18px;
+  bottom: 16px;
+  width: 86px;
+  height: 8px;
+  background: var(--blue);
+}
+
+.hero-logo-card img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin-top: 22px;
+  filter: drop-shadow(0 10px 16px rgba(32, 33, 36, 0.12));
+}
+
+.hero-logo-card span {
+  position: relative;
+  z-index: 1;
+  color: #3c4043;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .floating-card {
@@ -243,24 +323,28 @@ textarea {
 }
 
 .floating-card.blue {
-  top: 12px;
-  right: 210px;
+  top: 20px;
+  right: 178px;
+  width: 156px;
+  height: 174px;
   background: linear-gradient(160deg, var(--blue), #7baaf7);
   animation: book-float 5.2s ease-in-out infinite;
 }
 
 .floating-card.green {
-  top: 72px;
-  right: 126px;
-  width: 150px;
-  height: 166px;
+  top: 108px;
+  right: 104px;
+  width: 142px;
+  height: 150px;
   background: linear-gradient(160deg, var(--green), #70d68a);
   animation: book-float 6.3s ease-in-out 0.8s infinite;
 }
 
 .floating-card.yellow {
-  top: 32px;
-  right: 34px;
+  top: 54px;
+  right: 8px;
+  width: 156px;
+  height: 174px;
   background: linear-gradient(160deg, var(--yellow), #ffda63);
   color: #3c4043;
   animation: book-float 5.8s ease-in-out 0.4s infinite;

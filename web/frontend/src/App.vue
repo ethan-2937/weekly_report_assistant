@@ -2,9 +2,11 @@
   <div class="app-shell">
     <header class="app-header">
       <button class="brand" @click="setView('dashboard')">
-        <span class="brand-mark">周</span>
+        <span class="brand-mark brand-logo-wrap">
+          <img :src="youzhiLogo" alt="优智科技 Youzhi" />
+        </span>
         <span>
-          <strong>Weekly Outcomes</strong>
+          <strong>Youzhi Weekly AI</strong>
           <small>钉钉周报智能汇总</small>
         </span>
       </button>
@@ -47,6 +49,10 @@
         </div>
 
         <div class="hero-showcase" aria-hidden="true">
+          <div class="hero-logo-card">
+            <img :src="youzhiLogo" alt="" />
+            <span>每周一 · 自动采集 · 智能评价</span>
+          </div>
           <div class="floating-card blue">
             <span>{{ overview.expectedCount }}</span>
             <strong>应交候选</strong>
@@ -199,6 +205,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import youzhiLogo from './assets/youzhi-logo-transparent.png'
 
 const weeks = ref([])
 const selectedWeek = ref('')
