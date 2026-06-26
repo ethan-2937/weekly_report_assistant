@@ -22,3 +22,12 @@ services:
       - ./config/.env:/app/config/.env:ro
       - ./output:/app/output
       - ./logs:/app/logs
+    networks:
+      - weekly-report-net
+
+networks:
+  weekly-report-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.89.77.0/24

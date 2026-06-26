@@ -49,10 +49,6 @@
         </div>
 
         <div class="hero-showcase" aria-hidden="true">
-          <div class="hero-logo-card">
-            <img :src="youzhiLogo" alt="" />
-            <span>每周一 · 自动采集 · 智能评价</span>
-          </div>
           <div class="floating-card blue">
             <span>{{ overview.expectedCount }}</span>
             <strong>应交候选</strong>
