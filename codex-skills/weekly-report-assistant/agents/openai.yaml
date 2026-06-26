@@ -1,0 +1,4 @@
+interface:
+  display_name: "周报总结助手"
+  short_description: "Auto-pull weekly reports and find missing submissions"
+  default_prompt: "Use $weekly-report-assistant to pull last week's DingTalk weekly reports, summarize each person, evaluate team leads, and list missing submissions."
