@@ -1,0 +1,24 @@
+name: weekly-report
+
+services:
+  weekly-report:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: weekly-report:latest
+    container_name: weekly-report
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      WEEKLY_REPORT_ROOT: /app
+      WEEKLY_FRONTEND_DIST: /app/frontend
+      PYTHON_BIN: python3
+      WEEKLY_REPORT_PORT: 8088
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Xms128m -Xmx384m
+    mem_limit: 768m
+    volumes:
+      - ./config/.env:/app/config/.env:ro
+      - ./output:/app/output
+      - ./logs:/app/logs

@@ -1,0 +1,30 @@
+# Git / local artifacts
+.git
+.gitignore
+.venv
+__pycache__
+*.pyc
+logs
+output
+deploy
+
+# secrets
+config/.env
+.env
+
+# frontend artifacts
+web/frontend/node_modules
+web/frontend/dist
+web/frontend/.vite
+
+# legacy/simple backend artifacts
+web/backend/bin
+web/backend/.idea
+web/backend/*.iml
+web/backend-spring/target
+web/backend-spring/.tools
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store

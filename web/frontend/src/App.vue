@@ -1,0 +1,322 @@
+<template>
+  <div class="app-shell">
+    <header class="app-header">
+      <button class="brand" @click="setView('dashboard')">
+        <span class="brand-mark">周</span>
+        <span>
+          <strong>Weekly Outcomes</strong>
+          <small>钉钉周报智能汇总</small>
+        </span>
+      </button>
+
+      <nav class="decor-nav" aria-label="周报导航">
+        <button :class="{ active: currentView === 'dashboard' }" @click="setView('dashboard')">提交概览</button>
+        <button :class="{ active: currentView === 'status' }" @click="setView('status')">未交名单</button>
+        <button :class="{ active: currentView === 'report' }" @click="setView('report')">AI 评价</button>
+        <button :class="{ active: currentView === 'jobs' }" @click="setView('jobs')">运行状态</button>
+      </nav>
+
+      <div class="account-area">
+        <div class="user-chip">
+          <span class="avatar">HR</span>
+          <span>
+            <strong>周报运营台</strong>
+            <small>每周一自动分析上一周</small>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="home-hero">
+        <div class="hero-copy">
+          <el-tag effect="light" round>{{ latestWeek?.week || '等待数据' }}</el-tag>
+          <h1>每周一打开浏览器，就能看到最新周报信息。</h1>
+          <p>
+            后端自动拉取钉钉通讯录和周报，Codex skill 生成管理评价，前端展示提交概览、未提交候选、个人工作总结和团队负责人履职情况。
+          </p>
+          <div class="hero-actions">
+            <el-button type="primary" size="large" round :loading="jobBusy" @click="runJob('previous')">
+              生成上一周
+            </el-button>
+            <el-button size="large" round :loading="jobBusy" @click="runJob('current')">
+              当前周测试
+            </el-button>
+            <el-button size="large" round @click="refreshAll">刷新页面</el-button>
+          </div>
+        </div>
+
+        <div class="hero-showcase" aria-hidden="true">
+          <div class="floating-card blue">
+            <span>{{ overview.expectedCount }}</span>
+            <strong>应交候选</strong>
+          </div>
+          <div class="floating-card green">
+            <span>{{ overview.submittedCount }}</span>
+            <strong>已提交</strong>
+          </div>
+          <div class="floating-card yellow">
+            <span>{{ overview.missingCount }}</span>
+            <strong>未提交</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="category-strip">
+        <button v-for="week in weeks" :key="week.week" :class="{ active: selectedWeek === week.week }" @click="selectWeek(week.week)">
+          {{ week.week }}
+        </button>
+        <span v-if="weeks.length === 0" class="muted">暂无周次数据，请先生成一次。</span>
+      </section>
+
+      <section v-if="currentView === 'dashboard'" class="page-card">
+        <div class="page-header">
+          <div>
+            <h1>提交概览</h1>
+            <p>{{ selectedWeek || '未选择周次' }} · 数据生成时间 {{ formatDate(overview.generatedAt) }}</p>
+          </div>
+          <el-button round :disabled="!selectedWeek" @click="downloadCsv">下载提交表</el-button>
+        </div>
+
+        <div class="stat-grid">
+          <article class="stat-card">
+            <small>应交候选</small>
+            <strong>{{ overview.expectedCount }}</strong>
+            <span>来自钉钉通讯录授权范围</span>
+          </article>
+          <article class="stat-card success">
+            <small>已提交</small>
+            <strong>{{ overview.submittedCount }}</strong>
+            <span>按 userid 精准匹配</span>
+          </article>
+          <article class="stat-card danger">
+            <small>未提交候选</small>
+            <strong>{{ overview.missingCount }}</strong>
+            <span>需结合排除规则复核</span>
+          </article>
+          <article class="stat-card info">
+            <small>负责人候选</small>
+            <strong>{{ overview.leaderCandidateCount }}</strong>
+            <span>来自钉钉 leader 字段</span>
+          </article>
+        </div>
+
+        <div class="dashboard-layout">
+          <div class="soft-panel">
+            <div class="side-title">
+              <div>
+                <h2>提交摘要</h2>
+                <p>由 Python 采集脚本自动生成。</p>
+              </div>
+            </div>
+            <pre class="markdown-box">{{ summary.submissionSummary || '暂无提交摘要。' }}</pre>
+          </div>
+          <aside class="soft-panel accent-panel">
+            <h2>Codex 评价状态</h2>
+            <p v-if="overview.hasManagerReport">已生成 `manager_report.md`，前端正在展示正式评价。</p>
+            <p v-else>尚未生成正式评价。请在服务器 Codex 中使用 skill 生成 `summary/manager_report.md`。</p>
+            <el-button type="primary" round @click="setView('report')">查看 AI 评价</el-button>
+          </aside>
+        </div>
+      </section>
+
+      <section v-if="currentView === 'status'" class="page-card">
+        <div class="page-header">
+          <div>
+            <h1>提交状态</h1>
+            <p>支持按姓名、部门、提交状态和负责人候选筛选。</p>
+          </div>
+          <el-button round @click="downloadCsv">下载 CSV</el-button>
+        </div>
+
+        <div class="toolbar">
+          <el-input v-model="filters.keyword" clearable placeholder="搜索姓名、部门、职务" />
+          <el-select v-model="filters.status" clearable placeholder="提交状态">
+            <el-option label="已提交" value="已提交" />
+            <el-option label="未提交" value="未提交" />
+          </el-select>
+          <el-select v-model="filters.leader" clearable placeholder="负责人候选">
+            <el-option label="是" value="是" />
+            <el-option label="否" value="否" />
+          </el-select>
+        </div>
+
+        <el-table :data="filteredRows" class="soft-table" height="560" row-key="userid">
+          <el-table-column prop="提交状态" label="状态" width="110">
+            <template #default="{ row }">
+              <el-tag :type="row['提交状态'] === '已提交' ? 'success' : 'danger'" effect="light">
+                {{ row['提交状态'] }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="姓名" label="姓名" width="130" />
+          <el-table-column prop="部门" label="部门" min-width="190" show-overflow-tooltip />
+          <el-table-column prop="职务" label="职务" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="是否负责人候选" label="负责人" width="100" />
+          <el-table-column prop="提交时间" label="提交时间" min-width="170" />
+        </el-table>
+      </section>
+
+      <section v-if="currentView === 'report'" class="page-card report-page">
+        <div class="page-header">
+          <div>
+            <h1>AI 周报评价</h1>
+            <p>{{ analysis.isManagerReport ? '正式管理评价' : '当前显示分析输入包，等待 Codex skill 产出正式评价' }} · {{ analysis.source }}</p>
+          </div>
+          <el-tag :type="analysis.isManagerReport ? 'success' : 'warning'" effect="light">
+            {{ analysis.isManagerReport ? 'manager_report.md' : 'analysis_input.md' }}
+          </el-tag>
+        </div>
+        <div v-if="!analysis.isManagerReport" class="notice-card">
+          <strong>下一步：</strong>
+          在服务器 Codex 中运行 skill，让它基于本周 `analysis_input.md` 生成 `output/{{ selectedWeek }}/summary/manager_report.md`，刷新页面后即可展示正式评价。
+        </div>
+        <pre class="markdown-box report-box">{{ analysis.content || '暂无 AI 评价内容。' }}</pre>
+      </section>
+
+      <section v-if="currentView === 'jobs'" class="page-card">
+        <div class="page-header">
+          <div>
+            <h1>运行状态</h1>
+            <p>查看最近一次 Web 触发的采集任务。</p>
+          </div>
+          <div class="header-actions">
+            <el-button round :loading="jobBusy" @click="runJob('previous')">补跑上一周</el-button>
+            <el-button round @click="loadJob">刷新状态</el-button>
+          </div>
+        </div>
+        <div class="job-card">
+          <el-tag :type="jobStatusType(latestJob.status)" effect="light">{{ latestJob.status || 'NO JOB' }}</el-tag>
+          <h2>{{ latestJob.weekLabel || latestJob.weekMode || '暂无任务' }}</h2>
+          <p>开始：{{ formatDate(latestJob.startedAt) }} · 结束：{{ formatDate(latestJob.finishedAt) }}</p>
+          <pre>{{ latestJob.errorMessage || latestJob.stdout || '暂无日志。' }}</pre>
+        </div>
+      </section>
+    </main>
+  </div>
+</template>
+
+<script setup>
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+
+const weeks = ref([])
+const selectedWeek = ref('')
+const currentView = ref('dashboard')
+const summary = ref({})
+const analysis = ref({})
+const rows = ref([])
+const latestJob = ref({})
+const jobBusy = ref(false)
+const filters = reactive({ keyword: '', status: '', leader: '' })
+
+const latestWeek = computed(() => weeks.value[0] || null)
+const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
+const filteredRows = computed(() => {
+  const keyword = filters.keyword.trim().toLowerCase()
+  return rows.value.filter(row => {
+    const text = `${row['姓名'] || ''} ${row['部门'] || ''} ${row['职务'] || ''}`.toLowerCase()
+    return (!keyword || text.includes(keyword))
+      && (!filters.status || row['提交状态'] === filters.status)
+      && (!filters.leader || row['是否负责人候选'] === filters.leader)
+  })
+})
+
+function setView(view) {
+  currentView.value = view
+}
+
+async function request(path, options = {}) {
+  const response = await fetch(path, options)
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP ${response.status}`)
+  }
+  return data
+}
+
+async function refreshAll() {
+  await loadWeeks()
+  await loadJob()
+  if (selectedWeek.value) {
+    await loadWeek(selectedWeek.value)
+  }
+}
+
+async function loadWeeks() {
+  weeks.value = await request('/api/weeks')
+  if (!selectedWeek.value && weeks.value.length) {
+    selectedWeek.value = weeks.value[0].week
+  }
+}
+
+async function selectWeek(week) {
+  selectedWeek.value = week
+  await loadWeek(week)
+}
+
+async function loadWeek(week) {
+  if (!week) return
+  const [summaryData, analysisData, statusRows] = await Promise.all([
+    request(`/api/weeks/${week}/summary`),
+    request(`/api/weeks/${week}/analysis`),
+    request(`/api/weeks/${week}/submission-status`)
+  ])
+  summary.value = summaryData
+  analysis.value = analysisData
+  rows.value = statusRows
+}
+
+async function loadJob() {
+  latestJob.value = await request('/api/jobs/latest')
+  jobBusy.value = latestJob.value.status === 'RUNNING'
+}
+
+async function runJob(weekMode) {
+  try {
+    jobBusy.value = true
+    latestJob.value = await request(`/api/jobs/run?week=${weekMode}`, { method: 'POST' })
+    ElMessage.success('采集任务已启动，稍后自动刷新。')
+    pollJob()
+  } catch (error) {
+    jobBusy.value = false
+    ElMessage.error(error.message)
+  }
+}
+
+async function pollJob() {
+  for (let i = 0; i < 90; i++) {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    await loadJob()
+    if (latestJob.value.status && latestJob.value.status !== 'RUNNING') {
+      await refreshAll()
+      ElMessage[latestJob.value.status === 'SUCCESS' ? 'success' : 'error'](
+        latestJob.value.status === 'SUCCESS' ? '采集完成。' : '采集失败，请查看日志。'
+      )
+      return
+    }
+  }
+  jobBusy.value = false
+}
+
+function downloadCsv() {
+  if (!selectedWeek.value) return
+  window.open(`/api/files/${selectedWeek.value}/submission-status/download`, '_blank')
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('zh-CN', { hour12: false })
+}
+
+function jobStatusType(status) {
+  if (status === 'SUCCESS') return 'success'
+  if (status === 'FAILED') return 'danger'
+  if (status === 'RUNNING') return 'warning'
+  return 'info'
+}
+
+onMounted(refreshAll)
+</script>

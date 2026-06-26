@@ -1,0 +1,11 @@
+server:
+  port: ${WEEKLY_REPORT_PORT:8088}
+
+spring:
+  application:
+    name: weekly-report-backend
+
+weekly:
+  project-root: ${WEEKLY_REPORT_ROOT:}
+  frontend-dist: ${WEEKLY_FRONTEND_DIST:}
+  python-bin: ${PYTHON_BIN:}

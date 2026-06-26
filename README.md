@@ -1,2 +1,149 @@
-# weekly_report_assistant
-A system that can automatically use the DingTalk OpenAPI to check and evaluate weekly reports
+# 周报汇总助手
+
+本项目完成了一套从钉钉开放平台到 AI 周报分析的端到端链路：
+
+- 打通钉钉企业内部应用，使用 `Client ID / Client Secret` 获取 `accessToken`。
+- 接入钉钉通讯录 API，自动拉取授权范围内的部门、人员、负责人候选信息。
+- 接入钉钉日志/周报 API，按周报模板自动拉取指定周期内的员工周报。
+- 基于 `userid` 做人员和周报匹配，避免重名导致统计错误。
+- 自动生成提交状态表、未提交候选名单、团队负责人候选名单和 AI 分析输入包。
+- 编写 `weekly-report-assistant` Codex skill，让服务器上的智能体可以按固定提示词自动执行周报拉取、总结和评价。
+- 设计了本地 Windows 验证、Ubuntu 服务器部署、后续定时任务和权限隔离的迁移方案。
+
+换句话说，这套系统已经具备“每周一自动分析上一周周报”的基础能力：先由脚本稳定采集数据，再由 Codex skill 负责总结、评价、发现风险和输出管理视角结论。
+
+## 系统逻辑
+
+整体链路如下：
+
+```text
+钉钉企业内部应用
+  ↓ 获取 accessToken
+钉钉通讯录 API
+  ↓ 拉取部门、成员、负责人候选
+钉钉日志/周报 API
+  ↓ 拉取上一周正式周报模板
+本地/服务器脚本
+  ↓ userid 匹配、提交状态统计、数据标准化
+Codex weekly-report-assistant skill
+  ↓ 总结每个人工作、评价效果、检查负责人履职
+管理输出
+  ↓ 未提交名单、个人评价、团队负责人履职检查、共性风险
+```
+
+## 项目亮点
+
+- **自动化**：从“人工下载周报”升级为“API 自动拉取 + 一键生成分析材料”。
+- **可验证**：所有统计都基于钉钉 `userid`，比按姓名匹配更可靠。
+- **可迁移**：脚本不依赖桌面钉钉客户端，可部署到 Ubuntu 服务器。
+- **智能体化**：通过 Codex skill 固化工作流，后续只需要一句提示词即可触发分析。
+- **管理视角**：不仅统计谁交了，还检查周报质量、交付效果、AI 使用、下周计划和团队负责人额外职责。
+- **安全边界**：`.env`、原始输出、密钥和敏感数据均默认排除提交，后续可扩展分权限报告。
+
+## 周期规则
+
+公司每周一总结周报，因此脚本默认分析“上一完整周”：
+
+- 默认：上一周周一 00:00 到上一周周日 23:59:59，Asia/Shanghai。
+- 测试当前周：加 `--week current`。
+- 指定日期：加 `--start YYYY-MM-DD --end YYYY-MM-DD`。
+
+## 本地运行
+
+1. 复制配置模板：
+
+   ```powershell
+   Copy-Item config\.env.example config\.env
+   ```
+
+2. 编辑 `config\.env`，填写 `DINGTALK_APP_SECRET`，并确认 `DINGTALK_REPORT_TEMPLATE` 是钉钉里的真实周报模板名。
+
+3. 测试 access token：
+
+   ```powershell
+   python scripts\test_token.py
+   ```
+
+4. 一键拉取并生成分析材料：
+
+   ```powershell
+   python scripts\run_weekly.py
+   ```
+
+5. 本地测试当前周：
+
+   ```powershell
+   python scripts\run_weekly.py --week current
+   ```
+
+## 输出
+
+```text
+output/
+  contacts/
+    users.json
+    departments.json
+  <YYYY-Www>/
+    raw/reports.json
+    exports/submission_status.csv
+    summary/submission_check.md
+    summary/manager_report.md
+    analysis/analysis_input.md
+```
+
+## Web 界面
+
+Web 推荐使用 Java + Vue 实现：
+
+- Spring Boot 后端读取 `output/<周次>` 下的 CSV/Markdown/JSON 文件，并可手动触发 `scripts/run_weekly.py`。
+- 后端采用传统分层结构：`controller`、`service`、`service.impl`、`mapper`、`po`、`vo`、`config`、`common`、`util`。
+- Vue 前端沿用 `D:\BookStore\VueFronted` 的卡片、胶囊导航、柔和渐变和 Element Plus 表格风格。
+- Codex skill 每周一生成正式评价后，写入 `output/<周次>/summary/manager_report.md`，前端会自动展示。
+
+本地启动：
+
+```powershell
+cd web\frontend
+npm install
+npm run build
+
+cd ..\backend-spring
+java -jar target\weekly-report-backend-1.0.0.jar
+```
+
+打开：
+
+```text
+http://127.0.0.1:8088
+```
+
+Docker 部署：
+
+```bash
+docker compose up -d --build
+```
+
+详见 `docs/docker_deploy.md`。
+
+## 安全约定
+
+- `config/.env` 已被 `.gitignore` 忽略，不要提交到代码仓库。
+- 不要在日志或聊天中粘贴 `DINGTALK_APP_SECRET`。
+- 原始数据和汇总输出默认写到 `output/`，该目录也不会提交。
+- 如果要给不同管理者分发报告，先基于 `submission_status.csv` 和权限配置生成分权限版本。
+
+## Docker ????
+
+????? Docker Desktop ???
+
+- `docker compose build` ?????
+- `docker compose up -d` ?????
+- `GET /api/health` ?????
+- ????? `487 MB`???????? `170-200 MiB`?
+- `docker-compose.yml` ??? `JAVA_TOOL_OPTIONS=-Xms128m -Xmx384m` ? `mem_limit: 768m`???????? Ubuntu ?????
+
+??????????`2 CPU / 2 GB RAM / 5 GB ????`????????????? Codex ????? AI ?????????? `4 GB` ???
+
+## GitHub ?????
+
+? GitHub ??????? Ubuntu ?????? `docs/github_server_deploy.md`?
