@@ -111,7 +111,11 @@
                 <p>由 Python 采集脚本自动生成。</p>
               </div>
             </div>
-            <pre class="markdown-box">{{ summary.submissionSummary || '暂无提交摘要。' }}</pre>
+            <MarkdownReport
+              :content="summary.submissionSummary"
+              empty-text="暂无提交摘要。"
+              variant="compact"
+            />
           </div>
           <aside class="soft-panel accent-panel">
             <h2>Codex 评价状态</h2>
@@ -173,7 +177,11 @@
           <strong>下一步：</strong>
           在服务器 Codex 中运行 skill，让它基于本周 `analysis_input.md` 生成 `output/{{ selectedWeek }}/summary/manager_report.md`，刷新页面后即可展示正式评价。
         </div>
-        <pre class="markdown-box report-box">{{ analysis.content || '暂无 AI 评价内容。' }}</pre>
+        <MarkdownReport
+          :content="analysis.content"
+          empty-text="暂无 AI 评价内容。"
+          variant="report"
+        />
       </section>
 
       <section v-if="currentView === 'jobs'" class="page-card">
@@ -202,6 +210,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
+import MarkdownReport from './components/MarkdownReport.vue'
 
 const weeks = ref([])
 const selectedWeek = ref('')
