@@ -9,7 +9,7 @@ services:
     container_name: weekly-report
     restart: unless-stopped
     ports:
-      - "8088:8088"
+      - "${WEEKLY_HOST_PORT:-22080}:8088"
     environment:
       WEEKLY_REPORT_ROOT: /app
       WEEKLY_FRONTEND_DIST: /app/frontend
