@@ -3,7 +3,7 @@
 ```text
 Use $weekly-report-assistant.
 项目路径：/data2/person_path/yzzhang/weekly-report。
-请先阅读 README.md、docs/ubuntu_deploy.md，以及 skill 的 SKILL.md。
+请先阅读 README.md、docs/codeup_server_deploy.md、docs/ubuntu_deploy.md，以及 skill 的 SKILL.md。
 不要打印或泄露 config/.env、DINGTALK_APP_SECRET、access_token。
 请运行 python3 scripts/run_weekly.py 拉取上一周钉钉周报和通讯录。
 运行成功后，读取 output/<周次>/analysis/analysis_input.md，生成：
