@@ -18,6 +18,10 @@ import java.util.List;
 
 @Service
 public class WeeklyReportServiceImpl implements WeeklyReportService {
+    private static final String STATUS_SUBMITTED = "\u5df2\u63d0\u4ea4";
+    private static final String STATUS_MISSING = "\u672a\u63d0\u4ea4";
+    private static final String YES = "\u662f";
+
     private final SubmissionStatusMapper submissionStatusMapper;
     private final WeekFileMapper weekFileMapper;
 
@@ -84,9 +88,9 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
         } catch (ResourceNotFoundException e) {
             rows = List.of();
         }
-        long submitted = rows.stream().filter(row -> "???".equals(row.getStatus())).count();
-        long missing = rows.stream().filter(row -> "???".equals(row.getStatus())).count();
-        long leaders = rows.stream().filter(row -> "?".equals(row.getLeaderCandidate())).count();
+        long submitted = rows.stream().filter(row -> STATUS_SUBMITTED.equals(row.getStatus())).count();
+        long missing = rows.stream().filter(row -> STATUS_MISSING.equals(row.getStatus())).count();
+        long leaders = rows.stream().filter(row -> YES.equals(row.getLeaderCandidate())).count();
         WeekOverviewVO vo = new WeekOverviewVO();
         vo.setWeek(week);
         vo.setExpectedCount(rows.size());

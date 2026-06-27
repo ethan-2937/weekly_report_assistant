@@ -3,24 +3,24 @@ package com.yzzhang.weeklyreport.vo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SubmissionStatusVO {
-    @JsonProperty("????")
+    @JsonProperty("\u63d0\u4ea4\u72b6\u6001")
     private String status;
-    @JsonProperty("??")
+    @JsonProperty("\u59d3\u540d")
     private String name;
     private String userid;
-    @JsonProperty("??")
+    @JsonProperty("\u90e8\u95e8")
     private String dept;
-    @JsonProperty("???????")
+    @JsonProperty("\u662f\u5426\u8d1f\u8d23\u4eba\u5019\u9009")
     private String leaderCandidate;
-    @JsonProperty("??")
+    @JsonProperty("\u804c\u52a1")
     private String title;
-    @JsonProperty("????")
+    @JsonProperty("\u5468\u62a5\u90e8\u95e8")
     private String reportDept;
-    @JsonProperty("????")
+    @JsonProperty("\u63d0\u4ea4\u65f6\u95f4")
     private String submitTime;
     @JsonProperty("report_id")
     private String reportId;
-    @JsonProperty("??")
+    @JsonProperty("\u6a21\u677f")
     private String templateName;
 
     public String getStatus() { return status; }

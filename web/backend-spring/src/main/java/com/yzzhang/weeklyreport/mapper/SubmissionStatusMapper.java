@@ -17,6 +17,15 @@ import java.util.Map;
 
 @Repository
 public class SubmissionStatusMapper {
+    private static final String HEADER_STATUS = "\u63d0\u4ea4\u72b6\u6001";
+    private static final String HEADER_NAME = "\u59d3\u540d";
+    private static final String HEADER_DEPT = "\u90e8\u95e8";
+    private static final String HEADER_LEADER_CANDIDATE = "\u662f\u5426\u8d1f\u8d23\u4eba\u5019\u9009";
+    private static final String HEADER_TITLE = "\u804c\u52a1";
+    private static final String HEADER_REPORT_DEPT = "\u5468\u62a5\u90e8\u95e8";
+    private static final String HEADER_SUBMIT_TIME = "\u63d0\u4ea4\u65f6\u95f4";
+    private static final String HEADER_TEMPLATE = "\u6a21\u677f";
+
     private final ProjectPathConfig pathConfig;
 
     public SubmissionStatusMapper(ProjectPathConfig pathConfig) {
@@ -58,16 +67,16 @@ public class SubmissionStatusMapper {
 
     private SubmissionStatusPO toPO(Map<String, String> row) {
         SubmissionStatusPO po = new SubmissionStatusPO();
-        po.setStatus(row.getOrDefault("????", ""));
-        po.setName(row.getOrDefault("??", ""));
+        po.setStatus(row.getOrDefault(HEADER_STATUS, ""));
+        po.setName(row.getOrDefault(HEADER_NAME, ""));
         po.setUserid(row.getOrDefault("userid", ""));
-        po.setDept(row.getOrDefault("??", ""));
-        po.setLeaderCandidate(row.getOrDefault("???????", ""));
-        po.setTitle(row.getOrDefault("??", ""));
-        po.setReportDept(row.getOrDefault("????", ""));
-        po.setSubmitTime(row.getOrDefault("????", ""));
+        po.setDept(row.getOrDefault(HEADER_DEPT, ""));
+        po.setLeaderCandidate(row.getOrDefault(HEADER_LEADER_CANDIDATE, ""));
+        po.setTitle(row.getOrDefault(HEADER_TITLE, ""));
+        po.setReportDept(row.getOrDefault(HEADER_REPORT_DEPT, ""));
+        po.setSubmitTime(row.getOrDefault(HEADER_SUBMIT_TIME, ""));
         po.setReportId(row.getOrDefault("report_id", ""));
-        po.setTemplateName(row.getOrDefault("??", ""));
+        po.setTemplateName(row.getOrDefault(HEADER_TEMPLATE, ""));
         return po;
     }
 }
