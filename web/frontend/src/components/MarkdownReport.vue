@@ -8,7 +8,7 @@
       <section
         v-for="(block, index) in blocks"
         :key="`${block.type}-${index}`"
-        :class="['report-block', `report-block--${block.type}`, block.level ? `level-${block.level}` : '']"
+        :class="['report-block', `report-block--${block.type}`, block.level ? `level-${block.level}` : '', blockTone(block)]"
       >
         <component v-if="block.type === 'heading'" :is="headingTag(block.level)" class="report-heading">
           <span class="heading-kicker">{{ headingLabel(block.level) }}</span>
@@ -47,7 +47,11 @@
             </thead>
             <tbody>
               <tr v-for="(row, rowIndex) in block.rows" :key="rowIndex">
-                <td v-for="(cell, cellIndex) in block.headers" :key="cellIndex">
+                <td
+                  v-for="(cell, cellIndex) in block.headers"
+                  :key="cellIndex"
+                  :class="cellClass(row[cellIndex] || '', cell)"
+                >
                   <InlineText :parts="inlineParts(row[cellIndex] || '')" />
                 </td>
               </tr>
@@ -109,6 +113,37 @@ function headingLabel(level) {
   if (level <= 1) return 'REPORT'
   if (level === 2) return 'SECTION'
   return 'DETAIL'
+}
+
+function blockTone(block) {
+  if (block.type === 'heading' || block.type === 'table' || block.type === 'code') return ''
+  const text = `${block.text || ''} ${(block.items || []).join(' ')}`
+  if (/风险|异常|失败|未提交|缺失|阻塞|延期|严重|离职|淘汰/.test(text)) return 'tone-danger'
+  if (/下一步|待启动|待确认|需要|建议|关注|观察|复核|人工确认/.test(text)) return 'tone-warning'
+  if (/已完成|已提交|成功|达成|通过|正式评价|完成/.test(text)) return 'tone-success'
+  if (/进行中|生成|Codex|AI|分析|汇总/.test(text)) return 'tone-info'
+  return ''
+}
+
+function cellClass(value, header) {
+  const text = `${value}`
+  const headerText = `${header}`
+  const classes = ['report-cell']
+  if (/状态|进度|结果|是否|风险|备注|负责人|候选|提交/.test(headerText)) {
+    classes.push('is-key-field')
+  }
+  if (/未提交|异常|失败|缺失|风险|严重|延期|阻塞/.test(text)) {
+    classes.push('is-danger')
+  } else if (/待启动|待确认|观察中|关注|需|复核|候选/.test(text)) {
+    classes.push('is-warning')
+  } else if (/进行中|处理中|已生成|生成中/.test(text)) {
+    classes.push('is-progress')
+  } else if (/已提交|已完成|完成|成功|通过|达成|正常/.test(text)) {
+    classes.push('is-success')
+  } else if (/负责人|责任人|owner/i.test(headerText)) {
+    classes.push('is-owner')
+  }
+  return classes
 }
 
 function parseMarkdown(content) {

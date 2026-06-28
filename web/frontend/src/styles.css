@@ -8,6 +8,21 @@
   --border: rgba(60, 64, 67, 0.12);
   --card: rgba(255, 255, 255, 0.94);
   --shadow: 0 18px 54px rgba(60, 64, 67, 0.12);
+  --sheet-title: #2f3a4a;
+  --sheet-header: #526070;
+  --sheet-line: #dfe6ee;
+  --sheet-row: #fafbfd;
+  --sheet-blue: #eef4fb;
+  --sheet-blue-text: #3e5f89;
+  --sheet-info: #eef4ff;
+  --sheet-green: #eaf5ee;
+  --sheet-green-text: #3d6b4f;
+  --sheet-yellow: #fbf1df;
+  --sheet-yellow-text: #775d38;
+  --sheet-red: #f9e8ec;
+  --sheet-red-text: #7e4a57;
+  --sheet-purple: #eaf0fa;
+  --sheet-purple-text: #34527a;
   color: var(--text);
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
   background:
@@ -478,10 +493,10 @@ textarea {
 
 .markdown-report {
   display: grid;
-  gap: 14px;
-  color: #2f3a45;
+  gap: 12px;
+  color: var(--sheet-title);
   font-size: 14px;
-  line-height: 1.78;
+  line-height: 1.72;
 }
 
 .markdown-report--compact {
@@ -492,20 +507,21 @@ textarea {
 
 .markdown-report--report {
   min-height: 560px;
-  padding: 18px;
-  border: 1px solid rgba(26, 115, 232, 0.11);
-  border-radius: 24px;
+  padding: 16px;
+  border: 1px solid var(--sheet-line);
+  border-radius: 20px;
   background:
-    radial-gradient(circle at 8% 0%, rgba(26, 115, 232, 0.07), transparent 28%),
-    radial-gradient(circle at 95% 8%, rgba(251, 188, 4, 0.12), transparent 24%),
+    linear-gradient(90deg, rgba(82, 96, 112, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(82, 96, 112, 0.035) 1px, transparent 1px),
     linear-gradient(180deg, #fbfdff, #ffffff);
+  background-size: 28px 28px, 28px 28px, auto;
 }
 
 .report-empty {
   padding: 22px;
-  border: 1px dashed rgba(26, 115, 232, 0.28);
-  border-radius: 18px;
-  background: rgba(248, 251, 255, 0.72);
+  border: 1px dashed rgba(82, 96, 112, 0.34);
+  border-radius: 16px;
+  background: var(--sheet-row);
   color: var(--muted);
   text-align: center;
 }
@@ -519,7 +535,7 @@ textarea {
   align-items: flex-start;
   gap: 12px;
   margin: 0;
-  color: #18212f;
+  color: var(--sheet-title);
   line-height: 1.28;
 }
 
@@ -527,56 +543,57 @@ textarea {
 .report-block--heading.level-2 .report-heading {
   position: relative;
   overflow: hidden;
-  padding: 18px 20px;
-  border: 1px solid rgba(26, 115, 232, 0.14);
-  border-radius: 22px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 251, 255, 0.9)),
-    radial-gradient(circle at 10% 20%, rgba(26, 115, 232, 0.12), transparent 32%),
-    radial-gradient(circle at 92% 18%, rgba(234, 67, 53, 0.08), transparent 26%);
-  box-shadow: 0 16px 38px rgba(60, 64, 67, 0.08);
+  padding: 14px 16px;
+  border: 1px solid var(--sheet-line);
+  border-radius: 12px;
+  box-shadow: none;
 }
 
-.report-block--heading.level-1 .report-heading::after,
-.report-block--heading.level-2 .report-heading::after {
-  position: absolute;
-  right: 18px;
-  bottom: 14px;
-  width: 72px;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--red), var(--blue));
-  content: "";
-  opacity: 0.72;
+.report-block--heading.level-1 .report-heading {
+  background: var(--sheet-title);
+  color: white;
+}
+
+.report-block--heading.level-2 .report-heading {
+  background: var(--sheet-info);
+  color: #1e3a8a;
+}
+
+.report-block--heading.level-1 .heading-kicker,
+.report-block--heading.level-1 .heading-text {
+  color: white;
 }
 
 .report-block--heading.level-3 .report-heading,
 .report-block--heading.level-4 .report-heading {
-  padding: 4px 0 2px;
+  align-items: center;
+  padding: 8px 2px 8px 12px;
+  border-left: 4px solid var(--sheet-header);
+  background: linear-gradient(90deg, rgba(238, 244, 251, 0.78), transparent);
   font-size: 18px;
 }
 
 .heading-kicker {
   flex: 0 0 auto;
-  border-radius: 999px;
-  background: rgba(26, 115, 232, 0.1);
-  color: var(--blue);
+  border-radius: 6px;
+  background: rgba(82, 96, 112, 0.12);
+  color: var(--sheet-blue-text);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.08em;
   line-height: 1;
-  padding: 7px 9px;
+  padding: 6px 8px;
 }
 
 .heading-text {
   position: relative;
   z-index: 1;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 900;
 }
 
 .level-1 .heading-text {
-  font-size: 24px;
+  font-size: 22px;
 }
 
 .report-paragraph,
@@ -586,32 +603,35 @@ textarea {
 .report-table-wrap,
 .report-code {
   margin: 0;
-  border: 1px solid rgba(60, 64, 67, 0.09);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 10px 28px rgba(60, 64, 67, 0.06);
+  border: 1px solid var(--sheet-line);
+  border-radius: 12px;
+  background: white;
+  box-shadow: none;
 }
 
 .report-paragraph {
-  padding: 14px 16px;
+  position: relative;
+  padding: 13px 16px 13px 18px;
+  border-left: 5px solid var(--sheet-blue);
 }
 
 .report-quote {
-  padding: 14px 16px 14px 18px;
-  border-left: 5px solid var(--yellow);
-  background: #fffaf0;
-  color: #5f4300;
+  padding: 13px 16px 13px 18px;
+  border-left: 5px solid var(--sheet-yellow);
+  background: var(--sheet-yellow);
+  color: var(--sheet-yellow-text);
 }
 
 .report-list,
 .report-ordered-list {
   display: grid;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .report-list {
   list-style: none;
+  background: transparent;
 }
 
 .report-list li {
@@ -619,70 +639,120 @@ textarea {
   grid-template-columns: 16px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
+  min-height: 34px;
+  padding: 9px 10px;
+  border: 1px solid rgba(223, 230, 238, 0.86);
+  border-radius: 10px;
+  background: white;
+}
+
+.report-list li:nth-child(even) {
+  background: var(--sheet-row);
 }
 
 .list-dot {
-  width: 9px;
-  height: 9px;
-  margin-top: 9px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--red), var(--blue));
-  box-shadow: 0 0 0 5px rgba(26, 115, 232, 0.08);
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 3px;
+  background: var(--sheet-header);
+  box-shadow: 0 0 0 4px rgba(82, 96, 112, 0.08);
 }
 
 .report-ordered-list {
   padding-left: 38px;
+  background: var(--sheet-row);
 }
 
 .report-ordered-list li::marker {
-  color: var(--blue);
+  color: var(--sheet-blue-text);
   font-weight: 900;
 }
 
 .report-table-wrap {
   overflow: auto;
+  border-radius: 12px;
 }
 
 .report-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 520px;
+  background: white;
 }
 
 .report-table th,
 .report-table td {
-  border-bottom: 1px solid rgba(60, 64, 67, 0.08);
-  padding: 12px 14px;
+  border: 1px solid var(--sheet-line);
+  padding: 11px 13px;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .report-table th {
-  background: linear-gradient(180deg, #f8fbff, #eef5ff);
-  color: #1f2937;
+  background: var(--sheet-header);
+  color: white;
   font-weight: 900;
+  text-align: center;
   white-space: nowrap;
 }
 
-.report-table tr:last-child td {
-  border-bottom: 0;
+.report-table tbody tr:nth-child(even) td {
+  background: var(--sheet-row);
+}
+
+.report-table tbody tr:hover td {
+  background: #f4f7fb;
+}
+
+.report-table td.is-key-field {
+  text-align: center;
+  font-weight: 800;
+}
+
+.report-table td.is-progress {
+  background: var(--sheet-blue) !important;
+  color: var(--sheet-blue-text);
+}
+
+.report-table td.is-success {
+  background: var(--sheet-green) !important;
+  color: var(--sheet-green-text);
+}
+
+.report-table td.is-warning {
+  background: var(--sheet-yellow) !important;
+  color: var(--sheet-yellow-text);
+}
+
+.report-table td.is-danger {
+  background: var(--sheet-red) !important;
+  color: var(--sheet-red-text);
+}
+
+.report-table td.is-owner {
+  background: var(--sheet-purple) !important;
+  color: var(--sheet-purple-text);
 }
 
 .report-code {
   overflow: auto;
   padding: 14px 16px;
-  background: #172033;
-  color: #d9e6ff;
+  border-color: #425064;
+  background: var(--sheet-title);
+  color: #f8fafc;
   white-space: pre-wrap;
 }
 
 .markdown-report code {
-  border-radius: 7px;
-  background: rgba(26, 115, 232, 0.09);
-  color: #1459b5;
+  border: 1px solid rgba(82, 96, 112, 0.14);
+  border-radius: 6px;
+  background: var(--sheet-info);
+  color: #1e3a8a;
   font-family: "Cascadia Code", "Consolas", monospace;
   font-size: 0.92em;
-  padding: 2px 6px;
+  font-weight: 800;
+  padding: 2px 7px;
 }
 
 .report-code code {
@@ -692,21 +762,50 @@ textarea {
 }
 
 .markdown-report a {
-  color: var(--blue);
+  color: var(--sheet-blue-text);
   font-weight: 800;
   text-decoration: none;
 }
 
 .markdown-report strong {
-  color: #111827;
+  color: #172033;
   font-weight: 900;
+}
+
+.tone-info .report-paragraph,
+.tone-info .report-list,
+.tone-info .report-ordered-list {
+  border-left-color: var(--sheet-blue);
+  background: linear-gradient(90deg, rgba(238, 244, 251, 0.72), #ffffff 34%);
+}
+
+.tone-success .report-paragraph,
+.tone-success .report-list,
+.tone-success .report-ordered-list {
+  border-left-color: var(--sheet-green);
+  background: linear-gradient(90deg, rgba(234, 245, 238, 0.8), #ffffff 34%);
+}
+
+.tone-warning .report-paragraph,
+.tone-warning .report-list,
+.tone-warning .report-ordered-list {
+  border-left-color: var(--sheet-yellow);
+  background: linear-gradient(90deg, rgba(251, 241, 223, 0.86), #ffffff 34%);
+}
+
+.tone-danger .report-paragraph,
+.tone-danger .report-list,
+.tone-danger .report-ordered-list {
+  border-left-color: var(--sheet-red);
+  background: linear-gradient(90deg, rgba(249, 232, 236, 0.88), #ffffff 34%);
 }
 
 .notice-card {
   margin-bottom: 16px;
-  border-color: rgba(251, 188, 4, 0.36);
-  background: #fff8e8;
-  color: #5f4300;
+  border-color: #d8e5fb;
+  border-left: 5px solid #9dbcf7;
+  background: var(--sheet-info);
+  color: #1e3a8a;
 }
 
 .toolbar {
@@ -718,8 +817,31 @@ textarea {
 
 .soft-table {
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  border: 1px solid var(--sheet-line);
+  border-radius: 14px;
+}
+
+.soft-table .el-table__header th.el-table__cell {
+  background: var(--sheet-header);
+  color: white;
+  font-weight: 900;
+}
+
+.soft-table .el-table__body tr:nth-child(even) td.el-table__cell {
+  background: var(--sheet-row);
+}
+
+.soft-table .el-table__body tr:hover > td.el-table__cell {
+  background: #f4f7fb !important;
+}
+
+.soft-table .el-table__cell {
+  border-color: var(--sheet-line) !important;
+}
+
+.soft-table .el-tag {
+  border-radius: 6px;
+  font-weight: 900;
 }
 
 .job-card pre {
