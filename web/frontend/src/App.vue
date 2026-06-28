@@ -117,12 +117,6 @@
               variant="compact"
             />
           </div>
-          <aside class="soft-panel accent-panel">
-            <h2>Codex 评价状态</h2>
-            <p v-if="overview.hasManagerReport">已生成 `manager_report.md`，前端正在展示正式评价。</p>
-            <p v-else>尚未生成正式评价。请在服务器 Codex 中使用 skill 生成 `summary/manager_report.md`。</p>
-            <el-button type="primary" round @click="setView('report')">查看 AI 评价</el-button>
-          </aside>
         </div>
       </section>
 
@@ -203,6 +197,20 @@
         </div>
       </section>
     </main>
+
+    <button
+      class="ai-fab"
+      :class="{ active: currentView === 'report', pending: !overview.hasManagerReport }"
+      type="button"
+      aria-label="查看 AI 评价"
+      @click="setView('report')"
+    >
+      <span class="ai-fab__orb">AI</span>
+      <span class="ai-fab__copy">
+        <strong>查看 AI 评价</strong>
+        <small>{{ overview.hasManagerReport ? '已生成正式评价' : '等待 Codex 生成' }}</small>
+      </span>
+    </button>
   </div>
 </template>
 
