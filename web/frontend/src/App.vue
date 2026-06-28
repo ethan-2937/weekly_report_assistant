@@ -1,6 +1,14 @@
 <template>
   <div class="app-shell">
-    <header class="app-header">
+    <div class="header-reveal-zone" aria-hidden="true" @mouseenter="revealHeader"></div>
+
+    <header
+      class="app-header"
+      :class="{ 'app-header--hidden': headerHidden }"
+      @mouseenter="keepHeaderOpen"
+      @mouseleave="releaseHeader"
+      @focusin="revealHeader"
+    >
       <button class="brand" @click="setView('dashboard')">
         <span class="brand-mark brand-logo-wrap">
           <img :src="youzhiLogo" alt="优智科技 Youzhi" />
@@ -215,7 +223,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
 import MarkdownReport from './components/MarkdownReport.vue'
@@ -228,7 +236,10 @@ const analysis = ref({})
 const rows = ref([])
 const latestJob = ref({})
 const jobBusy = ref(false)
+const headerHidden = ref(false)
+const headerHovered = ref(false)
 const filters = reactive({ keyword: '', status: '', leader: '' })
+let lastScrollY = 0
 
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
@@ -244,6 +255,40 @@ const filteredRows = computed(() => {
 
 function setView(view) {
   currentView.value = view
+  revealHeader()
+}
+
+function getScrollY() {
+  return window.scrollY || document.documentElement.scrollTop || 0
+}
+
+function revealHeader() {
+  headerHidden.value = false
+}
+
+function keepHeaderOpen() {
+  headerHovered.value = true
+  revealHeader()
+}
+
+function releaseHeader() {
+  headerHovered.value = false
+  if (getScrollY() > 150) {
+    headerHidden.value = true
+  }
+}
+
+function handleHeaderScroll() {
+  const currentScrollY = getScrollY()
+  const scrollDelta = currentScrollY - lastScrollY
+
+  if (currentScrollY < 90 || scrollDelta < -8) {
+    revealHeader()
+  } else if (scrollDelta > 10 && currentScrollY > 150 && !headerHovered.value) {
+    headerHidden.value = true
+  }
+
+  lastScrollY = currentScrollY
 }
 
 async function request(path, options = {}) {
@@ -338,5 +383,13 @@ function jobStatusType(status) {
   return 'info'
 }
 
-onMounted(refreshAll)
+onMounted(() => {
+  lastScrollY = getScrollY()
+  window.addEventListener('scroll', handleHeaderScroll, { passive: true })
+  refreshAll()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleHeaderScroll)
+})
 </script>

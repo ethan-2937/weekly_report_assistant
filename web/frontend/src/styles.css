@@ -53,6 +53,28 @@ textarea {
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
+  transform: translateY(0);
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 180ms ease,
+    box-shadow 180ms ease;
+  will-change: transform;
+}
+
+.app-header--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(-100% - 30px));
+}
+
+.header-reveal-zone {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 19;
+  height: 46px;
+  pointer-events: auto;
 }
 
 .brand,
