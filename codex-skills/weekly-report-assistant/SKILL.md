@@ -11,6 +11,7 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Prefer explicit user dates. If the user asks for the weekly Monday summary or does not specify dates, use the previous completed ISO week (Monday 00:00 to Sunday 23:59:59, Asia/Shanghai).
    - Locate weekly-report files, DingTalk report JSON, contact/roster exports, and leader lists.
    - If `weekly_report_template.txt`, `team_leader_extra_duties.txt`, `金证优智工作周报模板.txt`, or `团队负责人额外职责.txt` exists in the workspace, read them and treat them as the source of truth.
+   - Do not rewrite or reinterpret `weekly_report_template.txt` to fit evaluation needs. It must mirror the real DingTalk template; only change it if the user explicitly says the DingTalk template itself changed.
 
 2. Build the expected submitter roster.
    - Prefer stable IDs (`userid`, employee ID) over names.
@@ -30,12 +31,12 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 5. Evaluate each submitted weekly report.
    - Summarize: 做了哪些工作, 关键交付物, 效果如何, 工时健康度, AI使用质量, 风险/求助, 下周计划.
    - Apply the latest weekly-report screening standard:
-     - 谁在真干活（虚实盘）: read `本周成果`; it must contain concrete output/deliverable nouns such as 文档、代码、报告、方案、清单、页面、接口、脚本、合同、测试结果、上线内容. Do not treat action-only wording such as 推进、跟进、参与、沟通、处理、学习 as a valid output by itself.
-     - 谁时间分配畸形（健康度）: read `工时占比 + 岗位角色`; the report should use percentages or clear proportions. Compare against the employee's role/title when available; if no role baseline exists, flag only obvious imbalance and state that the baseline is unavailable.
-     - AI用得怎样（红黑榜）: read `AI使用`; it must include tool/scenario + effect. Any item explicitly marked `【可复用】` should be promoted into the AI亮点/红榜 section.
-     - 下周计划合不合格: read `下周计划`; it must include both date/deadline and planned output. If it contains `继续` without a concrete date and output, mark it as unqualified; the preferred rule is to avoid `继续` entirely.
-     - 哪里需要老板拍板: read `风险与求助`; extract the blocking point and the requested support. Put these items near the top of the manager-facing report.
-   - Check completeness: 本周成果、工时占比、岗位角色、AI使用、下周计划、风险与求助.
+     - 谁在真干活（虚实盘）: read the actual template field `本周完成成果`/`本周成果`; it must contain concrete output/deliverable nouns such as 文档、代码、报告、方案、清单、页面、接口、脚本、合同、测试结果、上线内容. Do not treat action-only wording such as 推进、跟进、参与、沟通、处理、学习 as a valid output by itself.
+     - 谁时间分配畸形（健康度）: read `工时投入分析`/`工时占比`, and combine it with the roster/title as `岗位角色`; the report should use percentages or clear proportions. Compare against the employee's role/title when available; if no role baseline exists, flag only obvious imbalance and state that the baseline is unavailable.
+     - AI用得怎样（红黑榜）: read the actual template field `AI应用及效果`/`AI使用`; it must include tool/scenario + effect. Any item explicitly marked `【可复用】` should be promoted into the AI亮点/红榜 section.
+     - 下周计划合不合格: read `下周计划（含交付时间）`/`下周计划`; it must include both date/deadline and planned output. If it contains `继续` without a concrete date and output, mark it as unqualified; the preferred rule is to avoid `继续` entirely.
+     - 哪里需要老板拍板: read `风险与求助` only if the report/template provides that field, otherwise extract from risk/blocker/support wording in any section. Put found items near the top of the manager-facing report, but do not mark absence as template non-compliance unless the real DingTalk template contains that field.
+   - Check completeness against the real DingTalk template fields first: 本周完成成果、工时投入分析、AI应用及效果、下周计划（含交付时间）. Treat 风险与求助 as a management extraction dimension unless it exists in the actual template.
    - Prefer factual, evidence-based wording; distinguish completed deliverables from “推进/跟进/参与”等过程描述.
    - Quantify when the report contains data; do not invent metrics.
 

@@ -12,23 +12,25 @@
 
 ## Weekly Report Template Checks
 
-Each employee report should include:
+`weekly_report_template.txt` must mirror the real DingTalk online template. Do not edit it just because evaluation criteria changed. Separate DingTalk template compliance from manager screening criteria.
 
-- 本周成果: must contain concrete deliverable/output nouns, such as merged code, PRD, test report, signed contract, released document, resolved issue, dashboard, page, interface, script, list, or other verifiable output. Action-only wording such as `推进/跟进/参与/沟通/处理/学习` is not enough.
-- 工时占比 + 岗位角色: should provide percentages or clear proportions by activity. Compare with the employee's title/role when possible; if no baseline exists, state that role baseline is missing rather than inventing one.
-- AI使用: should include tool/scenario + effect. If not used, state `未使用`. Items marked `【可复用】` are AI highlights and should be promoted to the AI红榜/亮点 section.
-- 下周计划: must contain both a date/deadline and a planned output. Plans containing vague `继续` wording are unqualified unless rewritten with concrete date + output; prefer treating any `继续` as a warning.
-- 风险与求助: should briefly state the blocking point and the support needed from management or another team. These items should be placed near the top of the manager-facing report.
+Each employee report should be checked against the actual DingTalk template fields:
+
+- 本周完成成果: must contain concrete deliverable/output nouns, such as merged code, PRD, test report, signed contract, released document, resolved issue, dashboard, page, interface, script, list, or other verifiable output. Action-only wording such as `推进/跟进/参与/沟通/处理/学习` is not enough.
+- 工时投入分析: should provide percentages or clear proportions by activity. Compare with the employee's title/role from the roster when possible; if no baseline exists, state that role baseline is missing rather than inventing one.
+- AI应用及效果: should include tool/scenario + effect. If not used, state `未使用`. Items marked `【可复用】` are AI highlights and should be promoted to the AI红榜/亮点 section.
+- 下周计划（含交付时间）: must contain both a date/deadline and a planned output. Plans containing vague `继续` wording are unqualified unless rewritten with concrete date + output; prefer treating any `继续` as a warning.
+- 风险与求助: management extraction dimension. If the actual report/template has this field, evaluate it directly; otherwise extract blockers/support needs from any section and do not count absence as template non-compliance.
 
 ## Latest Screening Dimensions
 
 | 领导想看的维度 | 智能体需要哪个字段 | 合格标准 |
 |---|---|---|
-| 谁在真干活（虚实盘） | 本周成果 | 必须有产出物名词，不能光写动作。 |
-| 谁时间分配畸形（健康度） | 工时占比 + 岗位角色 | 用百分比写清楚，智能体才能比对岗位基准线；没有基准线时只标明显异常。 |
-| AI用得怎样（红黑榜） | AI使用 | 写清楚工具 + 效果，含 `【可复用】` 的自动入选亮点。 |
-| 下周计划合不合格 | 下周计划 | 必须带日期和产出，不能只有 `继续` 类表述。 |
-| 哪里需要老板拍板 | 风险与求助 | 简述卡点 + 需要什么支持，智能体自动置顶。 |
+| 谁在真干活（虚实盘） | 本周完成成果/本周成果 | 必须有产出物名词，不能光写动作。 |
+| 谁时间分配畸形（健康度） | 工时投入分析/工时占比 + 通讯录岗位角色 | 用百分比写清楚，智能体才能比对岗位基准线；没有基准线时只标明显异常。 |
+| AI用得怎样（红黑榜） | AI应用及效果/AI使用 | 写清楚工具 + 效果，含 `【可复用】` 的自动入选亮点。 |
+| 下周计划合不合格 | 下周计划（含交付时间）/下周计划 | 必须带日期和产出，不能只有 `继续` 类表述。 |
+| 哪里需要老板拍板 | 风险/阻塞/求助信息（如有） | 简述卡点 + 需要什么支持，智能体自动置顶；若钉钉模板没有该字段，不因缺失判定模板不合格。 |
 
 ## Per-Person Evaluation Columns
 
