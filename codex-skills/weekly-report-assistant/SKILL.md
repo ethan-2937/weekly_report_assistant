@@ -10,7 +10,7 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 1. Identify the reporting period and data sources before evaluating content.
    - Prefer explicit user dates. If the user asks for the weekly Monday summary or does not specify dates, use the previous completed ISO week (Monday 00:00 to Sunday 23:59:59, Asia/Shanghai).
    - Locate weekly-report files, DingTalk report JSON, contact/roster exports, and leader lists.
-   - If `金证优智工作周报模板.txt` or `团队负责人额外职责.txt` exists in the workspace, read them and treat them as the source of truth.
+   - If `weekly_report_template.txt`, `team_leader_extra_duties.txt`, `金证优智工作周报模板.txt`, or `团队负责人额外职责.txt` exists in the workspace, read them and treat them as the source of truth.
 
 2. Build the expected submitter roster.
    - Prefer stable IDs (`userid`, employee ID) over names.
@@ -28,8 +28,14 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Keep an “无法确认” bucket for unmatched submissions or roster ambiguity.
 
 5. Evaluate each submitted weekly report.
-   - Summarize: 做了哪些工作, 关键交付物, 效果如何, 风险/阻塞, 下周计划.
-   - Check completeness: 本周完成成果、工时投入分析、AI应用及效果、下周计划含交付时间.
+   - Summarize: 做了哪些工作, 关键交付物, 效果如何, 工时健康度, AI使用质量, 风险/求助, 下周计划.
+   - Apply the latest weekly-report screening standard:
+     - 谁在真干活（虚实盘）: read `本周成果`; it must contain concrete output/deliverable nouns such as 文档、代码、报告、方案、清单、页面、接口、脚本、合同、测试结果、上线内容. Do not treat action-only wording such as 推进、跟进、参与、沟通、处理、学习 as a valid output by itself.
+     - 谁时间分配畸形（健康度）: read `工时占比 + 岗位角色`; the report should use percentages or clear proportions. Compare against the employee's role/title when available; if no role baseline exists, flag only obvious imbalance and state that the baseline is unavailable.
+     - AI用得怎样（红黑榜）: read `AI使用`; it must include tool/scenario + effect. Any item explicitly marked `【可复用】` should be promoted into the AI亮点/红榜 section.
+     - 下周计划合不合格: read `下周计划`; it must include both date/deadline and planned output. If it contains `继续` without a concrete date and output, mark it as unqualified; the preferred rule is to avoid `继续` entirely.
+     - 哪里需要老板拍板: read `风险与求助`; extract the blocking point and the requested support. Put these items near the top of the manager-facing report.
+   - Check completeness: 本周成果、工时占比、岗位角色、AI使用、下周计划、风险与求助.
    - Prefer factual, evidence-based wording; distinguish completed deliverables from “推进/跟进/参与”等过程描述.
    - Quantify when the report contains data; do not invent metrics.
 
@@ -41,7 +47,9 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 
 7. Produce manager-facing outputs.
    - Start with a concise executive summary.
+   - Put `需老板拍板/协调事项` near the top, before long per-person detail, when any report contains 风险与求助.
    - Include submission statistics and missing list before detailed per-person evaluation.
+   - Include the latest screening conclusions: 真实产出、工时健康度、AI红黑榜、下周计划合格性、风险求助.
    - Include team-lead compliance table.
    - Include data-quality notes: missing roster, ambiguous names, API permission gaps, unreadable attachments.
    - Do not expose secrets, access tokens, or raw sensitive data unnecessarily.
@@ -62,7 +70,7 @@ After the script runs, analyze:
 - `output/<YYYY-Www>/exports/submission_status.csv` for the machine-readable submission table.
 - `output/<YYYY-Www>/summary/submission_check.md` for the submission overview.
 
-When producing the formal HR-facing evaluation, write it to `output/<YYYY-Www>/summary/manager_report.md`. The Java + Vue web interface reads that exact file and displays it as the AI evaluation page. Include the standard sections: ??????, ???/??????, ???????????, ?????????, ??????????, ?????????????.
+When producing the formal HR-facing evaluation, write it to `output/<YYYY-Www>/summary/manager_report.md`. The Java + Vue web interface reads that exact file and displays it as the AI evaluation page. Include the standard sections: 本周提交概览, 需老板拍板/协调事项, 未提交/异常提交名单, 筛选标准结论, 每人工作总结与效果评价, 团队负责人履职检查, 共性风险与下周关注点, 数据质量与需要人工确认事项.
 
 Do not print `.env`, `DINGTALK_APP_SECRET`, or access tokens. If `scripts/run_weekly.py` fails because permissions are missing, report the exact missing DingTalk scope from the error message and stop before inventing missing-submission results.
 
@@ -71,19 +79,22 @@ Do not print `.env`, `DINGTALK_APP_SECRET`, or access tokens. If `scripts/run_we
 When producing a report, use this structure unless the user requests a different format:
 
 1. 本周提交概览
-2. 未提交/异常提交名单
-3. 每人工作总结与效果评价
-4. 团队负责人履职检查
-5. 共性风险与下周关注点
-6. 数据质量与需要人工确认事项
+2. 需老板拍板/协调事项
+3. 未提交/异常提交名单
+4. 筛选标准结论（真实产出、工时健康度、AI红黑榜、下周计划合格性、风险求助）
+5. 每人工作总结与效果评价
+6. 团队负责人履职检查
+7. 共性风险与下周关注点
+8. 数据质量与需要人工确认事项
 
 For scoring or status labels, prefer:
 
-- `完成较好`: clear deliverables, measurable effect, next plan specific.
-- `基本完成`: has real work output but lacks some quantification or deadlines.
-- `需改进`: vague progress wording, missing deliverables, missing AI/time/next-plan sections, or weak evidence.
+- `完成较好`: clear deliverables, measurable effect, reasonable time allocation, AI use is concrete, and next plan has date + output.
+- `基本完成`: has real work output but lacks some quantification, time allocation detail, AI effect, or next-plan precision.
+- `需改进`: action-only progress wording, missing deliverables, missing/abnormal time allocation, missing AI tool/effect, next plan without date/output, plan containing vague `继续`, missing risk/support explanation, or weak evidence.
 - `未提交`: expected submitter has no matching report.
 - `无法判断`: source data is missing, ambiguous, or outside permission scope.
+- `AI亮点`: AI section contains tool/scenario/effect and explicitly marks `【可复用】`; include in AI红榜.
 
 ## Useful Resource
 
