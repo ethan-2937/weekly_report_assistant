@@ -48,7 +48,7 @@ textarea {
 }
 
 .app-shell {
-  width: min(100% - 32px, 1320px);
+  width: min(100% - 20px, 1680px);
   margin: 0 auto;
   padding: 18px 0 112px;
 }
@@ -398,14 +398,15 @@ textarea {
 .report-hero-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
   overflow: hidden;
-  padding: 30px;
+  padding: 34px 38px;
   background:
-    radial-gradient(circle at 80% 20%, rgba(251, 188, 4, 0.2), transparent 24%),
-    radial-gradient(circle at 12% 10%, rgba(26, 115, 232, 0.24), transparent 32%),
-    linear-gradient(135deg, #263240 0%, #526070 100%);
+    radial-gradient(circle at 84% 18%, rgba(251, 188, 4, 0.34), transparent 24%),
+    radial-gradient(circle at 58% 6%, rgba(52, 168, 83, 0.28), transparent 26%),
+    radial-gradient(circle at 12% 10%, rgba(26, 115, 232, 0.38), transparent 34%),
+    linear-gradient(135deg, #1f3552 0%, #40576b 52%, #68725f 100%);
   color: white;
 }
 
@@ -428,30 +429,37 @@ textarea {
 
 .report-eyebrow {
   display: inline-flex;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.82);
+  background:
+    linear-gradient(90deg, rgba(26, 115, 232, 0.38), rgba(52, 168, 83, 0.28)),
+    rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.94);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
-  padding: 7px 11px;
+  padding: 8px 13px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
 }
 
 .report-hero-main h1 {
   max-width: 720px;
   margin: 14px 0 10px;
-  font-size: clamp(30px, 4vw, 46px);
+  color: #ffffff;
+  font-size: clamp(34px, 4.2vw, 58px);
   line-height: 1.08;
   letter-spacing: -0.04em;
+  text-shadow: 0 10px 34px rgba(0, 0, 0, 0.26);
 }
 
 .report-hero-main p {
-  max-width: 760px;
+  max-width: 900px;
   margin: 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 800;
   line-height: 1.8;
+  text-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
 }
 
 .report-status-card {
@@ -459,29 +467,37 @@ textarea {
   display: grid;
   gap: 6px;
   min-height: 132px;
-  padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.13);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(52, 168, 83, 0.2), transparent 24%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(238, 244, 255, 0.88));
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(16px);
+  color: var(--sheet-title);
 }
 
 .report-status-card strong {
-  font-size: 19px;
+  color: #1f2a37;
+  font-size: 21px;
+  line-height: 1.25;
 }
 
 .report-status-card small {
-  color: rgba(255, 255, 255, 0.72);
+  color: #536173;
+  font-weight: 800;
   word-break: break-all;
 }
 
 .status-dot {
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 7px rgba(52, 168, 83, 0.12);
 }
 
 .status-dot.ready {
@@ -504,8 +520,29 @@ textarea {
   overflow: hidden;
   padding: 16px;
   border: 1px solid var(--sheet-line);
+  border-top: 5px solid var(--sheet-blue-text);
   border-radius: 16px;
   background: white;
+}
+
+.report-kpi-strip article:nth-child(1) {
+  border-top-color: var(--sheet-blue-text);
+  background: linear-gradient(180deg, rgba(238, 244, 251, 0.78), #ffffff 54%);
+}
+
+.report-kpi-strip article:nth-child(2) {
+  border-top-color: var(--sheet-red-text);
+  background: linear-gradient(180deg, rgba(249, 232, 236, 0.68), #ffffff 54%);
+}
+
+.report-kpi-strip article:nth-child(3) {
+  border-top-color: var(--sheet-yellow-text);
+  background: linear-gradient(180deg, rgba(251, 241, 223, 0.78), #ffffff 54%);
+}
+
+.report-kpi-strip article:nth-child(4) {
+  border-top-color: var(--sheet-green-text);
+  background: linear-gradient(180deg, rgba(234, 245, 238, 0.78), #ffffff 54%);
 }
 
 .report-kpi-strip article::after {
@@ -708,7 +745,8 @@ textarea {
 .report-block--heading.level-1 .report-heading {
   background:
     radial-gradient(circle at 90% 20%, rgba(251, 188, 4, 0.22), transparent 24%),
-    linear-gradient(135deg, #263240, var(--sheet-title));
+    radial-gradient(circle at 8% 12%, rgba(26, 115, 232, 0.28), transparent 30%),
+    linear-gradient(135deg, #1f3552, var(--sheet-title));
   color: white;
 }
 
@@ -719,7 +757,7 @@ textarea {
   color: #1e3a8a;
 }
 
-.report-block--heading.tone-boss .report-heading {
+.report-block--heading:not(.level-1).tone-boss .report-heading {
   border-color: rgba(234, 67, 53, 0.22);
   background:
     linear-gradient(90deg, rgba(249, 232, 236, 0.96), rgba(255, 255, 255, 0.9)),
@@ -727,12 +765,12 @@ textarea {
   color: var(--sheet-red-text);
 }
 
-.report-block--heading.tone-boss .heading-kicker {
+.report-block--heading:not(.level-1).tone-boss .heading-kicker {
   background: var(--sheet-red);
   color: var(--sheet-red-text);
 }
 
-.report-block--heading.tone-dimension .report-heading {
+.report-block--heading:not(.level-1).tone-dimension .report-heading {
   border-color: rgba(82, 96, 112, 0.22);
   background:
     linear-gradient(90deg, rgba(234, 240, 250, 0.96), rgba(255, 255, 255, 0.9)),
@@ -740,7 +778,7 @@ textarea {
   color: var(--sheet-title);
 }
 
-.report-block--heading.tone-ai .report-heading {
+.report-block--heading:not(.level-1).tone-ai .report-heading {
   border-color: rgba(52, 168, 83, 0.22);
   background:
     linear-gradient(90deg, rgba(234, 245, 238, 0.96), rgba(255, 255, 255, 0.9)),
@@ -860,8 +898,15 @@ textarea {
 }
 
 .report-table-wrap {
-  overflow: auto;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-radius: 12px;
+  box-shadow:
+    inset -18px 0 18px -22px rgba(47, 58, 74, 0.55),
+    inset 18px 0 18px -22px rgba(47, 58, 74, 0.35);
+  scrollbar-color: rgba(82, 96, 112, 0.45) rgba(238, 244, 251, 0.9);
+  scrollbar-width: thin;
 }
 
 .report-table {
@@ -872,12 +917,18 @@ textarea {
   background: white;
 }
 
+.markdown-report--report .report-table {
+  min-width: 1180px;
+}
+
 .report-table th,
 .report-table td {
   border: 1px solid var(--sheet-line);
-  padding: 11px 13px;
+  padding: 10px 12px;
   text-align: left;
   vertical-align: middle;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .report-table th {

@@ -168,8 +168,8 @@
       <section v-if="currentView === 'report'" class="page-card report-page">
         <div class="report-hero-card">
           <div class="report-hero-main">
-            <span class="report-eyebrow">MANAGER WEEKLY REVIEW · {{ selectedWeek || '未选择周次' }}</span>
-            <h1>AI 周报评价领导看板</h1>
+            <span class="report-eyebrow">WEEKLY AI REVIEW · {{ selectedWeek || '未选择周次' }}</span>
+            <h1>AI 周报评价看板</h1>
             <p>
               聚焦虚实盘、时间分配健康度、AI 使用红黑榜、下周计划合格性，以及需要老板拍板的协调事项。
             </p>
@@ -200,7 +200,7 @@
           <article>
             <small>评价模式</small>
             <strong>{{ analysis.isManagerReport ? '正式' : '预览' }}</strong>
-            <span>{{ analysis.isManagerReport ? '领导可直接阅读' : '等待 Codex 产出' }}</span>
+            <span>{{ analysis.isManagerReport ? '可直接阅读' : '等待 Codex 产出' }}</span>
           </article>
         </div>
 
