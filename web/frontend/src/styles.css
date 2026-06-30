@@ -48,9 +48,13 @@ textarea {
 }
 
 .app-shell {
-  width: min(100% - 20px, 1680px);
+  width: min(100% - 32px, 1320px);
   margin: 0 auto;
   padding: 18px 0 112px;
+}
+
+.app-shell--report {
+  width: min(100% - 20px, 1680px);
 }
 
 .app-header {
@@ -1218,9 +1222,23 @@ textarea {
 }
 
 .ai-fab.active {
+  width: 68px;
+  min-width: 68px;
+  height: 68px;
+  justify-content: center;
+  gap: 0;
+  padding: 10px;
   background:
     radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.74), transparent 28%),
-    linear-gradient(135deg, #202124 0%, #3c4043 100%);
+    linear-gradient(135deg, #1a73e8 0%, #00a88f 100%);
+}
+
+.ai-fab.active::after {
+  display: none;
+}
+
+.ai-fab.active .ai-fab__copy {
+  display: none;
 }
 
 .ai-fab__orb {
@@ -1373,5 +1391,12 @@ textarea {
     left: 14px;
     width: auto;
     justify-content: center;
+  }
+
+  .ai-fab.active {
+    right: 14px;
+    left: auto;
+    width: 68px;
+    min-width: 68px;
   }
 }

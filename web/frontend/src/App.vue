@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell">
+  <div :class="['app-shell', { 'app-shell--report': currentView === 'report' }]">
     <div class="header-reveal-zone" aria-hidden="true" @mouseenter="revealHeader"></div>
 
     <header
