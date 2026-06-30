@@ -116,12 +116,14 @@ function headingLabel(level) {
 }
 
 function blockTone(block) {
-  if (block.type === 'heading' || block.type === 'table' || block.type === 'code') return ''
   const text = `${block.text || ''} ${(block.items || []).join(' ')}`
+  if (/老板|拍板|协调事项|需要支持|需支持|求助|卡点/.test(text)) return 'tone-boss'
+  if (/五维|虚实盘|真干活|时间分配|健康度|红黑榜|下周计划合格|综合结论/.test(text)) return 'tone-dimension'
+  if (/AI|可复用|红榜|黑榜/.test(text)) return 'tone-ai'
   if (/风险|异常|失败|未提交|缺失|阻塞|延期|严重|离职|淘汰/.test(text)) return 'tone-danger'
   if (/下一步|待启动|待确认|需要|建议|关注|观察|复核|人工确认/.test(text)) return 'tone-warning'
   if (/已完成|已提交|成功|达成|通过|正式评价|完成/.test(text)) return 'tone-success'
-  if (/进行中|生成|Codex|AI|分析|汇总/.test(text)) return 'tone-info'
+  if (/进行中|生成|Codex|分析|汇总/.test(text)) return 'tone-info'
   return ''
 }
 
@@ -129,8 +131,19 @@ function cellClass(value, header) {
   const text = `${value}`
   const headerText = `${header}`
   const classes = ['report-cell']
-  if (/状态|进度|结果|是否|风险|备注|负责人|候选|提交/.test(headerText)) {
+  if (/状态|进度|结果|是否|风险|备注|负责人|候选|提交|虚实盘|健康度|红黑榜|计划|结论|跟进/.test(headerText)) {
     classes.push('is-key-field')
+  }
+  if (/老板|拍板|协调|支持|求助/.test(headerText + text)) {
+    classes.push('is-boss')
+  } else if (/虚实盘|本周成果|产出/.test(headerText)) {
+    classes.push('is-output')
+  } else if (/时间分配|健康度|工时/.test(headerText)) {
+    classes.push('is-time-health')
+  } else if (/AI|红黑榜/.test(headerText)) {
+    classes.push('is-ai')
+  } else if (/下周计划|计划合格/.test(headerText)) {
+    classes.push('is-plan')
   }
   if (/未提交|异常|失败|缺失|风险|严重|延期|阻塞/.test(text)) {
     classes.push('is-danger')

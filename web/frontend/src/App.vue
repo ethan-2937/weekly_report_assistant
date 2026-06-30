@@ -166,15 +166,44 @@
       </section>
 
       <section v-if="currentView === 'report'" class="page-card report-page">
-        <div class="page-header">
-          <div>
-            <h1>AI 周报评价</h1>
-            <p>{{ analysis.isManagerReport ? '正式管理评价' : '当前显示分析输入包，等待 Codex skill 产出正式评价' }} · {{ analysis.source }}</p>
+        <div class="report-hero-card">
+          <div class="report-hero-main">
+            <span class="report-eyebrow">MANAGER WEEKLY REVIEW · {{ selectedWeek || '未选择周次' }}</span>
+            <h1>AI 周报评价领导看板</h1>
+            <p>
+              聚焦虚实盘、时间分配健康度、AI 使用红黑榜、下周计划合格性，以及需要老板拍板的协调事项。
+            </p>
           </div>
-          <el-tag :type="analysis.isManagerReport ? 'success' : 'warning'" effect="light">
-            {{ analysis.isManagerReport ? 'manager_report.md' : 'analysis_input.md' }}
-          </el-tag>
+          <div class="report-status-card">
+            <span :class="['status-dot', analysis.isManagerReport ? 'ready' : 'waiting']"></span>
+            <strong>{{ analysis.isManagerReport ? '正式评价已生成' : '等待正式评价' }}</strong>
+            <small>{{ analysis.source || (analysis.isManagerReport ? 'manager_report.md' : 'analysis_input.md') }}</small>
+          </div>
         </div>
+
+        <div class="report-kpi-strip">
+          <article>
+            <small>提交率</small>
+            <strong>{{ submissionRate }}</strong>
+            <span>{{ overview.submittedCount || 0 }} / {{ overview.expectedCount || 0 }}</span>
+          </article>
+          <article>
+            <small>未提交候选</small>
+            <strong>{{ overview.missingCount || 0 }}</strong>
+            <span>优先核对排除规则</span>
+          </article>
+          <article>
+            <small>负责人候选</small>
+            <strong>{{ overview.leaderCandidateCount || 0 }}</strong>
+            <span>需检查履职材料</span>
+          </article>
+          <article>
+            <small>评价模式</small>
+            <strong>{{ analysis.isManagerReport ? '正式' : '预览' }}</strong>
+            <span>{{ analysis.isManagerReport ? '领导可直接阅读' : '等待 Codex 产出' }}</span>
+          </article>
+        </div>
+
         <div v-if="!analysis.isManagerReport" class="notice-card">
           <strong>下一步：</strong>
           在服务器 Codex 中运行 skill，让它基于本周 `analysis_input.md` 生成 `output/{{ selectedWeek }}/summary/manager_report.md`，刷新页面后即可展示正式评价。
@@ -243,6 +272,12 @@ let lastScrollY = 0
 
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
+const submissionRate = computed(() => {
+  const expected = Number(overview.value.expectedCount || 0)
+  const submitted = Number(overview.value.submittedCount || 0)
+  if (!expected) return '-'
+  return `${Math.round((submitted / expected) * 100)}%`
+})
 const filteredRows = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
   return rows.value.filter(row => {

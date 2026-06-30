@@ -386,6 +386,161 @@ textarea {
   font-size: 14px;
 }
 
+.report-page {
+  overflow: hidden;
+  padding: 0;
+  border-color: rgba(47, 58, 74, 0.12);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(47, 58, 74, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 251, 253, 0.94));
+}
+
+.report-hero-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 22px;
+  overflow: hidden;
+  padding: 30px;
+  background:
+    radial-gradient(circle at 80% 20%, rgba(251, 188, 4, 0.2), transparent 24%),
+    radial-gradient(circle at 12% 10%, rgba(26, 115, 232, 0.24), transparent 32%),
+    linear-gradient(135deg, #263240 0%, #526070 100%);
+  color: white;
+}
+
+.report-hero-card::after {
+  position: absolute;
+  right: -58px;
+  bottom: -96px;
+  width: 220px;
+  height: 220px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  content: "";
+}
+
+.report-hero-main,
+.report-status-card {
+  position: relative;
+  z-index: 1;
+}
+
+.report-eyebrow {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 7px 11px;
+}
+
+.report-hero-main h1 {
+  max-width: 720px;
+  margin: 14px 0 10px;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.report-hero-main p {
+  max-width: 760px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.report-status-card {
+  align-self: center;
+  display: grid;
+  gap: 6px;
+  min-height: 132px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.report-status-card strong {
+  font-size: 19px;
+}
+
+.report-status-card small {
+  color: rgba(255, 255, 255, 0.72);
+  word-break: break-all;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.1);
+}
+
+.status-dot.ready {
+  background: var(--green);
+}
+
+.status-dot.waiting {
+  background: var(--yellow);
+}
+
+.report-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 24px 4px;
+}
+
+.report-kpi-strip article {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--sheet-line);
+  border-radius: 16px;
+  background: white;
+}
+
+.report-kpi-strip article::after {
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: rgba(82, 96, 112, 0.08);
+  content: "";
+}
+
+.report-kpi-strip small,
+.report-kpi-strip span {
+  display: block;
+  color: var(--muted);
+}
+
+.report-kpi-strip strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: var(--sheet-title);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.report-page .notice-card {
+  margin: 16px 24px 0;
+}
+
+.report-page .markdown-report--report {
+  margin: 16px 24px 24px;
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -507,14 +662,15 @@ textarea {
 
 .markdown-report--report {
   min-height: 560px;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--sheet-line);
   border-radius: 20px;
   background:
     linear-gradient(90deg, rgba(82, 96, 112, 0.035) 1px, transparent 1px),
     linear-gradient(180deg, rgba(82, 96, 112, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, #fbfdff, #ffffff);
+  linear-gradient(180deg, #fbfdff, #ffffff);
   background-size: 28px 28px, 28px 28px, auto;
+  box-shadow: 0 20px 48px rgba(47, 58, 74, 0.08);
 }
 
 .report-empty {
@@ -550,13 +706,46 @@ textarea {
 }
 
 .report-block--heading.level-1 .report-heading {
-  background: var(--sheet-title);
+  background:
+    radial-gradient(circle at 90% 20%, rgba(251, 188, 4, 0.22), transparent 24%),
+    linear-gradient(135deg, #263240, var(--sheet-title));
   color: white;
 }
 
 .report-block--heading.level-2 .report-heading {
-  background: var(--sheet-info);
+  background:
+    linear-gradient(90deg, rgba(238, 244, 255, 0.96), rgba(255, 255, 255, 0.82)),
+    radial-gradient(circle at 96% 20%, rgba(26, 115, 232, 0.12), transparent 26%);
   color: #1e3a8a;
+}
+
+.report-block--heading.tone-boss .report-heading {
+  border-color: rgba(234, 67, 53, 0.22);
+  background:
+    linear-gradient(90deg, rgba(249, 232, 236, 0.96), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at 94% 20%, rgba(234, 67, 53, 0.14), transparent 28%);
+  color: var(--sheet-red-text);
+}
+
+.report-block--heading.tone-boss .heading-kicker {
+  background: var(--sheet-red);
+  color: var(--sheet-red-text);
+}
+
+.report-block--heading.tone-dimension .report-heading {
+  border-color: rgba(82, 96, 112, 0.22);
+  background:
+    linear-gradient(90deg, rgba(234, 240, 250, 0.96), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at 94% 20%, rgba(82, 96, 112, 0.16), transparent 28%);
+  color: var(--sheet-title);
+}
+
+.report-block--heading.tone-ai .report-heading {
+  border-color: rgba(52, 168, 83, 0.22);
+  background:
+    linear-gradient(90deg, rgba(234, 245, 238, 0.96), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at 94% 20%, rgba(52, 168, 83, 0.15), transparent 28%);
+  color: var(--sheet-green-text);
 }
 
 .report-block--heading.level-1 .heading-kicker,
@@ -644,6 +833,7 @@ textarea {
   border: 1px solid rgba(223, 230, 238, 0.86);
   border-radius: 10px;
   background: white;
+  box-shadow: 0 6px 18px rgba(47, 58, 74, 0.04);
 }
 
 .report-list li:nth-child(even) {
@@ -676,7 +866,8 @@ textarea {
 
 .report-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   min-width: 520px;
   background: white;
 }
@@ -695,6 +886,14 @@ textarea {
   font-weight: 900;
   text-align: center;
   white-space: nowrap;
+}
+
+.report-table th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.report-table th:last-child {
+  border-top-right-radius: 12px;
 }
 
 .report-table tbody tr:nth-child(even) td {
@@ -732,6 +931,32 @@ textarea {
 
 .report-table td.is-owner {
   background: var(--sheet-purple) !important;
+  color: var(--sheet-purple-text);
+}
+
+.report-table td.is-boss {
+  background: var(--sheet-red) !important;
+  color: var(--sheet-red-text);
+  font-weight: 900;
+}
+
+.report-table td.is-output {
+  background: rgba(238, 244, 251, 0.72);
+  color: var(--sheet-blue-text);
+}
+
+.report-table td.is-time-health {
+  background: rgba(251, 241, 223, 0.72);
+  color: var(--sheet-yellow-text);
+}
+
+.report-table td.is-ai {
+  background: rgba(234, 245, 238, 0.74);
+  color: var(--sheet-green-text);
+}
+
+.report-table td.is-plan {
+  background: rgba(234, 240, 250, 0.74);
   color: var(--sheet-purple-text);
 }
 
@@ -798,6 +1023,33 @@ textarea {
 .tone-danger .report-ordered-list {
   border-left-color: var(--sheet-red);
   background: linear-gradient(90deg, rgba(249, 232, 236, 0.88), #ffffff 34%);
+}
+
+.tone-boss .report-paragraph,
+.tone-boss .report-list,
+.tone-boss .report-ordered-list {
+  border-left-color: var(--sheet-red);
+  background:
+    linear-gradient(90deg, rgba(249, 232, 236, 0.94), #ffffff 38%),
+    radial-gradient(circle at 96% 15%, rgba(234, 67, 53, 0.08), transparent 28%);
+}
+
+.tone-dimension .report-paragraph,
+.tone-dimension .report-list,
+.tone-dimension .report-ordered-list {
+  border-left-color: var(--sheet-header);
+  background:
+    linear-gradient(90deg, rgba(234, 240, 250, 0.86), #ffffff 38%),
+    radial-gradient(circle at 96% 15%, rgba(82, 96, 112, 0.08), transparent 28%);
+}
+
+.tone-ai .report-paragraph,
+.tone-ai .report-list,
+.tone-ai .report-ordered-list {
+  border-left-color: var(--sheet-green);
+  background:
+    linear-gradient(90deg, rgba(234, 245, 238, 0.9), #ffffff 38%),
+    radial-gradient(circle at 96% 15%, rgba(52, 168, 83, 0.08), transparent 28%);
 }
 
 .notice-card {
@@ -1020,6 +1272,11 @@ textarea {
 
   .home-hero,
   .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .report-hero-card,
+  .report-kpi-strip {
     grid-template-columns: 1fr;
   }
 

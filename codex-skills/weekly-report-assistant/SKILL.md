@@ -48,9 +48,10 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 
 7. Produce manager-facing outputs.
    - Start with a concise executive summary.
-   - Put `需老板拍板/协调事项` near the top, before long per-person detail, when any report contains 风险与求助.
+   - Put `需老板拍板/协调事项` near the top, before long per-person detail, when any report contains risk/blocker/support content that needs management coordination.
    - Include submission statistics and missing list before detailed per-person evaluation.
-   - Include the latest screening conclusions: 真实产出、工时健康度、AI红黑榜、下周计划合格性、风险求助.
+   - Replace the old per-person evaluation fields with the latest leadership dimensions. Do not create a separate `筛选标准结论` block. Each employee's evaluation should directly use: `虚实盘（本周成果）`, `时间分配健康度`, `AI使用红黑榜`, `下周计划合格性`, and `综合结论/需跟进`.
+   - Keep `需老板拍板/协调事项` as a separate top-level module, because leaders need to scan it quickly.
    - Include team-lead compliance table.
    - Include data-quality notes: missing roster, ambiguous names, API permission gaps, unreadable attachments.
    - Do not expose secrets, access tokens, or raw sensitive data unnecessarily.
@@ -71,7 +72,7 @@ After the script runs, analyze:
 - `output/<YYYY-Www>/exports/submission_status.csv` for the machine-readable submission table.
 - `output/<YYYY-Www>/summary/submission_check.md` for the submission overview.
 
-When producing the formal HR-facing evaluation, write it to `output/<YYYY-Www>/summary/manager_report.md`. The Java + Vue web interface reads that exact file and displays it as the AI evaluation page. Include the standard sections: 本周提交概览, 需老板拍板/协调事项, 未提交/异常提交名单, 筛选标准结论, 每人工作总结与效果评价, 团队负责人履职检查, 共性风险与下周关注点, 数据质量与需要人工确认事项.
+When producing the formal HR-facing evaluation, write it to `output/<YYYY-Www>/summary/manager_report.md`. The Java + Vue web interface reads that exact file and displays it as the AI evaluation page. Include the standard sections: 本周提交概览, 需老板拍板/协调事项, 未提交/异常提交名单, 员工五维评价, 团队负责人履职检查, 共性风险与下周关注点, 数据质量与需要人工确认事项.
 
 Do not print `.env`, `DINGTALK_APP_SECRET`, or access tokens. If `scripts/run_weekly.py` fails because permissions are missing, report the exact missing DingTalk scope from the error message and stop before inventing missing-submission results.
 
@@ -82,11 +83,10 @@ When producing a report, use this structure unless the user requests a different
 1. 本周提交概览
 2. 需老板拍板/协调事项
 3. 未提交/异常提交名单
-4. 筛选标准结论（真实产出、工时健康度、AI红黑榜、下周计划合格性、风险求助）
-5. 每人工作总结与效果评价
-6. 团队负责人履职检查
-7. 共性风险与下周关注点
-8. 数据质量与需要人工确认事项
+4. 员工五维评价（虚实盘、时间分配健康度、AI使用红黑榜、下周计划合格性、综合结论/需跟进）
+5. 团队负责人履职检查
+6. 共性风险与下周关注点
+7. 数据质量与需要人工确认事项
 
 For scoring or status labels, prefer:
 

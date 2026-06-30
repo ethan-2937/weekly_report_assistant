@@ -22,7 +22,9 @@ Each employee report should be checked against the actual DingTalk template fiel
 - 下周计划（含交付时间）: must contain both a date/deadline and a planned output. Plans containing vague `继续` wording are unqualified unless rewritten with concrete date + output; prefer treating any `继续` as a warning.
 - 风险与求助: management extraction dimension. If the actual report/template has this field, evaluate it directly; otherwise extract blockers/support needs from any section and do not count absence as template non-compliance.
 
-## Latest Screening Dimensions
+## Leadership Evaluation Dimensions
+
+These dimensions replace the old per-person evaluation fields. Do not output them as a separate `筛选标准结论` section. The per-person evaluation table/narrative should directly use these dimensions. `哪里需要老板拍板` can be pulled out into a separate top-level module for leaders.
 
 | 领导想看的维度 | 智能体需要哪个字段 | 合格标准 |
 |---|---|---|
@@ -40,19 +42,14 @@ Recommended columns for table or spreadsheet outputs:
 - 部门/团队
 - 是否团队负责人
 - 提交状态
-- 本周主要工作
-- 关键交付物
-- 效果评价
-- 周报完整性
-- 真实产出判断
-- 工时健康度
-- AI应用情况
-- AI红黑榜标记
-- 下周计划质量
-- 风险/阻塞
-- 需老板拍板/支持
-- 评价结论
-- 需要跟进
+- 虚实盘（本周成果）
+- 时间分配健康度
+- AI使用红黑榜
+- 下周计划合格性
+- 综合结论
+- 需跟进
+
+Keep `需老板拍板/支持` out of the per-person table when possible; aggregate those items into the separate top-level `需老板拍板/协调事项` module.
 
 ## Team Lead Compliance Columns
 
@@ -80,8 +77,8 @@ Recommended columns for table or spreadsheet outputs:
 
 ```text
 本周应提交 X 人，已提交 Y 人，未提交 Z 人；另有 A 条重复/异常提交、B 条无法匹配提交。
-整体看，主要工作集中在……；交付效果较好的方向包括……；主要风险包括……。
-需老板拍板/协调事项包括……；AI可复用亮点包括……。
+整体看，真实产出较好的方向包括……；时间分配异常集中在……；AI可复用亮点包括……；下周计划主要问题包括……。
+需老板拍板/协调事项包括……。
 团队负责人履职方面，X 人完整提交团队汇总，Y 人缺少成员评价/风险/资源需求等关键内容。
 ```
 
@@ -89,16 +86,21 @@ Recommended columns for table or spreadsheet outputs:
 
 ```text
 姓名：
-- 本周工作：
-- 交付与效果：
-- 周报完整性：
-- 真实产出判断：
-- 工时健康度：
-- AI应用：
-- AI红黑榜标记：
-- 下周计划：
-- 风险与求助：
-- 评价结论：
+- 虚实盘（本周成果）：
+- 时间分配健康度：
+- AI使用红黑榜：
+- 下周计划合格性：
+- 综合结论：
+- 需跟进：
+```
+
+## Boss Decision Module Template
+
+```text
+## 需老板拍板/协调事项
+
+| 优先级 | 人员/团队 | 卡点 | 需要支持 | 建议时限 |
+|---|---|---|---|---|
 ```
 
 ## Web Display Contract
