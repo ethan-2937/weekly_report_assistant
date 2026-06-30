@@ -1015,6 +1015,21 @@ textarea {
   color: var(--sheet-purple-text);
 }
 
+.report-table td.report-cell.is-success {
+  background: var(--sheet-green) !important;
+  color: var(--sheet-green-text) !important;
+}
+
+.report-table td.report-cell.is-warning {
+  background: var(--sheet-yellow) !important;
+  color: var(--sheet-yellow-text) !important;
+}
+
+.report-table td.report-cell.is-danger {
+  background: var(--sheet-red) !important;
+  color: var(--sheet-red-text) !important;
+}
+
 .report-code {
   overflow: auto;
   padding: 14px 16px;

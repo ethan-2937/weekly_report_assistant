@@ -51,6 +51,21 @@ Recommended columns for table or spreadsheet outputs:
 
 Keep `需老板拍板/支持` out of the per-person table when possible; aggregate those items into the separate top-level `需老板拍板/协调事项` module.
 
+## Web Color Label Contract
+
+The web UI can infer colors from text, but the formal manager report should still use stable labels to reduce ambiguity:
+
+- Green: `完成较好`, `完成`, `合格`, `红榜`, `可复用`.
+- Yellow: `需改进`, `基本完成`, `待确认`, `需关注`.
+- Red: `不合格`, `未完成`, `无产出`, `未使用`, `黑榜`.
+- Neutral: `无法判断` when evidence is missing or ambiguous.
+
+Preferred cell wording examples:
+
+- `完成较好：有明确产出物，效果可验证。`
+- `需改进：只有动作描述，产出物不够清晰。`
+- `不合格：下周计划无日期和产出。`
+
 ## Team Lead Compliance Columns
 
 - 负责人

@@ -51,6 +51,11 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Put `需老板拍板/协调事项` near the top, before long per-person detail, when any report contains risk/blocker/support content that needs management coordination.
    - Include submission statistics and missing list before detailed per-person evaluation.
    - Replace the old per-person evaluation fields with the latest leadership dimensions. Do not create a separate `筛选标准结论` block. Each employee's evaluation should directly use: `虚实盘（本周成果）`, `时间分配健康度`, `AI使用红黑榜`, `下周计划合格性`, and `综合结论/需跟进`.
+   - Use stable status labels inside these five dimensions so the web UI can color cells consistently:
+     - Green labels: `完成较好`, `完成`, `合格`, `红榜`, `可复用`.
+     - Yellow labels: `需改进`, `基本完成`, `待确认`, `需关注`.
+     - Red labels: `不合格`, `未完成`, `无产出`, `未使用`, `黑榜`.
+     - Use `无法判断` only when source data is missing or ambiguous.
    - Keep `需老板拍板/协调事项` as a separate top-level module, because leaders need to scan it quickly.
    - Include team-lead compliance table.
    - Include data-quality notes: missing roster, ambiguous names, API permission gaps, unreadable attachments.

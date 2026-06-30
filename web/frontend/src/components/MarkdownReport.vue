@@ -145,18 +145,35 @@ function cellClass(value, header) {
   } else if (/下周计划|计划合格/.test(headerText)) {
     classes.push('is-plan')
   }
-  if (/未提交|异常|失败|缺失|风险|严重|延期|阻塞/.test(text)) {
-    classes.push('is-danger')
-  } else if (/待启动|待确认|观察中|关注|需|复核|候选/.test(text)) {
-    classes.push('is-warning')
-  } else if (/进行中|处理中|已生成|生成中/.test(text)) {
-    classes.push('is-progress')
-  } else if (/已提交|已完成|完成|成功|通过|达成|正常/.test(text)) {
-    classes.push('is-success')
+
+  const tone = statusTone(text)
+  if (tone) {
+    classes.push(`is-${tone}`)
   } else if (/负责人|责任人|owner/i.test(headerText)) {
     classes.push('is-owner')
   }
   return classes
+}
+
+function statusTone(value) {
+  const text = `${value}`.replace(/\s+/g, '')
+  if (!text) return ''
+  if (/无明显(风险|异常|阻塞|问题)|未见(明显)?(风险|异常|阻塞|问题)|风险可控|时间分配健康|计划清晰/.test(text)) {
+    return 'success'
+  }
+  if (/不合格|未完成|未达成|无产出|无交付|只有动作|未提交|异常|失败|缺失|严重|延期|阻塞|黑榜|未使用|无AI|无明确产出|无具体产出/.test(text)) {
+    return 'danger'
+  }
+  if (/需改进|需要改进|基本完成|待完善|待确认|待启动|观察中|关注|复核|候选|偏高|偏低|不清晰|不明确|不充分|较弱|一般|模糊|继续/.test(text)) {
+    return 'warning'
+  }
+  if (/进行中|处理中|已生成|生成中/.test(text)) {
+    return 'progress'
+  }
+  if (/完成较好|完成|合格|优秀|较好|已提交|已完成|成功|达成|通过|正常|健康|清晰|红榜|可复用/.test(text)) {
+    return 'success'
+  }
+  return ''
 }
 
 function parseMarkdown(content) {
