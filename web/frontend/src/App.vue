@@ -499,7 +499,7 @@
           <div>
             <span class="login-eyebrow">FEEDBACK</span>
             <h2>提出 bug 或建议</h2>
-            <p>不用填复杂工单，写一句话即可；系统会自动带上账号、周次和页面信息，并通知张艺政。</p>
+            <p>不用填复杂工单，写一句话即可；系统会自动带上账号、周次和页面信息，并通知开发人员。</p>
           </div>
         </div>
       </template>
@@ -507,8 +507,8 @@
       <div class="feedback-panel feedback-panel--simple">
         <div class="feedback-target-card feedback-target-card--simple">
           <div>
-            <strong>发送给：张艺政</strong>
-            <span>会直接通过钉钉发送给张艺政；发送失败时可一键复制内容。</span>
+            <strong>通知开发人员</strong>
+            <span>会直接通过钉钉发送给开发人员。</span>
           </div>
           <el-tag effect="light" round>{{ selectedWeek || '当前页面' }}</el-tag>
         </div>
@@ -561,7 +561,7 @@
         <div v-if="feedbackResult && !feedbackResult.delivered" class="feedback-copy-box">
           <div>
             <strong>备用方式</strong>
-            <span>复制内容后，在钉钉中直接发给张艺政。</span>
+            <span>复制内容后，在钉钉中直接发给开发人员。</span>
           </div>
           <el-button round type="primary" @click="copyFeedbackText">复制内容</el-button>
         </div>
@@ -580,7 +580,7 @@
           <span>Ctrl + Enter 也可提交</span>
           <div>
             <el-button @click="feedbackDialogVisible = false">取消</el-button>
-            <el-button type="primary" :loading="feedbackSaving" @click="submitFeedback">发送给张艺政</el-button>
+            <el-button class="feedback-submit-btn" type="primary" :loading="feedbackSaving" @click="submitFeedback">通知开发人员</el-button>
           </div>
         </div>
       </template>
@@ -1139,13 +1139,16 @@ async function submitFeedback() {
         view: currentViewLabel.value
       })
     })
-    feedbackResult.value = data
     if (data.delivered) {
-      ElMessage.success(data.message || '反馈已发送')
+      ElMessage.success('已通知开发人员')
       feedbackDialogVisible.value = false
       resetFeedbackForm()
     } else {
-      ElMessage.warning(data.message || '反馈已记录，请复制后在钉钉联系张艺政')
+      feedbackResult.value = {
+        ...data,
+        message: '已记录反馈，但钉钉消息未直接发送。请复制内容联系开发人员。'
+      }
+      ElMessage.warning(feedbackResult.value.message)
     }
   } catch (error) {
     ElMessage.error(error.message)
@@ -1162,7 +1165,7 @@ async function copyFeedbackText() {
   }
   try {
     await navigator.clipboard.writeText(text)
-    ElMessage.success('已复制，可以在钉钉中发给张艺政')
+    ElMessage.success('已复制，可以在钉钉中发给开发人员')
   } catch (error) {
     ElMessage.error('浏览器没有开放复制权限，请手动选中文本复制')
   }

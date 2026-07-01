@@ -732,6 +732,28 @@ textarea {
   font-weight: 900;
 }
 
+.feedback-footer .feedback-submit-btn.el-button--primary {
+  --el-button-bg-color: #0b57d0;
+  --el-button-border-color: #0b57d0;
+  --el-button-hover-bg-color: #0842a0;
+  --el-button-hover-border-color: #0842a0;
+  --el-button-active-bg-color: #07357f;
+  --el-button-active-border-color: #07357f;
+  --el-button-disabled-text-color: #ffffff;
+  min-width: 128px;
+  color: #ffffff !important;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  background: #0b57d0 !important;
+  border-color: #0b57d0 !important;
+  box-shadow: 0 10px 24px rgba(11, 87, 208, 0.26);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+.feedback-footer .feedback-submit-btn.el-button--primary span {
+  color: #ffffff !important;
+}
+
 .no-access-card {
   overflow: hidden;
   padding: 46px;
