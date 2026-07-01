@@ -634,6 +634,44 @@ textarea {
   background: white;
 }
 
+.account-menu {
+  display: inline-flex;
+}
+
+.account-menu__trigger {
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.account-menu__trigger:hover,
+.account-menu__trigger:focus-visible {
+  border-color: rgba(26, 115, 232, 0.35);
+  box-shadow: 0 10px 26px rgba(26, 115, 232, 0.14);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.account-caret {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f3f6fb;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.account-dropdown {
+  min-width: 168px;
+}
+
+.account-dropdown .el-dropdown-menu__item {
+  font-weight: 800;
+}
+
 .avatar {
   display: grid;
   width: 34px;

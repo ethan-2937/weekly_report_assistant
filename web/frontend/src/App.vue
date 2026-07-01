@@ -116,15 +116,27 @@
       </nav>
 
       <div class="account-area">
-        <div class="user-chip">
-          <span class="avatar">{{ userInitial }}</span>
-          <span>
-            <strong>{{ currentUser.realName || currentUser.username }}</strong>
-            <small>{{ roleLabel }} · JWT 已登录</small>
-          </span>
-        </div>
-        <el-button size="small" round @click="openChangePassword">修改密码</el-button>
-        <el-button size="small" round @click="logout">退出</el-button>
+        <el-dropdown
+          class="account-menu"
+          trigger="hover"
+          placement="bottom-end"
+          @command="handleAccountCommand"
+        >
+          <button class="user-chip account-menu__trigger" type="button">
+            <span class="avatar">{{ userInitial }}</span>
+            <span>
+              <strong>{{ currentUser.realName || currentUser.username }}</strong>
+              <small>{{ roleLabel }} · JWT 已登录</small>
+            </span>
+            <span class="account-caret" aria-hidden="true">⌄</span>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu class="account-dropdown">
+              <el-dropdown-item command="password">修改密码</el-dropdown-item>
+              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </header>
 
@@ -963,6 +975,16 @@ function roleTagType(roleCode) {
   if (roleCode === 'HR') return 'success'
   if (roleCode === 'MANAGER') return 'warning'
   return 'info'
+}
+
+function handleAccountCommand(command) {
+  if (command === 'password') {
+    openChangePassword()
+    return
+  }
+  if (command === 'logout') {
+    logout()
+  }
 }
 
 async function logout() {
