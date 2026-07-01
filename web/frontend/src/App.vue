@@ -508,7 +508,7 @@
         <div class="feedback-target-card feedback-target-card--simple">
           <div>
             <strong>通知开发人员</strong>
-            <span>会直接通过钉钉发送给开发人员。</span>
+            <span>会直接通过钉钉发送给张艺政。</span>
           </div>
           <el-tag effect="light" round>{{ selectedWeek || '当前页面' }}</el-tag>
         </div>
