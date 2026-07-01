@@ -24,19 +24,9 @@
           <h1>工作周报汇总与评价系统</h1>
           <p>统一登录、权限分级、钉钉身份绑定，提供安全、规范的周报汇总与评价入口。</p>
         </div>
-        <div class="login-proof-grid">
-          <article>
-            <strong>JWT</strong>
-            <span>后端令牌鉴权</span>
-          </article>
-          <article>
-            <strong>MySQL</strong>
-            <span>账号角色持久化</span>
-          </article>
-          <article>
-            <strong>DingTalk</strong>
-            <span>预留钉钉统一登录</span>
-          </article>
+        <div class="login-poster__note">
+          <span>周报数据仅向授权账号开放</span>
+          <strong>请使用本人账号登录，首次登录后及时修改初始密码。</strong>
         </div>
       </aside>
 

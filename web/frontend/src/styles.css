@@ -261,7 +261,7 @@ textarea {
 
 .login-poster__brand,
 .login-poster__copy,
-.login-proof-grid {
+.login-poster__note {
   position: relative;
   z-index: 1;
 }
@@ -274,8 +274,13 @@ textarea {
 
 .login-poster__brand small,
 .login-poster__copy p,
-.login-proof-grid span {
+.login-poster__note span {
   color: rgba(255, 255, 255, 0.78);
+}
+
+.login-poster__copy {
+  margin: auto 0;
+  transform: translateY(-10px);
 }
 
 .login-poster__copy h1 {
@@ -294,27 +299,32 @@ textarea {
   line-height: 1.8;
 }
 
-.login-proof-grid {
+.login-poster__note {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.login-proof-grid article {
-  padding: 16px;
+  max-width: 520px;
+  gap: 8px;
+  padding: 20px 22px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px);
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+  backdrop-filter: blur(16px);
 }
 
-.login-proof-grid strong,
-.login-proof-grid span {
+.login-poster__note span,
+.login-poster__note strong {
   display: block;
 }
 
-.login-proof-grid strong {
-  font-size: 20px;
+.login-poster__note span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.login-poster__note strong {
+  color: white;
+  font-size: 17px;
+  line-height: 1.55;
 }
 
 .login-card--official {
@@ -1841,10 +1851,6 @@ textarea {
   .login-poster,
   .login-card--official {
     min-height: auto;
-  }
-
-  .login-proof-grid {
-    grid-template-columns: 1fr;
   }
 
   .hero-showcase {
