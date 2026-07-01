@@ -122,8 +122,9 @@
           </button>
           <template #dropdown>
             <el-dropdown-menu class="account-dropdown">
-              <el-dropdown-item command="password">修改密码</el-dropdown-item>
-              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              <el-dropdown-item command="feedback">提出 bug 或建议</el-dropdown-item>
+              <el-dropdown-item divided command="password">修改密码</el-dropdown-item>
+              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -485,6 +486,106 @@
       </section>
     </main>
 
+    <el-dialog
+      v-model="feedbackDialogVisible"
+      class="feedback-dialog"
+      width="560px"
+      :close-on-click-modal="!feedbackSaving"
+      destroy-on-close
+    >
+      <template #header>
+        <div class="feedback-dialog__header">
+          <span class="feedback-dialog__mark">钉</span>
+          <div>
+            <span class="login-eyebrow">FEEDBACK</span>
+            <h2>提出 bug 或建议</h2>
+            <p>不用填复杂工单，写一句话即可；系统会自动带上账号、周次和页面信息，并通知张艺政。</p>
+          </div>
+        </div>
+      </template>
+
+      <div class="feedback-panel feedback-panel--simple">
+        <div class="feedback-target-card feedback-target-card--simple">
+          <div>
+            <strong>发送给：张艺政</strong>
+            <span>钉钉工作通知直达；发送失败时可一键复制内容。</span>
+          </div>
+          <el-tag effect="light" round>{{ selectedWeek || '当前页面' }}</el-tag>
+        </div>
+
+        <div class="feedback-type-grid feedback-type-grid--compact" aria-label="反馈类型">
+          <button
+            v-for="item in feedbackCategoryOptions"
+            :key="item.value"
+            type="button"
+            :class="['feedback-type-card', { active: feedbackForm.category === item.value }]"
+            @click="feedbackForm.category = item.value"
+          >
+            <span>{{ item.icon }}</span>
+            <strong>{{ item.label }}</strong>
+          </button>
+        </div>
+
+        <label class="feedback-simple-input">
+          <span>反馈内容</span>
+          <el-input
+            v-model="feedbackForm.detail"
+            type="textarea"
+            :rows="5"
+            maxlength="1200"
+            show-word-limit
+            placeholder="直接写：哪个页面、哪条数据、哪里不方便，或者希望增加什么功能。可以只写一句话。"
+            @keyup.ctrl.enter="submitFeedback"
+          />
+        </label>
+
+        <div class="feedback-quick-row">
+          <span>自动附带：{{ currentUser.realName || currentUser.username }} · {{ selectedWeek || '未选择周次' }} · {{ currentViewLabel }}</span>
+          <button
+            type="button"
+            :class="['feedback-urgent-toggle', { active: feedbackForm.urgency !== 'NORMAL' }]"
+            @click="toggleFeedbackUrgency"
+          >
+            {{ feedbackForm.urgency === 'NORMAL' ? '普通处理' : '请尽快处理' }}
+          </button>
+        </div>
+
+        <el-alert
+          v-if="feedbackResult"
+          :title="feedbackResult.message"
+          :type="feedbackResult.delivered ? 'success' : 'warning'"
+          show-icon
+          :closable="false"
+        />
+
+        <div v-if="feedbackResult && !feedbackResult.delivered" class="feedback-copy-box">
+          <div>
+            <strong>备用方式</strong>
+            <span>复制内容后，在钉钉中直接发给张艺政。</span>
+          </div>
+          <el-button round type="primary" @click="copyFeedbackText">复制内容</el-button>
+        </div>
+        <el-input
+          v-if="feedbackResult && !feedbackResult.delivered"
+          class="feedback-copy-text"
+          :model-value="feedbackResult.copyText"
+          type="textarea"
+          :rows="4"
+          readonly
+        />
+      </div>
+
+      <template #footer>
+        <div class="feedback-footer">
+          <span>Ctrl + Enter 也可提交</span>
+          <div>
+            <el-button @click="feedbackDialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="feedbackSaving" @click="submitFeedback">发送给张艺政</el-button>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="changePasswordDialogVisible" title="修改密码" width="440px">
       <div class="password-reset-box">
         <p>建议首次登录后立即修改初始密码，修改后请妥善保存。</p>
@@ -566,7 +667,20 @@ const passwordForm = reactive({ id: null, username: '', password: '' })
 const changePasswordDialogVisible = ref(false)
 const changePasswordSaving = ref(false)
 const changePasswordForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
-
+const feedbackDialogVisible = ref(false)
+const feedbackSaving = ref(false)
+const feedbackResult = ref(null)
+const feedbackForm = reactive({
+  category: 'BUG',
+  detail: '',
+  urgency: 'NORMAL'
+})
+const feedbackCategoryOptions = [
+  { value: 'BUG', label: 'Bug', icon: '!' },
+  { value: 'SUGGESTION', label: '建议', icon: '+' },
+  { value: 'DATA', label: '数据问题', icon: '#' },
+  { value: 'PERMISSION', label: '权限问题', icon: '锁' }
+]
 const weeks = ref([])
 const selectedWeek = ref('')
 const currentView = ref('dashboard')
@@ -594,6 +708,14 @@ const roleLabel = computed(() => {
   return '普通用户'
 })
 const isAdmin = computed(() => (currentUser.value?.roles || []).includes('ADMIN'))
+const currentViewLabel = computed(() => ({
+  dashboard: '提交概览',
+  status: '未交名单',
+  report: 'AI 评价',
+  jobs: '运行状态',
+  users: '用户管理',
+  denied: '无权限提示'
+}[currentView.value] || currentView.value))
 const userInitial = computed(() => {
   const name = currentUser.value?.realName || currentUser.value?.username || 'U'
   return String(name).slice(0, 2).toUpperCase()
@@ -967,7 +1089,90 @@ function roleTagType(roleCode) {
   return 'info'
 }
 
+function openFeedbackDialog() {
+  feedbackResult.value = null
+  feedbackDialogVisible.value = true
+}
+
+function resetFeedbackForm() {
+  Object.assign(feedbackForm, {
+    category: 'BUG',
+    detail: '',
+    urgency: 'NORMAL'
+  })
+  feedbackResult.value = null
+}
+
+function toggleFeedbackUrgency() {
+  feedbackForm.urgency = feedbackForm.urgency === 'NORMAL' ? 'HIGH' : 'NORMAL'
+}
+
+function feedbackTitleFromDetail() {
+  const firstLine = feedbackForm.detail
+    .trim()
+    .split('\n')
+    .find(line => line.trim())
+    ?.trim() || '周报系统反馈'
+  const clipped = firstLine.length > 42 ? `${firstLine.slice(0, 42)}...` : firstLine
+  const category = feedbackCategoryOptions.find(item => item.value === feedbackForm.category)?.label || '反馈'
+  return `${category}：${clipped}`
+}
+
+async function submitFeedback() {
+  if (!feedbackForm.detail.trim()) {
+    ElMessage.error('写一句反馈内容即可提交')
+    return
+  }
+  try {
+    feedbackSaving.value = true
+    const data = await request('/api/feedback', {
+      method: 'POST',
+      body: JSON.stringify({
+        category: feedbackForm.category,
+        title: feedbackTitleFromDetail(),
+        detail: feedbackForm.detail.trim(),
+        expectation: '',
+        urgency: feedbackForm.urgency,
+        pageUrl: window.location.href,
+        userAgent: navigator.userAgent,
+        week: selectedWeek.value,
+        view: currentViewLabel.value
+      })
+    })
+    feedbackResult.value = data
+    if (data.delivered) {
+      ElMessage.success(data.message || '反馈已发送')
+      feedbackDialogVisible.value = false
+      resetFeedbackForm()
+    } else {
+      ElMessage.warning(data.message || '反馈已记录，请复制后在钉钉联系张艺政')
+    }
+  } catch (error) {
+    ElMessage.error(error.message)
+  } finally {
+    feedbackSaving.value = false
+  }
+}
+
+async function copyFeedbackText() {
+  const text = feedbackResult.value?.copyText || ''
+  if (!text) {
+    ElMessage.warning('暂无可复制内容')
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('已复制，可以在钉钉中发给张艺政')
+  } catch (error) {
+    ElMessage.error('浏览器没有开放复制权限，请手动选中文本复制')
+  }
+}
+
 function handleAccountCommand(command) {
+  if (command === 'feedback') {
+    openFeedbackDialog()
+    return
+  }
   if (command === 'password') {
     openChangePassword()
     return
@@ -1001,7 +1206,10 @@ function clearAuth(showLogin = true) {
   adminRoles.value = []
   adminKeyword.value = ''
   changePasswordDialogVisible.value = false
+  feedbackDialogVisible.value = false
+  feedbackResult.value = null
   Object.assign(changePasswordForm, { oldPassword: '', newPassword: '', confirmPassword: '' })
+  resetFeedbackForm()
   currentView.value = 'dashboard'
   if (showLogin) {
     authLoading.value = false

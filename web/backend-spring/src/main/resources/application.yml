@@ -32,3 +32,13 @@ weekly:
       authorize-url: ${WEEKLY_DINGTALK_AUTHORIZE_URL:https://login.dingtalk.com/oauth2/auth}
       token-url: ${WEEKLY_DINGTALK_TOKEN_URL:https://api.dingtalk.com/v1.0/oauth2/userAccessToken}
       user-info-url: ${WEEKLY_DINGTALK_USER_INFO_URL:https://api.dingtalk.com/v1.0/contact/users/me}
+  feedback:
+    enabled: ${WEEKLY_FEEDBACK_ENABLED:true}
+    recipient-name: ${WEEKLY_FEEDBACK_RECIPIENT_NAME:张艺政}
+    dingtalk-user-ids: ${WEEKLY_FEEDBACK_DINGTALK_USER_IDS:}
+    dingtalk-app-key: ${WEEKLY_FEEDBACK_DINGTALK_APP_KEY:}
+    dingtalk-app-secret: ${WEEKLY_FEEDBACK_DINGTALK_APP_SECRET:}
+    dingtalk-agent-id: ${WEEKLY_FEEDBACK_DINGTALK_AGENT_ID:}
+    env-path: ${WEEKLY_FEEDBACK_ENV_PATH:}
+    access-token-url: ${WEEKLY_FEEDBACK_DINGTALK_TOKEN_URL:https://api.dingtalk.com/v1.0/oauth2/accessToken}
+    async-send-url: ${WEEKLY_FEEDBACK_DINGTALK_SEND_URL:https://oapi.dingtalk.com/topapi/message/corpconversation/asyncsend_v2}

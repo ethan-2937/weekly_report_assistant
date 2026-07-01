@@ -113,6 +113,7 @@ Web 推荐使用 Java + Vue 实现：
 - 角色已预留 `ADMIN`、`REPORT_ALL`、`HR`、`MANAGER`、`USER`，后续可以继续扩展负责人按团队查看。
 - `ADMIN` 登录后可以进入“用户管理”，新建账号、分配角色、启停账号、绑定钉钉 `userId/unionId`、重置密码，并预留部门权限范围配置。
 - 钉钉登录由钉钉证明身份，本系统仍通过 `sys_user.ding_user_id` 或 `sys_user.ding_union_id` 判断是否允许进入系统。
+- 登录后右上角下拉框提供“提出 bug 或建议”，面向领导使用时只需填写一段反馈内容；系统会自动附带账号、周次、页面信息，记录到 `logs/feedback-YYYY-MM.jsonl`，并优先通过钉钉工作通知直达张艺政。
 
 钉钉登录启用方式：
 
@@ -120,6 +121,12 @@ Web 推荐使用 Java + Vue 实现：
 2. 在服务器根目录 `.env` 中设置 `WEEKLY_DINGTALK_LOGIN_ENABLED=true`、`WEEKLY_DINGTALK_CLIENT_ID`、`WEEKLY_DINGTALK_CLIENT_SECRET`、`WEEKLY_DINGTALK_REDIRECT_URI`、`WEEKLY_FRONTEND_URL`。
 3. 用户首次钉钉登录时，系统会先按 `ding_user_id/union_id` 查找本地账号；如果未绑定，则只在钉钉姓名与本地唯一启用账号姓名完全一致时自动绑定，管理员账号仍需手动绑定。
 4. 如果姓名重复或本地账号不存在，登录会失败，需要管理员在“用户管理”里手动填写钉钉 `userId/unionId`。
+
+反馈通知启用方式：
+
+1. 在 `.env` 或 `config/.env` 中配置 `WEEKLY_FEEDBACK_DINGTALK_USER_IDS`（或 `FEEDBACK_DINGTALK_USER_IDS`），值为张艺政的钉钉 `userid`，多个接收人用逗号分隔。
+2. 如果 `.env` 未单独填写 `WEEKLY_FEEDBACK_DINGTALK_APP_KEY`、`WEEKLY_FEEDBACK_DINGTALK_APP_SECRET`、`WEEKLY_FEEDBACK_DINGTALK_AGENT_ID`，后端会回退读取 `config/.env` 里的 `DINGTALK_APP_KEY`、`DINGTALK_APP_SECRET`、`DINGTALK_AGENT_ID`。
+3. 如果接收人 `userid` 未配置，系统会尝试从本地用户绑定或 `output/contacts/users.json` 中按姓名查找；仍找不到时，前端会提示复制反馈内容并手动发给张艺政。
 
 本地直连 MySQL 时，默认连接：
 

@@ -8,6 +8,7 @@ public class WeeklyReportProperties {
     private String frontendDist;
     private String pythonBin;
     private Auth auth = new Auth();
+    private Feedback feedback = new Feedback();
 
     public String getProjectRoot() {
         return projectRoot;
@@ -39,6 +40,14 @@ public class WeeklyReportProperties {
 
     public void setAuth(Auth auth) {
         this.auth = auth;
+    }
+
+    public Feedback getFeedback() {
+        return feedback;
+    }
+
+    public void setFeedback(Feedback feedback) {
+        this.feedback = feedback;
     }
 
     public static class Auth {
@@ -170,6 +179,90 @@ public class WeeklyReportProperties {
 
         public void setUserInfoUrl(String userInfoUrl) {
             this.userInfoUrl = userInfoUrl;
+        }
+    }
+
+    public static class Feedback {
+        private boolean enabled = true;
+        private String recipientName = "张艺政";
+        private String dingtalkUserIds;
+        private String dingtalkAppKey;
+        private String dingtalkAppSecret;
+        private String dingtalkAgentId;
+        private String envPath;
+        private String accessTokenUrl = "https://api.dingtalk.com/v1.0/oauth2/accessToken";
+        private String asyncSendUrl = "https://oapi.dingtalk.com/topapi/message/corpconversation/asyncsend_v2";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getRecipientName() {
+            return recipientName;
+        }
+
+        public void setRecipientName(String recipientName) {
+            this.recipientName = recipientName;
+        }
+
+        public String getDingtalkUserIds() {
+            return dingtalkUserIds;
+        }
+
+        public void setDingtalkUserIds(String dingtalkUserIds) {
+            this.dingtalkUserIds = dingtalkUserIds;
+        }
+
+        public String getDingtalkAppKey() {
+            return dingtalkAppKey;
+        }
+
+        public void setDingtalkAppKey(String dingtalkAppKey) {
+            this.dingtalkAppKey = dingtalkAppKey;
+        }
+
+        public String getDingtalkAppSecret() {
+            return dingtalkAppSecret;
+        }
+
+        public void setDingtalkAppSecret(String dingtalkAppSecret) {
+            this.dingtalkAppSecret = dingtalkAppSecret;
+        }
+
+        public String getDingtalkAgentId() {
+            return dingtalkAgentId;
+        }
+
+        public void setDingtalkAgentId(String dingtalkAgentId) {
+            this.dingtalkAgentId = dingtalkAgentId;
+        }
+
+        public String getEnvPath() {
+            return envPath;
+        }
+
+        public void setEnvPath(String envPath) {
+            this.envPath = envPath;
+        }
+
+        public String getAccessTokenUrl() {
+            return accessTokenUrl;
+        }
+
+        public void setAccessTokenUrl(String accessTokenUrl) {
+            this.accessTokenUrl = accessTokenUrl;
+        }
+
+        public String getAsyncSendUrl() {
+            return asyncSendUrl;
+        }
+
+        public void setAsyncSendUrl(String asyncSendUrl) {
+            this.asyncSendUrl = asyncSendUrl;
         }
     }
 }
