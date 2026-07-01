@@ -15,14 +15,14 @@
             <img :src="youzhiLogo" alt="优智科技 Youzhi" />
           </span>
           <span>
-            <strong>Youzhi Weekly AI</strong>
-            <small>钉钉周报智能治理平台</small>
+            <strong>优智周报系统</strong>
+            <small>周报汇总与评价平台</small>
           </span>
         </div>
         <div class="login-poster__copy">
           <span class="login-eyebrow">MANAGEMENT CONSOLE</span>
-          <h1>每周一打开浏览器，直接进入最新周报驾驶舱。</h1>
-          <p>统一登录、权限分级、钉钉身份绑定，为 HR 和管理者提供更安全的周报评价入口。</p>
+          <h1>工作周报汇总与评价系统</h1>
+          <p>统一登录、权限分级、钉钉身份绑定，提供安全、规范的周报汇总与评价入口。</p>
         </div>
         <div class="login-proof-grid">
           <article>
@@ -81,7 +81,7 @@
 
         <div class="login-hint login-hint--official">
           <strong>安全提示</strong>
-          <span>正式使用前请修改默认管理员密码，并在用户管理中为 HR 绑定钉钉身份。</span>
+          <span>正式使用前请及时修改初始密码，并由管理员按需配置账号权限与钉钉身份绑定。</span>
         </div>
       </div>
     </div>
