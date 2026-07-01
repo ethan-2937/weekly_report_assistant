@@ -508,7 +508,7 @@
         <div class="feedback-target-card feedback-target-card--simple">
           <div>
             <strong>发送给：张艺政</strong>
-            <span>钉钉工作通知直达；发送失败时可一键复制内容。</span>
+            <span>会直接通过钉钉发送给张艺政；发送失败时可一键复制内容。</span>
           </div>
           <el-tag effect="light" round>{{ selectedWeek || '当前页面' }}</el-tag>
         </div>

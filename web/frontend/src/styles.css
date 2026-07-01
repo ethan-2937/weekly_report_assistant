@@ -724,6 +724,14 @@ textarea {
   font-weight: 800;
 }
 
+.feedback-footer .el-button--primary {
+  --el-button-text-color: #ffffff;
+  --el-button-hover-text-color: #ffffff;
+  --el-button-active-text-color: #ffffff;
+  color: #ffffff;
+  font-weight: 900;
+}
+
 .no-access-card {
   overflow: hidden;
   padding: 46px;
