@@ -61,11 +61,17 @@ public class AuthController {
     public ResponseEntity<Void> dingtalkCallback(
         @RequestParam(required = false) String code,
         @RequestParam(required = false) String authCode,
+        @RequestParam(required = false) String state,
+        @RequestParam(required = false) String error,
+        @RequestParam(required = false) String error_description,
         HttpServletRequest request
     ) {
         String frontendUrl = authService.dingtalkFrontendUrl();
         try {
-            LoginResponseVO login = authService.loginByDingTalk(code != null ? code : authCode, request);
+            if (error != null && !error.isBlank()) {
+                throw new RuntimeException(error_description == null || error_description.isBlank() ? error : error_description);
+            }
+            LoginResponseVO login = authService.loginByDingTalk(code != null ? code : authCode, state, request);
             URI redirect = UriComponentsBuilder.fromUriString(frontendUrl)
                 .queryParam("token", login.getToken())
                 .queryParam("login", "dingtalk")

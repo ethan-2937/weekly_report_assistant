@@ -114,6 +114,13 @@ Web 推荐使用 Java + Vue 实现：
 - `ADMIN` 登录后可以进入“用户管理”，新建账号、分配角色、启停账号、绑定钉钉 `userId/unionId`、重置密码，并预留部门权限范围配置。
 - 钉钉登录由钉钉证明身份，本系统仍通过 `sys_user.ding_user_id` 或 `sys_user.ding_union_id` 判断是否允许进入系统。
 
+钉钉登录启用方式：
+
+1. 在钉钉开发者后台把登录回调地址配置为 `http(s)://你的域名或IP/api/auth/dingtalk/callback`。
+2. 在服务器根目录 `.env` 中设置 `WEEKLY_DINGTALK_LOGIN_ENABLED=true`、`WEEKLY_DINGTALK_CLIENT_ID`、`WEEKLY_DINGTALK_CLIENT_SECRET`、`WEEKLY_DINGTALK_REDIRECT_URI`、`WEEKLY_FRONTEND_URL`。
+3. 用户首次钉钉登录时，系统会先按 `ding_user_id/union_id` 查找本地账号；如果未绑定，则只在钉钉姓名与本地唯一启用账号姓名完全一致时自动绑定，管理员账号仍需手动绑定。
+4. 如果姓名重复或本地账号不存在，登录会失败，需要管理员在“用户管理”里手动填写钉钉 `userId/unionId`。
+
 本地直连 MySQL 时，默认连接：
 
 ```text

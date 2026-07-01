@@ -16,7 +16,7 @@ public interface AuthService {
 
     DingTalkLoginUrlVO dingtalkLoginUrl();
 
-    LoginResponseVO loginByDingTalk(String code, HttpServletRequest request);
+    LoginResponseVO loginByDingTalk(String code, String state, HttpServletRequest request);
 
     String dingtalkFrontendUrl();
 }

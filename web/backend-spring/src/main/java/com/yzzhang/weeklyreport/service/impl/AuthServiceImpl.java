@@ -26,14 +26,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthServiceImpl implements AuthService {
+    private static final Duration DINGTALK_STATE_TTL = Duration.ofMinutes(10);
+
     private final AuthUserDetailsService userDetailsService;
     private final SysUserMapper sysUserMapper;
     private final SysLoginLogMapper loginLogMapper;
@@ -41,6 +46,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final WeeklyReportProperties properties;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final Map<String, Instant> dingtalkStates = new ConcurrentHashMap<>();
 
     public AuthServiceImpl(
         AuthUserDetailsService userDetailsService,
@@ -121,12 +127,13 @@ public class AuthServiceImpl implements AuthService {
             return vo;
         }
 
+        String state = createDingTalkState();
         String loginUrl = UriComponentsBuilder.fromUriString(dingtalk.getAuthorizeUrl())
             .queryParam("redirect_uri", dingtalk.getRedirectUri())
             .queryParam("response_type", "code")
             .queryParam("client_id", dingtalk.getClientId())
             .queryParam("scope", "openid")
-            .queryParam("state", UUID.randomUUID().toString())
+            .queryParam("state", state)
             .queryParam("prompt", "consent")
             .build()
             .encode()
@@ -137,15 +144,19 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponseVO loginByDingTalk(String code, HttpServletRequest request) {
+    public LoginResponseVO loginByDingTalk(String code, String state, HttpServletRequest request) {
+        validateDingTalkState(state);
         if (!hasText(code)) {
             throw new BizException("钉钉授权码为空");
         }
         DingTalkProfile profile = fetchDingTalkProfile(code);
         Optional<SysUserPO> userOptional = sysUserMapper.findByDingIdentity(profile.userId(), profile.unionId());
         if (userOptional.isEmpty()) {
-            recordLogin(null, profile.nick(), "DINGTALK", false, request, "钉钉账号未绑定系统用户");
-            throw new BizException("该钉钉账号尚未绑定系统用户，请先由管理员绑定");
+            userOptional = autoBindLocalUser(profile);
+        }
+        if (userOptional.isEmpty()) {
+            recordLogin(null, profile.displayName(), "DINGTALK", false, request, "钉钉账号未绑定系统用户");
+            throw new BizException("该钉钉账号尚未绑定系统用户，请先由管理员在用户管理中绑定");
         }
 
         SysUserPO userPO = userOptional.get();
@@ -153,6 +164,52 @@ public class AuthServiceImpl implements AuthService {
         sysUserMapper.updateLastLoginTime(user.getId());
         recordLogin(user.getId(), user.getUsername(), "DINGTALK", true, request, "登录成功");
         return buildLoginResponse(user);
+    }
+
+    private String createDingTalkState() {
+        cleanupExpiredDingTalkStates();
+        String state = UUID.randomUUID().toString();
+        dingtalkStates.put(state, Instant.now().plus(DINGTALK_STATE_TTL));
+        return state;
+    }
+
+    private void validateDingTalkState(String state) {
+        cleanupExpiredDingTalkStates();
+        if (!hasText(state)) {
+            throw new BizException("钉钉登录状态校验失败，请重新发起登录");
+        }
+        Instant expiresAt = dingtalkStates.remove(state);
+        if (expiresAt == null || expiresAt.isBefore(Instant.now())) {
+            throw new BizException("钉钉登录状态已过期，请重新发起登录");
+        }
+    }
+
+    private void cleanupExpiredDingTalkStates() {
+        Instant now = Instant.now();
+        dingtalkStates.entrySet().removeIf(entry -> entry.getValue().isBefore(now));
+    }
+
+    private Optional<SysUserPO> autoBindLocalUser(DingTalkProfile profile) {
+        if (!hasText(profile.name())) {
+            return Optional.empty();
+        }
+        List<SysUserPO> candidates = sysUserMapper.findActiveByRealName(profile.name());
+        if (candidates.size() > 1) {
+            throw new BizException("钉钉姓名匹配到多个系统账号，请联系管理员手动绑定");
+        }
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        SysUserPO user = candidates.get(0);
+        if (hasText(user.getDingUserId()) || hasText(user.getDingUnionId())) {
+            return Optional.empty();
+        }
+        if (sysUserMapper.findRoleCodesByUserId(user.getId()).contains("ADMIN")) {
+            throw new BizException("管理员账号需要手动绑定钉钉身份");
+        }
+        sysUserMapper.bindDingIdentityIfEmpty(user.getId(), profile.userId(), profile.unionId());
+        return sysUserMapper.findById(user.getId());
     }
 
     @Override
@@ -195,7 +252,7 @@ public class AuthServiceImpl implements AuthService {
 
         ResponseEntity<Map> tokenResponse = restTemplate.postForEntity(dingtalk.getTokenUrl(), tokenRequest, Map.class);
         Map<String, Object> tokenBody = tokenResponse.getBody();
-        String accessToken = stringValue(tokenBody, List.of("accessToken", "access_token"));
+        String accessToken = stringValueDeep(tokenBody, List.of("accessToken", "access_token"));
         if (!hasText(accessToken)) {
             throw new BizException("钉钉登录失败：未获取到用户访问凭证");
         }
@@ -209,13 +266,16 @@ public class AuthServiceImpl implements AuthService {
             Map.class
         );
         Map<String, Object> userBody = userResponse.getBody();
-        String userId = stringValue(userBody, List.of("userId", "userid", "user_id"));
-        String unionId = stringValue(userBody, List.of("unionId", "unionid", "union_id"));
-        String nick = stringValue(userBody, List.of("nick", "name", "realName"));
-        return new DingTalkProfile(userId, unionId, nick);
+        String userId = stringValueDeep(userBody, List.of("userId", "userid", "user_id"));
+        String unionId = stringValueDeep(userBody, List.of("unionId", "unionid", "union_id"));
+        String name = stringValueDeep(userBody, List.of("name", "nick", "realName", "displayName"));
+        if (!hasText(userId) && !hasText(unionId)) {
+            throw new BizException("钉钉登录失败：未获取到用户身份标识");
+        }
+        return new DingTalkProfile(userId, unionId, name);
     }
 
-    private String stringValue(Map<String, Object> map, List<String> keys) {
+    private String stringValueDeep(Map<String, Object> map, List<String> keys) {
         if (map == null) {
             return "";
         }
@@ -223,6 +283,15 @@ public class AuthServiceImpl implements AuthService {
             Object value = map.get(key);
             if (value != null && hasText(String.valueOf(value))) {
                 return String.valueOf(value);
+            }
+        }
+        for (Object value : map.values()) {
+            if (value instanceof Map<?, ?> nested) {
+                @SuppressWarnings("unchecked")
+                String nestedValue = stringValueDeep((Map<String, Object>) nested, keys);
+                if (hasText(nestedValue)) {
+                    return nestedValue;
+                }
             }
         }
         return "";
@@ -248,6 +317,13 @@ public class AuthServiceImpl implements AuthService {
         return value != null && !value.isBlank();
     }
 
-    private record DingTalkProfile(String userId, String unionId, String nick) {
+    private record DingTalkProfile(String userId, String unionId, String name) {
+        private String displayName() {
+            return hasText(name) ? name : (hasText(userId) ? userId : unionId);
+        }
+
+        private static boolean hasText(String value) {
+            return value != null && !value.isBlank();
+        }
     }
 }

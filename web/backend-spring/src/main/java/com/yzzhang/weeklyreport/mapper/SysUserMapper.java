@@ -51,6 +51,22 @@ public class SysUserMapper {
         }
     }
 
+    public List<SysUserPO> findActiveByRealName(String realName) {
+        if (!hasText(realName)) {
+            return List.of();
+        }
+        return jdbcTemplate.query(
+            """
+            select *
+            from sys_user
+            where status = 1 and real_name = ?
+            order by id
+            """,
+            rowMapper,
+            realName.trim()
+        );
+    }
+
     public List<SysUserPO> listUsers(String keyword) {
         if (hasText(keyword)) {
             String like = "%" + keyword.trim() + "%";
@@ -128,6 +144,20 @@ public class SysUserMapper {
 
     public void updatePassword(Long userId, String passwordHash) {
         jdbcTemplate.update("update sys_user set password_hash = ? where id = ?", passwordHash, userId);
+    }
+
+    public void bindDingIdentityIfEmpty(Long userId, String dingUserId, String dingUnionId) {
+        jdbcTemplate.update(
+            """
+            update sys_user
+            set ding_user_id = case when ding_user_id is null or ding_user_id = '' then ? else ding_user_id end,
+                ding_union_id = case when ding_union_id is null or ding_union_id = '' then ? else ding_union_id end
+            where id = ?
+            """,
+            normalizeNullable(dingUserId),
+            normalizeNullable(dingUnionId),
+            userId
+        );
     }
 
     public Optional<SysUserPO> findByDingIdentity(String dingUserId, String dingUnionId) {
@@ -239,6 +269,10 @@ public class SysUserMapper {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String normalizeNullable(String value) {
+        return hasText(value) ? value.trim() : null;
     }
 
     private static class SysUserRowMapper implements RowMapper<SysUserPO> {
