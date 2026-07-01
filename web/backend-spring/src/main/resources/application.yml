@@ -4,8 +4,31 @@ server:
 spring:
   application:
     name: weekly-report-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/weekly_report?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${SPRING_DATASOURCE_MAX_POOL_SIZE:5}
+      minimum-idle: ${SPRING_DATASOURCE_MIN_IDLE:1}
 
 weekly:
   project-root: ${WEEKLY_REPORT_ROOT:}
   frontend-dist: ${WEEKLY_FRONTEND_DIST:}
   python-bin: ${PYTHON_BIN:}
+  auth:
+    jwt-secret: ${WEEKLY_JWT_SECRET:weekly-report-local-dev-secret-change-me-2026}
+    token-expire-minutes: ${WEEKLY_JWT_EXPIRE_MINUTES:720}
+    bootstrap-admin-username: ${WEEKLY_BOOTSTRAP_ADMIN_USERNAME:admin}
+    bootstrap-admin-password: ${WEEKLY_BOOTSTRAP_ADMIN_PASSWORD:admin123}
+    bootstrap-admin-real-name: ${WEEKLY_BOOTSTRAP_ADMIN_REAL_NAME:系统管理员}
+    dingtalk:
+      enabled: ${WEEKLY_DINGTALK_LOGIN_ENABLED:false}
+      client-id: ${WEEKLY_DINGTALK_CLIENT_ID:}
+      client-secret: ${WEEKLY_DINGTALK_CLIENT_SECRET:}
+      redirect-uri: ${WEEKLY_DINGTALK_REDIRECT_URI:}
+      frontend-url: ${WEEKLY_FRONTEND_URL:/}
+      authorize-url: ${WEEKLY_DINGTALK_AUTHORIZE_URL:https://login.dingtalk.com/oauth2/auth}
+      token-url: ${WEEKLY_DINGTALK_TOKEN_URL:https://api.dingtalk.com/v1.0/oauth2/userAccessToken}
+      user-info-url: ${WEEKLY_DINGTALK_USER_INFO_URL:https://api.dingtalk.com/v1.0/contact/users/me}

@@ -1,6 +1,27 @@
 name: weekly-report
 
 services:
+  mysql:
+    image: mysql:8.4
+    container_name: weekly-report-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-weekly_report_root_123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-weekly_report}
+      TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - weekly-report-net
+
   weekly-report:
     build:
       context: .
@@ -8,13 +29,29 @@ services:
     image: weekly-report:latest
     container_name: weekly-report
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       - "${WEEKLY_HOST_PORT:-22080}:8088"
     environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-weekly_report}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-weekly_report_root_123}
       WEEKLY_REPORT_ROOT: /app
       WEEKLY_FRONTEND_DIST: /app/frontend
       PYTHON_BIN: python3
       WEEKLY_REPORT_PORT: 8088
+      WEEKLY_JWT_SECRET: ${WEEKLY_JWT_SECRET:-weekly-report-local-dev-secret-change-me-2026}
+      WEEKLY_JWT_EXPIRE_MINUTES: ${WEEKLY_JWT_EXPIRE_MINUTES:-720}
+      WEEKLY_BOOTSTRAP_ADMIN_USERNAME: ${WEEKLY_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      WEEKLY_BOOTSTRAP_ADMIN_PASSWORD: ${WEEKLY_BOOTSTRAP_ADMIN_PASSWORD:-admin123}
+      WEEKLY_BOOTSTRAP_ADMIN_REAL_NAME: ${WEEKLY_BOOTSTRAP_ADMIN_REAL_NAME:-系统管理员}
+      WEEKLY_DINGTALK_LOGIN_ENABLED: ${WEEKLY_DINGTALK_LOGIN_ENABLED:-false}
+      WEEKLY_DINGTALK_CLIENT_ID: ${WEEKLY_DINGTALK_CLIENT_ID:-}
+      WEEKLY_DINGTALK_CLIENT_SECRET: ${WEEKLY_DINGTALK_CLIENT_SECRET:-}
+      WEEKLY_DINGTALK_REDIRECT_URI: ${WEEKLY_DINGTALK_REDIRECT_URI:-}
+      WEEKLY_FRONTEND_URL: ${WEEKLY_FRONTEND_URL:-/}
       TZ: Asia/Shanghai
       JAVA_TOOL_OPTIONS: -Xms128m -Xmx384m
     mem_limit: 768m
@@ -31,3 +68,6 @@ networks:
     ipam:
       config:
         - subnet: 10.89.77.0/24
+
+volumes:
+  mysql-data:

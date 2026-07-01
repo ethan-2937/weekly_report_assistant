@@ -1,5 +1,64 @@
 <template>
-  <div :class="['app-shell', { 'app-shell--report': currentView === 'report' }]">
+  <div v-if="authLoading" class="auth-loading">
+    <span class="auth-loading__orb">AI</span>
+    <strong>正在确认登录状态...</strong>
+  </div>
+
+  <section v-else-if="!currentUser" class="login-shell">
+    <div class="login-card">
+      <div class="login-brand">
+        <span class="brand-mark brand-logo-wrap">
+          <img :src="youzhiLogo" alt="优智科技 Youzhi" />
+        </span>
+        <div>
+          <span class="login-eyebrow">Youzhi Weekly AI</span>
+          <h1>登录后查看最新周报评价</h1>
+          <p>先使用管理员账号进入系统，后续可为 HR、负责人和普通用户配置不同权限。</p>
+        </div>
+      </div>
+
+      <el-alert
+        v-if="loginError"
+        :title="loginError"
+        type="error"
+        show-icon
+        :closable="false"
+      />
+
+      <div class="login-form">
+        <label>
+          <span>用户名</span>
+          <el-input v-model="loginForm.username" size="large" placeholder="请输入用户名" @keyup.enter="login" />
+        </label>
+        <label>
+          <span>密码</span>
+          <el-input
+            v-model="loginForm.password"
+            size="large"
+            type="password"
+            show-password
+            placeholder="请输入密码"
+            @keyup.enter="login"
+          />
+        </label>
+        <el-button type="primary" size="large" round :loading="loginBusy" @click="login">
+          用户名密码登录
+        </el-button>
+        <el-button class="ding-login-btn" size="large" round :loading="dingtalkBusy" @click="loginWithDingTalk">
+          钉钉登录
+        </el-button>
+      </div>
+
+      <div class="login-hint">
+        <strong>初始化管理员：</strong>
+        <code>admin</code>
+        <span>/</span>
+        <code>admin123</code>
+      </div>
+    </div>
+  </section>
+
+  <div v-else :class="['app-shell', { 'app-shell--report': currentView === 'report' }]">
     <div class="header-reveal-zone" aria-hidden="true" @mouseenter="revealHeader"></div>
 
     <header
@@ -28,12 +87,13 @@
 
       <div class="account-area">
         <div class="user-chip">
-          <span class="avatar">HR</span>
+          <span class="avatar">{{ userInitial }}</span>
           <span>
-            <strong>周报运营台</strong>
-            <small>每周一自动分析上一周</small>
+            <strong>{{ currentUser.realName || currentUser.username }}</strong>
+            <small>{{ roleLabel }} · JWT 已登录</small>
           </span>
         </div>
+        <el-button size="small" round @click="logout">退出</el-button>
       </div>
     </header>
 
@@ -257,6 +317,16 @@ import { ElMessage } from 'element-plus'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
 import MarkdownReport from './components/MarkdownReport.vue'
 
+const TOKEN_KEY = 'weekly_report_jwt'
+
+const authLoading = ref(true)
+const loginBusy = ref(false)
+const dingtalkBusy = ref(false)
+const loginError = ref('')
+const token = ref(localStorage.getItem(TOKEN_KEY) || '')
+const currentUser = ref(null)
+const loginForm = reactive({ username: 'admin', password: '' })
+
 const weeks = ref([])
 const selectedWeek = ref('')
 const currentView = ref('dashboard')
@@ -272,6 +342,17 @@ let lastScrollY = 0
 
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
+const roleLabel = computed(() => {
+  const roles = currentUser.value?.roles || []
+  if (roles.includes('ADMIN')) return '系统管理员'
+  if (roles.includes('HR')) return 'HR'
+  if (roles.includes('MANAGER')) return '团队负责人'
+  return '普通用户'
+})
+const userInitial = computed(() => {
+  const name = currentUser.value?.realName || currentUser.value?.username || 'U'
+  return String(name).slice(0, 2).toUpperCase()
+})
 const submissionRate = computed(() => {
   const expected = Number(overview.value.expectedCount || 0)
   const submitted = Number(overview.value.submittedCount || 0)
@@ -327,12 +408,136 @@ function handleHeaderScroll() {
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(path, options)
-  const data = await response.json().catch(() => ({}))
+  const { skipAuth, ...fetchOptions } = options
+  const headers = new Headers(fetchOptions.headers || {})
+  if (!skipAuth && token.value) {
+    headers.set('Authorization', `Bearer ${token.value}`)
+  }
+  if (fetchOptions.body && !(fetchOptions.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  const response = await fetch(path, { ...fetchOptions, headers })
+  const contentType = response.headers.get('content-type') || ''
+  const data = contentType.includes('application/json')
+    ? await response.json().catch(() => ({}))
+    : await response.text().catch(() => '')
+
+  if (response.status === 401 && !skipAuth) {
+    clearAuth()
+    throw new Error('登录已过期，请重新登录')
+  }
   if (!response.ok) {
-    throw new Error(data.error || `HTTP ${response.status}`)
+    throw new Error(data?.error || data || `HTTP ${response.status}`)
   }
   return data
+}
+
+async function initAuth() {
+  authLoading.value = true
+  loginError.value = ''
+  readAuthQuery()
+  try {
+    if (token.value) {
+      currentUser.value = await request('/api/auth/me')
+      await refreshAll()
+    }
+  } catch (error) {
+    clearAuth(false)
+    loginError.value = error.message
+  } finally {
+    authLoading.value = false
+  }
+}
+
+function readAuthQuery() {
+  const url = new URL(window.location.href)
+  const queryToken = url.searchParams.get('token')
+  const authError = url.searchParams.get('auth_error')
+  if (queryToken) {
+    token.value = queryToken
+    localStorage.setItem(TOKEN_KEY, queryToken)
+  }
+  if (authError) {
+    loginError.value = authError
+  }
+  if (queryToken || authError || url.searchParams.get('login')) {
+    url.searchParams.delete('token')
+    url.searchParams.delete('auth_error')
+    url.searchParams.delete('login')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+}
+
+async function login() {
+  if (!loginForm.username || !loginForm.password) {
+    loginError.value = '请输入用户名和密码'
+    return
+  }
+  try {
+    loginBusy.value = true
+    loginError.value = ''
+    const data = await request('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(loginForm),
+      skipAuth: true
+    })
+    applyLogin(data)
+    ElMessage.success('登录成功')
+    await refreshAll()
+  } catch (error) {
+    loginError.value = error.message
+  } finally {
+    loginBusy.value = false
+  }
+}
+
+async function loginWithDingTalk() {
+  try {
+    dingtalkBusy.value = true
+    loginError.value = ''
+    const data = await request('/api/auth/dingtalk/login-url', { skipAuth: true })
+    if (!data.enabled || !data.loginUrl) {
+      loginError.value = data.message || '钉钉登录暂未启用'
+      return
+    }
+    window.location.href = data.loginUrl
+  } catch (error) {
+    loginError.value = error.message
+  } finally {
+    dingtalkBusy.value = false
+  }
+}
+
+function applyLogin(data) {
+  token.value = data.token
+  currentUser.value = data.user
+  localStorage.setItem(TOKEN_KEY, data.token)
+}
+
+async function logout() {
+  try {
+    await request('/api/auth/logout', { method: 'POST' })
+  } catch (error) {
+    // JWT is stateless, so the frontend can always clear local login state.
+  }
+  clearAuth()
+  ElMessage.success('已退出登录')
+}
+
+function clearAuth(showLogin = true) {
+  token.value = ''
+  currentUser.value = null
+  localStorage.removeItem(TOKEN_KEY)
+  weeks.value = []
+  selectedWeek.value = ''
+  summary.value = {}
+  analysis.value = {}
+  rows.value = []
+  latestJob.value = {}
+  if (showLogin) {
+    authLoading.value = false
+  }
 }
 
 async function refreshAll() {
@@ -399,9 +604,27 @@ async function pollJob() {
   jobBusy.value = false
 }
 
-function downloadCsv() {
+async function downloadCsv() {
   if (!selectedWeek.value) return
-  window.open(`/api/files/${selectedWeek.value}/submission-status/download`, '_blank')
+  const response = await fetch(`/api/files/${selectedWeek.value}/submission-status/download`, {
+    headers: token.value ? { Authorization: `Bearer ${token.value}` } : {}
+  })
+  if (response.status === 401) {
+    clearAuth()
+    ElMessage.error('登录已过期，请重新登录')
+    return
+  }
+  if (!response.ok) {
+    ElMessage.error(`下载失败：HTTP ${response.status}`)
+    return
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `submission_status_${selectedWeek.value}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 function formatDate(value) {
@@ -421,7 +644,7 @@ function jobStatusType(status) {
 onMounted(() => {
   lastScrollY = getScrollY()
   window.addEventListener('scroll', handleHeaderScroll, { passive: true })
-  refreshAll()
+  initAuth()
 })
 
 onBeforeUnmount(() => {

@@ -100,6 +100,36 @@ Web 推荐使用 Java + Vue 实现：
 - Vue 前端沿用 `D:\BookStore\VueFronted` 的卡片、胶囊导航、柔和渐变和 Element Plus 表格风格。
 - Codex skill 每周一生成正式评价后，写入 `output/<周次>/summary/manager_report.md`，前端会自动展示。
 
+## 登录与权限
+
+当前版本已接入 MySQL + JWT：
+
+- 首次启动会自动创建认证相关表：`sys_user`、`sys_role`、`sys_user_role`、`sys_dept_scope`、`sys_login_log`。
+- 首次启动会预置管理员账号：`admin / admin123`，密码入库时会转成 BCrypt 哈希。
+- 前端先支持用户名密码登录，并保留“钉钉登录”按钮。
+- 后端核心接口 `/api/weeks/**`、`/api/jobs/**`、`/api/files/**` 已受 JWT 保护。
+- 角色已预留 `ADMIN`、`HR`、`MANAGER`、`USER`，后续可以继续扩展负责人按团队查看。
+- 钉钉登录由钉钉证明身份，本系统仍通过 `sys_user.ding_user_id` 或 `sys_user.ding_union_id` 判断是否允许进入系统。
+
+本地直连 MySQL 时，默认连接：
+
+```text
+jdbc:mysql://localhost:3306/weekly_report
+username: root
+password: 空
+```
+
+如需修改，在启动 Java 服务前设置：
+
+```powershell
+$env:SPRING_DATASOURCE_URL="jdbc:mysql://localhost:3306/weekly_report?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
+$env:SPRING_DATASOURCE_USERNAME="root"
+$env:SPRING_DATASOURCE_PASSWORD="你的密码"
+$env:WEEKLY_JWT_SECRET="至少32字节的正式JWT密钥"
+```
+
+正式使用前建议修改 `admin` 密码，并把 `WEEKLY_JWT_SECRET`、MySQL 密码写到服务器根目录 `.env`，不要提交真实密钥。
+
 本地启动：
 
 ```powershell
@@ -120,6 +150,8 @@ http://127.0.0.1:8088
 Docker 部署：
 
 ```bash
+cp .env.example .env
+# 按需修改 .env 里的 MYSQL_ROOT_PASSWORD、WEEKLY_JWT_SECRET、WEEKLY_HOST_PORT
 docker compose up -d --build
 ```
 
@@ -137,9 +169,9 @@ docker compose up -d --build
 本地 Docker Desktop 和服务器 Docker 都可以运行这套系统。当前版本的资源占用大致如下：
 
 - Docker 镜像约 `487 MB`。
-- 容器稳定运行内存约 `170-200 MiB`。
+- Java 容器稳定运行内存约 `170-220 MiB`，MySQL 容器通常约 `300-600 MiB`，视数据量和 MySQL 参数浮动。
 - `docker-compose.yml` 已限制 Java 参数为 `-Xms128m -Xmx384m`，并设置 `mem_limit: 768m`，适合普通 Ubuntu 服务器长期运行。
-- 建议服务器预留 `2 CPU / 2 GB RAM / 5 GB 磁盘`；如果还要在服务器上用 Codex 生成 AI 评价，建议至少 `4 GB RAM`。
+- 加上 MySQL 后，建议服务器预留 `2 CPU / 3 GB RAM / 8 GB 磁盘`；如果还要在服务器上用 Codex 生成 AI 评价，建议至少 `4 GB RAM`。
 
 ## 云效 Codeup 代码仓库与服务器部署
 
