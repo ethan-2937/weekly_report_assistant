@@ -1,6 +1,7 @@
 package com.yzzhang.weeklyreport.controller;
 
 import com.yzzhang.weeklyreport.service.AuthService;
+import com.yzzhang.weeklyreport.vo.ChangePasswordRequestVO;
 import com.yzzhang.weeklyreport.vo.CurrentUserVO;
 import com.yzzhang.weeklyreport.vo.DingTalkLoginUrlVO;
 import com.yzzhang.weeklyreport.vo.LoginRequestVO;
@@ -43,6 +44,12 @@ public class AuthController {
     @PostMapping("/logout")
     public Map<String, String> logout() {
         return Map.of("message", "已退出登录");
+    }
+
+    @PostMapping("/password")
+    public Map<String, String> changePassword(@Valid @RequestBody ChangePasswordRequestVO request) {
+        authService.changePassword(request);
+        return Map.of("message", "密码已修改");
     }
 
     @GetMapping("/dingtalk/login-url")

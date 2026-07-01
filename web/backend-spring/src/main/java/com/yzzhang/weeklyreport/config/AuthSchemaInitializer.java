@@ -6,8 +6,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class AuthSchemaInitializer implements ApplicationRunner {
+    private static final List<FullAccessUser> FULL_ACCESS_USERS = List.of(
+        new FullAccessUser("wangkai", "王凯", "kwang@kingdomai.com"),
+        new FullAccessUser("zhanyi", "詹毅", "yzhan@kingdomai.com"),
+        new FullAccessUser("pengweijuan", "彭维娟", "wjpeng@kingdomai.com"),
+        new FullAccessUser("sunxiaoming", "孙晓明", "xmsun@kingdomai.com")
+    );
+
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final WeeklyReportProperties properties;
@@ -23,6 +32,7 @@ public class AuthSchemaInitializer implements ApplicationRunner {
         createTables();
         seedRoles();
         seedAdmin();
+        seedFullAccessUsers();
     }
 
     private void createTables() {
@@ -98,8 +108,9 @@ public class AuthSchemaInitializer implements ApplicationRunner {
     }
 
     private void seedRoles() {
-        insertRole("ADMIN", "系统管理员", "系统配置、用户权限和全部周报数据");
-        insertRole("HR", "HR", "查看全部周报评价和提交统计");
+        insertRole("ADMIN", "系统管理员", "系统配置、用户权限管理");
+        insertRole("REPORT_ALL", "全部周报权限", "可查看所有周报、完整AI评价和敏感团队内容");
+        insertRole("HR", "HR", "预留：HR 工作身份，后续可叠加具体数据权限");
         insertRole("MANAGER", "团队负责人", "预留：查看授权团队范围内周报");
         insertRole("USER", "普通用户", "预留：普通员工访问身份");
     }
@@ -121,16 +132,76 @@ public class AuthSchemaInitializer implements ApplicationRunner {
         }
 
         Long userId = jdbcTemplate.queryForObject("select id from sys_user where username = ?", Long.class, username);
-        Long adminRoleId = jdbcTemplate.queryForObject("select id from sys_role where role_code = 'ADMIN'", Long.class);
+        bindRoleIfMissing(userId, "ADMIN");
+        removeRoleIfBound(userId, "REPORT_ALL");
+    }
+
+    private void seedFullAccessUsers() {
+        for (FullAccessUser user : FULL_ACCESS_USERS) {
+            seedFullAccessUser(user);
+        }
+    }
+
+    private void seedFullAccessUser(FullAccessUser user) {
+        String encodedInitialPassword = passwordEncoder.encode(user.initialPassword());
+        Integer exists = jdbcTemplate.queryForObject(
+            "select count(*) from sys_user where username = ?",
+            Integer.class,
+            user.username()
+        );
+        if (exists != null && exists == 0) {
+            jdbcTemplate.update(
+                "insert into sys_user(username, password_hash, real_name, email, status) values (?, ?, ?, ?, 1)",
+                user.username(),
+                encodedInitialPassword,
+                user.realName(),
+                user.initialPassword()
+            );
+        } else {
+            jdbcTemplate.update(
+                """
+                update sys_user
+                set real_name = ?,
+                    password_hash = case when password_hash is null or password_hash = '' then ? else password_hash end,
+                    email = case when email is null or email = '' then ? else email end,
+                    status = 1
+                where username = ?
+                """,
+                user.realName(),
+                encodedInitialPassword,
+                user.initialPassword(),
+                user.username()
+            );
+        }
+
+        Long userId = jdbcTemplate.queryForObject("select id from sys_user where username = ?", Long.class, user.username());
+        bindRoleIfMissing(userId, "REPORT_ALL");
+    }
+
+    private void bindRoleIfMissing(Long userId, String roleCode) {
+        Long roleId = jdbcTemplate.queryForObject("select id from sys_role where role_code = ?", Long.class, roleCode);
         Integer bound = jdbcTemplate.queryForObject(
             "select count(*) from sys_user_role where user_id = ? and role_id = ?",
             Integer.class,
             userId,
-            adminRoleId
+            roleId
         );
         if (bound != null && bound == 0) {
-            jdbcTemplate.update("insert into sys_user_role(user_id, role_id) values (?, ?)", userId, adminRoleId);
+            jdbcTemplate.update("insert into sys_user_role(user_id, role_id) values (?, ?)", userId, roleId);
         }
+    }
+
+    private void removeRoleIfBound(Long userId, String roleCode) {
+        jdbcTemplate.update(
+            """
+            delete ur
+            from sys_user_role ur
+            join sys_role r on r.id = ur.role_id
+            where ur.user_id = ? and r.role_code = ?
+            """,
+            userId,
+            roleCode
+        );
     }
 
     private void insertRole(String roleCode, String roleName, String description) {
@@ -144,5 +215,8 @@ public class AuthSchemaInitializer implements ApplicationRunner {
             roleName,
             description
         );
+    }
+
+    private record FullAccessUser(String username, String realName, String initialPassword) {
     }
 }

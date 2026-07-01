@@ -105,10 +105,13 @@ Web 推荐使用 Java + Vue 实现：
 当前版本已接入 MySQL + JWT：
 
 - 首次启动会自动创建认证相关表：`sys_user`、`sys_role`、`sys_user_role`、`sys_dept_scope`、`sys_login_log`。
-- 首次启动会预置管理员账号：`admin / admin123`，密码入库时会转成 BCrypt 哈希。
+- 首次启动会预置管理员账号：`admin / admin123`，密码入库时会转成 BCrypt 哈希；当前管理员账号只负责账号管理，不默认查看完整周报数据。
+- 首次启动会预置 4 个“全部周报权限”账号：`wangkai`、`zhanyi`、`pengweijuan`、`sunxiaoming`。初始密码按“名拼音首字母 + 姓拼音 + @kingdomai.com”的规则生成，例如 `pengweijuan / wjpeng@kingdomai.com`。
+- 用户登录后可在右上角“修改密码”中自行修改初始密码；管理员也可以在“用户管理”中重置密码。
 - 前端先支持用户名密码登录，并保留“钉钉登录”按钮。
-- 后端核心接口 `/api/weeks/**`、`/api/jobs/**`、`/api/files/**` 已受 JWT 保护。
-- 角色已预留 `ADMIN`、`HR`、`MANAGER`、`USER`，后续可以继续扩展负责人按团队查看。
+- 后端核心接口 `/api/weeks/**`、`/api/jobs/**`、`/api/files/**` 需要 `REPORT_ALL` 角色；因此当前上线版本只有上述 4 个全权限账号能查看完整周报、AI 评价、运行采集和下载数据。
+- 角色已预留 `ADMIN`、`REPORT_ALL`、`HR`、`MANAGER`、`USER`，后续可以继续扩展负责人按团队查看。
+- `ADMIN` 登录后可以进入“用户管理”，新建账号、分配角色、启停账号、绑定钉钉 `userId/unionId`、重置密码，并预留部门权限范围配置。
 - 钉钉登录由钉钉证明身份，本系统仍通过 `sys_user.ding_user_id` 或 `sys_user.ding_union_id` 判断是否允许进入系统。
 
 本地直连 MySQL 时，默认连接：

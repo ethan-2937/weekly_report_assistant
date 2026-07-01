@@ -14,6 +14,7 @@ web/frontend/.vite/
 deploy/
 .tools/
 *.tar.gz
+权限.txt
 .idea/
 .vscode/
 *.iml

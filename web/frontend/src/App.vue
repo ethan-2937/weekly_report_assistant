@@ -4,56 +4,85 @@
     <strong>正在确认登录状态...</strong>
   </div>
 
-  <section v-else-if="!currentUser" class="login-shell">
-    <div class="login-card">
-      <div class="login-brand">
-        <span class="brand-mark brand-logo-wrap">
-          <img :src="youzhiLogo" alt="优智科技 Youzhi" />
-        </span>
-        <div>
-          <span class="login-eyebrow">Youzhi Weekly AI</span>
-          <h1>登录后查看最新周报评价</h1>
-          <p>先使用管理员账号进入系统，后续可为 HR、负责人和普通用户配置不同权限。</p>
+  <section v-else-if="!currentUser" class="login-shell login-shell--official">
+    <div class="login-orbit login-orbit--one"></div>
+    <div class="login-orbit login-orbit--two"></div>
+
+    <div class="login-stage">
+      <aside class="login-poster">
+        <div class="login-poster__brand">
+          <span class="brand-mark brand-logo-wrap">
+            <img :src="youzhiLogo" alt="优智科技 Youzhi" />
+          </span>
+          <span>
+            <strong>Youzhi Weekly AI</strong>
+            <small>钉钉周报智能治理平台</small>
+          </span>
         </div>
-      </div>
+        <div class="login-poster__copy">
+          <span class="login-eyebrow">MANAGEMENT CONSOLE</span>
+          <h1>每周一打开浏览器，直接进入最新周报驾驶舱。</h1>
+          <p>统一登录、权限分级、钉钉身份绑定，为 HR 和管理者提供更安全的周报评价入口。</p>
+        </div>
+        <div class="login-proof-grid">
+          <article>
+            <strong>JWT</strong>
+            <span>后端令牌鉴权</span>
+          </article>
+          <article>
+            <strong>MySQL</strong>
+            <span>账号角色持久化</span>
+          </article>
+          <article>
+            <strong>DingTalk</strong>
+            <span>预留钉钉统一登录</span>
+          </article>
+        </div>
+      </aside>
 
-      <el-alert
-        v-if="loginError"
-        :title="loginError"
-        type="error"
-        show-icon
-        :closable="false"
-      />
+      <div class="login-card login-card--official">
+        <div class="login-card__head">
+          <span class="login-eyebrow">SECURE SIGN IN</span>
+          <h2>登录周报系统</h2>
+          <p>请使用系统账号登录；已绑定钉钉身份的用户可直接走钉钉授权。</p>
+        </div>
 
-      <div class="login-form">
-        <label>
-          <span>用户名</span>
-          <el-input v-model="loginForm.username" size="large" placeholder="请输入用户名" @keyup.enter="login" />
-        </label>
-        <label>
-          <span>密码</span>
-          <el-input
-            v-model="loginForm.password"
-            size="large"
-            type="password"
-            show-password
-            placeholder="请输入密码"
-            @keyup.enter="login"
-          />
-        </label>
-        <el-button type="primary" size="large" round :loading="loginBusy" @click="login">
-          用户名密码登录
-        </el-button>
-        <el-button class="ding-login-btn" size="large" round :loading="dingtalkBusy" @click="loginWithDingTalk">
-          钉钉登录
-        </el-button>
-      </div>
+        <el-alert
+          v-if="loginError"
+          :title="loginError"
+          type="error"
+          show-icon
+          :closable="false"
+        />
 
-      <div class="login-hint">
-        <strong>初始化管理员：</strong>
-        <code>admin</code>
-        <span>/</span>
-        <code>admin123</code>
+        <div class="login-form">
+          <label>
+            <span>用户名</span>
+            <el-input v-model="loginForm.username" size="large" placeholder="请输入用户名" @keyup.enter="login" />
+          </label>
+          <label>
+            <span>密码</span>
+            <el-input
+              v-model="loginForm.password"
+              size="large"
+              type="password"
+              show-password
+              placeholder="请输入密码"
+              @keyup.enter="login"
+            />
+          </label>
+          <el-button type="primary" size="large" round :loading="loginBusy" @click="login">
+            进入工作台
+          </el-button>
+          <el-button class="ding-login-btn" size="large" round :loading="dingtalkBusy" @click="loginWithDingTalk">
+            使用钉钉登录
+          </el-button>
+        </div>
+
+        <div class="login-hint login-hint--official">
+          <strong>安全提示</strong>
+          <span>正式使用前请修改默认管理员密码，并在用户管理中为 HR 绑定钉钉身份。</span>
+        </div>
       </div>
     </div>
   </section>
@@ -68,7 +97,7 @@
       @mouseleave="releaseHeader"
       @focusin="revealHeader"
     >
-      <button class="brand" @click="setView('dashboard')">
+      <button class="brand" @click="setView(defaultView)">
         <span class="brand-mark brand-logo-wrap">
           <img :src="youzhiLogo" alt="优智科技 Youzhi" />
         </span>
@@ -79,10 +108,11 @@
       </button>
 
       <nav class="decor-nav" aria-label="周报导航">
-        <button :class="{ active: currentView === 'dashboard' }" @click="setView('dashboard')">提交概览</button>
-        <button :class="{ active: currentView === 'status' }" @click="setView('status')">未交名单</button>
-        <button :class="{ active: currentView === 'report' }" @click="setView('report')">AI 评价</button>
-        <button :class="{ active: currentView === 'jobs' }" @click="setView('jobs')">运行状态</button>
+        <button v-if="canViewReports" :class="{ active: currentView === 'dashboard' }" @click="setView('dashboard')">提交概览</button>
+        <button v-if="canViewReports" :class="{ active: currentView === 'status' }" @click="setView('status')">未交名单</button>
+        <button v-if="canViewReports" :class="{ active: currentView === 'report' }" @click="setView('report')">AI 评价</button>
+        <button v-if="canViewReports" :class="{ active: currentView === 'jobs' }" @click="setView('jobs')">运行状态</button>
+        <button v-if="isAdmin" :class="{ active: currentView === 'users' }" @click="setView('users')">用户管理</button>
       </nav>
 
       <div class="account-area">
@@ -93,12 +123,13 @@
             <small>{{ roleLabel }} · JWT 已登录</small>
           </span>
         </div>
+        <el-button size="small" round @click="openChangePassword">修改密码</el-button>
         <el-button size="small" round @click="logout">退出</el-button>
       </div>
     </header>
 
     <main class="main-content">
-      <section class="home-hero">
+      <section v-if="canViewReports" class="home-hero">
         <div class="hero-copy">
           <el-tag effect="light" round>{{ latestWeek?.week || '等待数据' }}</el-tag>
           <h1>每周一打开浏览器，就能看到最新周报信息。</h1>
@@ -132,14 +163,14 @@
         </div>
       </section>
 
-      <section class="category-strip">
+      <section v-if="canViewReports" class="category-strip">
         <button v-for="week in weeks" :key="week.week" :class="{ active: selectedWeek === week.week }" @click="selectWeek(week.week)">
           {{ week.week }}
         </button>
         <span v-if="weeks.length === 0" class="muted">暂无周次数据，请先生成一次。</span>
       </section>
 
-      <section v-if="currentView === 'dashboard'" class="page-card">
+      <section v-if="currentView === 'dashboard' && canViewReports" class="page-card">
         <div class="page-header">
           <div>
             <h1>提交概览</h1>
@@ -188,7 +219,7 @@
         </div>
       </section>
 
-      <section v-if="currentView === 'status'" class="page-card">
+      <section v-if="currentView === 'status' && canViewReports" class="page-card">
         <div class="page-header">
           <div>
             <h1>提交状态</h1>
@@ -225,7 +256,7 @@
         </el-table>
       </section>
 
-      <section v-if="currentView === 'report'" class="page-card report-page">
+      <section v-if="currentView === 'report' && canViewReports" class="page-card report-page">
         <div class="report-hero-card">
           <div class="report-hero-main">
             <span class="report-eyebrow">WEEKLY AI REVIEW · {{ selectedWeek || '未选择周次' }}</span>
@@ -275,7 +306,154 @@
         />
       </section>
 
-      <section v-if="currentView === 'jobs'" class="page-card">
+      <section v-if="currentView === 'users' && isAdmin" class="page-card admin-page">
+        <div class="admin-hero">
+          <div>
+            <span class="login-eyebrow">ACCESS CONTROL</span>
+            <h1>用户与权限管理</h1>
+            <p>系统管理员可以在这里新建账号、分配角色、绑定钉钉身份，并为后续团队范围权限预留配置。</p>
+          </div>
+          <el-button type="primary" round @click="openCreateUser">新建账号</el-button>
+        </div>
+
+        <div class="admin-toolbar">
+          <el-input
+            v-model="adminKeyword"
+            clearable
+            placeholder="搜索用户名、姓名、手机号、钉钉 userId"
+            @keyup.enter="loadAdminUsers"
+            @clear="loadAdminUsers"
+          />
+          <el-button round :loading="adminLoading" @click="loadAdminUsers">刷新</el-button>
+        </div>
+
+        <el-table :data="adminUsers" class="soft-table admin-table" height="560" row-key="id" v-loading="adminLoading">
+          <el-table-column label="状态" width="92">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 1 ? 'success' : 'info'" effect="light">
+                {{ row.status === 1 ? '启用' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="账号" min-width="170">
+            <template #default="{ row }">
+              <div class="admin-user-cell">
+                <strong>{{ row.realName || row.username }}</strong>
+                <small>{{ row.username }}</small>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="角色" min-width="220">
+            <template #default="{ row }">
+              <div class="role-chip-list">
+                <el-tag v-for="role in row.roles" :key="role" :type="roleTagType(role)" effect="light">
+                  {{ roleName(role) }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="钉钉绑定" min-width="240" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="ding-binding">
+                <span v-if="row.dingUserId">userId：{{ row.dingUserId }}</span>
+                <span v-if="row.dingUnionId">unionId：{{ row.dingUnionId }}</span>
+                <span v-if="!row.dingUserId && !row.dingUnionId" class="muted">未绑定</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="权限范围" min-width="180" show-overflow-tooltip>
+            <template #default="{ row }">
+              {{ row.deptScopes?.length ? row.deptScopes.join('、') : '暂未配置' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="lastLoginTime" label="最近登录" min-width="170">
+            <template #default="{ row }">{{ formatDate(row.lastLoginTime) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="180" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" link type="primary" @click="openEditUser(row)">编辑</el-button>
+              <el-button size="small" link type="warning" @click="openPasswordReset(row)">重置密码</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-dialog v-model="userDialogVisible" :title="userDialogMode === 'create' ? '新建账号' : '编辑账号'" width="720px">
+          <div class="admin-form-grid">
+            <label>
+              <span>用户名</span>
+              <el-input v-model="userForm.username" placeholder="如 hr01 / manager01" />
+            </label>
+            <label v-if="userDialogMode === 'create'">
+              <span>初始密码</span>
+              <el-input v-model="userForm.password" type="password" show-password placeholder="可留空，但需绑定钉钉身份" />
+            </label>
+            <label>
+              <span>姓名</span>
+              <el-input v-model="userForm.realName" placeholder="真实姓名" />
+            </label>
+            <label>
+              <span>状态</span>
+              <el-select v-model="userForm.status">
+                <el-option label="启用" :value="1" />
+                <el-option label="停用" :value="0" />
+              </el-select>
+            </label>
+            <label>
+              <span>手机号</span>
+              <el-input v-model="userForm.mobile" placeholder="可选" />
+            </label>
+            <label>
+              <span>邮箱</span>
+              <el-input v-model="userForm.email" placeholder="可选" />
+            </label>
+            <label>
+              <span>钉钉 userId</span>
+              <el-input v-model="userForm.dingUserId" placeholder="用于钉钉登录绑定" />
+            </label>
+            <label>
+              <span>钉钉 unionId</span>
+              <el-input v-model="userForm.dingUnionId" placeholder="可选，跨应用身份" />
+            </label>
+            <label class="admin-form-grid__full">
+              <span>角色</span>
+              <el-select v-model="userForm.roles" multiple placeholder="请选择角色">
+                <el-option
+                  v-for="role in adminRoles"
+                  :key="role.roleCode"
+                  :label="`${role.roleName}（${role.roleCode}）`"
+                  :value="role.roleCode"
+                />
+              </el-select>
+            </label>
+            <label class="admin-form-grid__full">
+              <span>部门权限范围（预留）</span>
+              <el-input
+                v-model="userForm.deptScopesText"
+                type="textarea"
+                :rows="3"
+                placeholder="可填写 ALL 或部门名称，多个范围用换行/逗号分隔；当前阶段暂不强制过滤数据"
+              />
+            </label>
+          </div>
+          <template #footer>
+            <el-button @click="userDialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="userSaving" @click="saveUser">保存</el-button>
+          </template>
+        </el-dialog>
+
+        <el-dialog v-model="passwordDialogVisible" title="重置密码" width="420px">
+          <div class="password-reset-box">
+            <p>正在为 <strong>{{ passwordForm.username }}</strong> 重置密码。</p>
+            <el-input v-model="passwordForm.password" type="password" show-password placeholder="请输入新密码，至少 6 位" />
+          </div>
+          <template #footer>
+            <el-button @click="passwordDialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="passwordSaving" @click="resetPassword">确认重置</el-button>
+          </template>
+        </el-dialog>
+      </section>
+
+      <section v-if="currentView === 'jobs' && canViewReports" class="page-card">
         <div class="page-header">
           <div>
             <h1>运行状态</h1>
@@ -293,9 +471,42 @@
           <pre>{{ latestJob.errorMessage || latestJob.stdout || '暂无日志。' }}</pre>
         </div>
       </section>
+
+      <section v-if="currentView === 'denied'" class="page-card no-access-card">
+        <span class="login-eyebrow">ACCESS LIMITED</span>
+        <h1>当前账号暂无周报查看权限</h1>
+        <p>
+          本上线版本只允许四个“全部周报权限”账号查看完整周报、AI 评价和采集状态。
+          如需开通，请联系系统管理员在用户管理中分配 REPORT_ALL 角色。
+        </p>
+        <el-button v-if="isAdmin" type="primary" round @click="setView('users')">进入用户管理</el-button>
+      </section>
     </main>
 
+    <el-dialog v-model="changePasswordDialogVisible" title="修改密码" width="440px">
+      <div class="password-reset-box">
+        <p>建议首次登录后立即修改初始密码，修改后请妥善保存。</p>
+        <label>
+          <span>当前密码</span>
+          <el-input v-model="changePasswordForm.oldPassword" type="password" show-password placeholder="请输入当前密码" />
+        </label>
+        <label>
+          <span>新密码</span>
+          <el-input v-model="changePasswordForm.newPassword" type="password" show-password placeholder="至少 6 位" />
+        </label>
+        <label>
+          <span>确认新密码</span>
+          <el-input v-model="changePasswordForm.confirmPassword" type="password" show-password placeholder="再次输入新密码" @keyup.enter="changeOwnPassword" />
+        </label>
+      </div>
+      <template #footer>
+        <el-button @click="changePasswordDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="changePasswordSaving" @click="changeOwnPassword">确认修改</el-button>
+      </template>
+    </el-dialog>
+
     <button
+      v-if="canViewReports"
       class="ai-fab"
       :class="{ active: currentView === 'report', pending: !overview.hasManagerReport }"
       type="button"
@@ -327,6 +538,33 @@ const token = ref(localStorage.getItem(TOKEN_KEY) || '')
 const currentUser = ref(null)
 const loginForm = reactive({ username: 'admin', password: '' })
 
+const adminUsers = ref([])
+const adminRoles = ref([])
+const adminLoading = ref(false)
+const adminKeyword = ref('')
+const userDialogVisible = ref(false)
+const userDialogMode = ref('create')
+const userSaving = ref(false)
+const userForm = reactive({
+  id: null,
+  username: '',
+  password: '',
+  realName: '',
+  mobile: '',
+  email: '',
+  dingUserId: '',
+  dingUnionId: '',
+  status: 1,
+  roles: ['USER'],
+  deptScopesText: ''
+})
+const passwordDialogVisible = ref(false)
+const passwordSaving = ref(false)
+const passwordForm = reactive({ id: null, username: '', password: '' })
+const changePasswordDialogVisible = ref(false)
+const changePasswordSaving = ref(false)
+const changePasswordForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+
 const weeks = ref([])
 const selectedWeek = ref('')
 const currentView = ref('dashboard')
@@ -338,17 +576,22 @@ const jobBusy = ref(false)
 const headerHidden = ref(false)
 const headerHovered = ref(false)
 const filters = reactive({ keyword: '', status: '', leader: '' })
+const reportViews = new Set(['dashboard', 'status', 'report', 'jobs'])
 let lastScrollY = 0
 
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
+const canViewReports = computed(() => (currentUser.value?.roles || []).includes('REPORT_ALL'))
+const defaultView = computed(() => (canViewReports.value ? 'dashboard' : (isAdmin.value ? 'users' : 'denied')))
 const roleLabel = computed(() => {
   const roles = currentUser.value?.roles || []
   if (roles.includes('ADMIN')) return '系统管理员'
+  if (roles.includes('REPORT_ALL')) return '全部周报权限'
   if (roles.includes('HR')) return 'HR'
   if (roles.includes('MANAGER')) return '团队负责人'
   return '普通用户'
 })
+const isAdmin = computed(() => (currentUser.value?.roles || []).includes('ADMIN'))
 const userInitial = computed(() => {
   const name = currentUser.value?.realName || currentUser.value?.username || 'U'
   return String(name).slice(0, 2).toUpperCase()
@@ -369,9 +612,24 @@ const filteredRows = computed(() => {
   })
 })
 
-function setView(view) {
+async function setView(view) {
+  if (reportViews.has(view) && !canViewReports.value) {
+    currentView.value = defaultView.value
+    ElMessage.error('当前账号没有周报查看权限')
+    if (currentView.value === 'users') {
+      await ensureAdminData()
+    }
+    return
+  }
+  if (view === 'users' && !isAdmin.value) {
+    ElMessage.error('只有系统管理员可以访问用户管理')
+    return
+  }
   currentView.value = view
   revealHeader()
+  if (view === 'users') {
+    await ensureAdminData()
+  }
 }
 
 function getScrollY() {
@@ -440,7 +698,7 @@ async function initAuth() {
   try {
     if (token.value) {
       currentUser.value = await request('/api/auth/me')
-      await refreshAll()
+      await enterWorkspace()
     }
   } catch (error) {
     clearAuth(false)
@@ -484,7 +742,7 @@ async function login() {
     })
     applyLogin(data)
     ElMessage.success('登录成功')
-    await refreshAll()
+    await enterWorkspace()
   } catch (error) {
     loginError.value = error.message
   } finally {
@@ -515,6 +773,198 @@ function applyLogin(data) {
   localStorage.setItem(TOKEN_KEY, data.token)
 }
 
+async function enterWorkspace() {
+  currentView.value = defaultView.value
+  if (canViewReports.value) {
+    await refreshAll()
+  }
+  if (currentView.value === 'users') {
+    await ensureAdminData()
+  }
+}
+
+async function ensureAdminData() {
+  if (!isAdmin.value) return
+  await Promise.all([loadAdminRoles(), loadAdminUsers()])
+}
+
+async function loadAdminRoles() {
+  if (adminRoles.value.length) return
+  adminRoles.value = await request('/api/admin/roles')
+}
+
+async function loadAdminUsers() {
+  if (!isAdmin.value) return
+  adminLoading.value = true
+  try {
+    const query = adminKeyword.value ? `?keyword=${encodeURIComponent(adminKeyword.value)}` : ''
+    adminUsers.value = await request(`/api/admin/users${query}`)
+  } finally {
+    adminLoading.value = false
+  }
+}
+
+function openCreateUser() {
+  userDialogMode.value = 'create'
+  resetUserForm()
+  userDialogVisible.value = true
+  loadAdminRoles()
+}
+
+function openEditUser(row) {
+  userDialogMode.value = 'edit'
+  Object.assign(userForm, {
+    id: row.id,
+    username: row.username || '',
+    password: '',
+    realName: row.realName || '',
+    mobile: row.mobile || '',
+    email: row.email || '',
+    dingUserId: row.dingUserId || '',
+    dingUnionId: row.dingUnionId || '',
+    status: row.status === 0 ? 0 : 1,
+    roles: row.roles?.length ? [...row.roles] : ['USER'],
+    deptScopesText: row.deptScopes?.join('\n') || ''
+  })
+  userDialogVisible.value = true
+  loadAdminRoles()
+}
+
+function resetUserForm() {
+  Object.assign(userForm, {
+    id: null,
+    username: '',
+    password: '',
+    realName: '',
+    mobile: '',
+    email: '',
+    dingUserId: '',
+    dingUnionId: '',
+    status: 1,
+    roles: ['USER'],
+    deptScopesText: ''
+  })
+}
+
+async function saveUser() {
+  if (!userForm.username.trim()) {
+    ElMessage.error('请输入用户名')
+    return
+  }
+  if (userDialogMode.value === 'create' && !userForm.password && !userForm.dingUserId && !userForm.dingUnionId) {
+    ElMessage.error('新建用户至少需要设置密码或绑定钉钉身份')
+    return
+  }
+  const body = {
+    username: userForm.username.trim(),
+    password: userForm.password,
+    realName: userForm.realName,
+    mobile: userForm.mobile,
+    email: userForm.email,
+    dingUserId: userForm.dingUserId,
+    dingUnionId: userForm.dingUnionId,
+    status: userForm.status,
+    roles: userForm.roles?.length ? userForm.roles : ['USER'],
+    deptScopes: parseDeptScopes(userForm.deptScopesText)
+  }
+  try {
+    userSaving.value = true
+    if (userDialogMode.value === 'create') {
+      await request('/api/admin/users', { method: 'POST', body: JSON.stringify(body) })
+    } else {
+      await request(`/api/admin/users/${userForm.id}`, { method: 'PUT', body: JSON.stringify(body) })
+    }
+    userDialogVisible.value = false
+    ElMessage.success('账号已保存')
+    await loadAdminUsers()
+  } catch (error) {
+    ElMessage.error(error.message)
+  } finally {
+    userSaving.value = false
+  }
+}
+
+function openPasswordReset(row) {
+  Object.assign(passwordForm, { id: row.id, username: row.username, password: '' })
+  passwordDialogVisible.value = true
+}
+
+async function resetPassword() {
+  if (!passwordForm.password || passwordForm.password.length < 6) {
+    ElMessage.error('新密码至少 6 位')
+    return
+  }
+  try {
+    passwordSaving.value = true
+    await request(`/api/admin/users/${passwordForm.id}/password`, {
+      method: 'POST',
+      body: JSON.stringify({ password: passwordForm.password })
+    })
+    passwordDialogVisible.value = false
+    ElMessage.success('密码已重置')
+  } catch (error) {
+    ElMessage.error(error.message)
+  } finally {
+    passwordSaving.value = false
+  }
+}
+
+function openChangePassword() {
+  Object.assign(changePasswordForm, { oldPassword: '', newPassword: '', confirmPassword: '' })
+  changePasswordDialogVisible.value = true
+}
+
+async function changeOwnPassword() {
+  if (!changePasswordForm.oldPassword) {
+    ElMessage.error('请输入当前密码')
+    return
+  }
+  if (!changePasswordForm.newPassword || changePasswordForm.newPassword.length < 6) {
+    ElMessage.error('新密码至少 6 位')
+    return
+  }
+  if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
+    ElMessage.error('两次输入的新密码不一致')
+    return
+  }
+  try {
+    changePasswordSaving.value = true
+    await request('/api/auth/password', {
+      method: 'POST',
+      body: JSON.stringify({
+        oldPassword: changePasswordForm.oldPassword,
+        newPassword: changePasswordForm.newPassword
+      })
+    })
+    changePasswordDialogVisible.value = false
+    ElMessage.success('密码已修改，下次登录请使用新密码')
+  } catch (error) {
+    ElMessage.error(error.message)
+  } finally {
+    changePasswordSaving.value = false
+  }
+}
+
+function parseDeptScopes(value) {
+  return String(value || '')
+    .split(/[\n,，;；]+/)
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
+function roleName(roleCode) {
+  const role = adminRoles.value.find(item => item.roleCode === roleCode)
+  return role?.roleName || roleCode
+}
+
+function roleTagType(roleCode) {
+  if (roleCode === 'ADMIN') return 'danger'
+  if (roleCode === 'REPORT_ALL') return 'primary'
+  if (roleCode === 'HR') return 'success'
+  if (roleCode === 'MANAGER') return 'warning'
+  return 'info'
+}
+
 async function logout() {
   try {
     await request('/api/auth/logout', { method: 'POST' })
@@ -535,12 +985,19 @@ function clearAuth(showLogin = true) {
   analysis.value = {}
   rows.value = []
   latestJob.value = {}
+  adminUsers.value = []
+  adminRoles.value = []
+  adminKeyword.value = ''
+  changePasswordDialogVisible.value = false
+  Object.assign(changePasswordForm, { oldPassword: '', newPassword: '', confirmPassword: '' })
+  currentView.value = 'dashboard'
   if (showLogin) {
     authLoading.value = false
   }
 }
 
 async function refreshAll() {
+  if (!canViewReports.value) return
   await loadWeeks()
   await loadJob()
   if (selectedWeek.value) {
@@ -549,6 +1006,7 @@ async function refreshAll() {
 }
 
 async function loadWeeks() {
+  if (!canViewReports.value) return
   weeks.value = await request('/api/weeks')
   if (!selectedWeek.value && weeks.value.length) {
     selectedWeek.value = weeks.value[0].week
@@ -556,12 +1014,13 @@ async function loadWeeks() {
 }
 
 async function selectWeek(week) {
+  if (!canViewReports.value) return
   selectedWeek.value = week
   await loadWeek(week)
 }
 
 async function loadWeek(week) {
-  if (!week) return
+  if (!week || !canViewReports.value) return
   const [summaryData, analysisData, statusRows] = await Promise.all([
     request(`/api/weeks/${week}/summary`),
     request(`/api/weeks/${week}/analysis`),
@@ -573,11 +1032,16 @@ async function loadWeek(week) {
 }
 
 async function loadJob() {
+  if (!canViewReports.value) return
   latestJob.value = await request('/api/jobs/latest')
   jobBusy.value = latestJob.value.status === 'RUNNING'
 }
 
 async function runJob(weekMode) {
+  if (!canViewReports.value) {
+    ElMessage.error('当前账号没有运行采集任务的权限')
+    return
+  }
   try {
     jobBusy.value = true
     latestJob.value = await request(`/api/jobs/run?week=${weekMode}`, { method: 'POST' })
@@ -605,6 +1069,10 @@ async function pollJob() {
 }
 
 async function downloadCsv() {
+  if (!canViewReports.value) {
+    ElMessage.error('当前账号没有下载周报数据的权限')
+    return
+  }
   if (!selectedWeek.value) return
   const response = await fetch(`/api/files/${selectedWeek.value}/submission-status/download`, {
     headers: token.value ? { Authorization: `Bearer ${token.value}` } : {}

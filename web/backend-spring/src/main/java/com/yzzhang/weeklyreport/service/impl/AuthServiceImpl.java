@@ -9,6 +9,7 @@ import com.yzzhang.weeklyreport.security.AuthUserDetailsService;
 import com.yzzhang.weeklyreport.security.AuthenticatedUser;
 import com.yzzhang.weeklyreport.security.JwtTokenProvider;
 import com.yzzhang.weeklyreport.service.AuthService;
+import com.yzzhang.weeklyreport.vo.ChangePasswordRequestVO;
 import com.yzzhang.weeklyreport.vo.CurrentUserVO;
 import com.yzzhang.weeklyreport.vo.DingTalkLoginUrlVO;
 import com.yzzhang.weeklyreport.vo.LoginRequestVO;
@@ -79,11 +80,30 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public CurrentUserVO currentUser() {
+        return toCurrentUser(currentAuthenticatedUser());
+    }
+
+    @Override
+    public void changePassword(ChangePasswordRequestVO requestVO) {
+        AuthenticatedUser user = currentAuthenticatedUser();
+        if (!hasText(user.getPassword())) {
+            throw new BizException("当前账号未设置密码，请联系管理员重置后再修改");
+        }
+        if (!passwordEncoder.matches(requestVO.getOldPassword(), user.getPassword())) {
+            throw new BizException("当前密码不正确");
+        }
+        if (!hasText(requestVO.getNewPassword()) || requestVO.getNewPassword().length() < 6) {
+            throw new BizException("新密码至少需要6位");
+        }
+        sysUserMapper.updatePassword(user.getId(), passwordEncoder.encode(requestVO.getNewPassword()));
+    }
+
+    private AuthenticatedUser currentAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUser user)) {
             throw new BizException("请先登录");
         }
-        return toCurrentUser(user);
+        return user;
     }
 
     @Override
