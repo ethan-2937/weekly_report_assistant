@@ -4,6 +4,7 @@ import com.yzzhang.weeklyreport.common.ResourceNotFoundException;
 import com.yzzhang.weeklyreport.mapper.SubmissionStatusMapper;
 import com.yzzhang.weeklyreport.mapper.WeekFileMapper;
 import com.yzzhang.weeklyreport.po.SubmissionStatusPO;
+import com.yzzhang.weeklyreport.service.ReportPermissionService;
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
 import com.yzzhang.weeklyreport.util.WeekLabelUtils;
 import com.yzzhang.weeklyreport.vo.AnalysisVO;
@@ -12,6 +13,8 @@ import com.yzzhang.weeklyreport.vo.SummaryVO;
 import com.yzzhang.weeklyreport.vo.WeekOverviewVO;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -24,15 +27,23 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
 
     private final SubmissionStatusMapper submissionStatusMapper;
     private final WeekFileMapper weekFileMapper;
+    private final ReportPermissionService reportPermissionService;
+    private final ReportContentFilter reportContentFilter = new ReportContentFilter();
 
-    public WeeklyReportServiceImpl(SubmissionStatusMapper submissionStatusMapper, WeekFileMapper weekFileMapper) {
+    public WeeklyReportServiceImpl(
+        SubmissionStatusMapper submissionStatusMapper,
+        WeekFileMapper weekFileMapper,
+        ReportPermissionService reportPermissionService
+    ) {
         this.submissionStatusMapper = submissionStatusMapper;
         this.weekFileMapper = weekFileMapper;
+        this.reportPermissionService = reportPermissionService;
     }
 
     @Override
     public List<WeekOverviewVO> listWeeks() {
-        return weekFileMapper.listWeekLabels().stream().map(this::overview).toList();
+        ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
+        return weekFileMapper.listWeekLabels().stream().map(week -> overview(week, permission)).toList();
     }
 
     @Override
@@ -43,30 +54,50 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
     @Override
     public List<SubmissionStatusVO> listSubmissionStatus(String week) {
         assertWeek(week);
-        return submissionStatusMapper.selectByWeek(week).stream().map(this::toVO).toList();
+        ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
+        return visibleRows(week, permission).stream().map(this::toVO).toList();
     }
 
     @Override
     public SummaryVO getSummary(String week) {
         assertWeek(week);
-        WeekOverviewVO base = overview(week);
+        ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
+        List<SubmissionStatusPO> allRows = selectRows(week);
+        List<SubmissionStatusPO> visibleRows = reportPermissionService.filterRows(allRows, permission);
+        WeekOverviewVO base = overview(week, visibleRows);
         SummaryVO vo = new SummaryVO();
         copyOverview(base, vo);
-        vo.setSubmissionSummary(weekFileMapper.readIfExists(weekFileMapper.submissionSummaryPath(week)));
-        vo.setManagerReport(weekFileMapper.readIfExists(weekFileMapper.managerReportPath(week)));
+        String submissionSummary = weekFileMapper.readIfExists(weekFileMapper.submissionSummaryPath(week));
+        String managerReport = weekFileMapper.readIfExists(weekFileMapper.managerReportPath(week));
+        if (permission.fullAccess()) {
+            vo.setSubmissionSummary(submissionSummary);
+            vo.setManagerReport(managerReport);
+        } else {
+            vo.setSubmissionSummary(reportContentFilter.buildSubmissionSummary(week, visibleRows));
+            vo.setManagerReport(reportContentFilter.filterManagerReport(managerReport, week, allRows, visibleRows));
+        }
         return vo;
     }
 
     @Override
     public AnalysisVO getAnalysis(String week) {
         assertWeek(week);
+        ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
         Path manager = weekFileMapper.managerReportPath(week);
         Path analysis = weekFileMapper.analysisInputPath(week);
         Path source = Files.exists(manager) ? manager : analysis;
+        String content = weekFileMapper.readIfExists(source);
+        if (!permission.fullAccess()) {
+            List<SubmissionStatusPO> allRows = selectRows(week);
+            List<SubmissionStatusPO> visibleRows = reportPermissionService.filterRows(allRows, permission);
+            content = Files.exists(manager)
+                ? reportContentFilter.filterManagerReport(content, week, allRows, visibleRows)
+                : reportContentFilter.filterAnalysisInput(content, week, allRows, visibleRows);
+        }
         AnalysisVO vo = new AnalysisVO();
         vo.setWeek(week);
         vo.setSource(weekFileMapper.relativize(source));
-        vo.setContent(weekFileMapper.readIfExists(source));
+        vo.setContent(content);
         vo.setManagerReport(Files.exists(manager));
         return vo;
     }
@@ -74,20 +105,30 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
     @Override
     public Path getSubmissionStatusCsv(String week) {
         assertWeek(week);
+        ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
         Path csv = submissionStatusMapper.csvPath(week);
         if (!Files.exists(csv)) {
             throw new ResourceNotFoundException("submission_status.csv not found for " + week);
         }
+        if (!permission.fullAccess()) {
+            List<SubmissionStatusPO> visibleRows = visibleRows(week, permission);
+            try {
+                Path filtered = Files.createTempFile("submission_status_" + week + "_", ".csv");
+                Files.writeString(filtered, reportContentFilter.toCsv(visibleRows), StandardCharsets.UTF_8);
+                filtered.toFile().deleteOnExit();
+                return filtered;
+            } catch (IOException e) {
+                throw new ResourceNotFoundException("failed to create filtered submission_status.csv: " + e.getMessage());
+            }
+        }
         return csv;
     }
 
-    private WeekOverviewVO overview(String week) {
-        List<SubmissionStatusPO> rows;
-        try {
-            rows = submissionStatusMapper.selectByWeek(week);
-        } catch (ResourceNotFoundException e) {
-            rows = List.of();
-        }
+    private WeekOverviewVO overview(String week, ReportPermissionService.ReportPermission permission) {
+        return overview(week, visibleRowsOrEmpty(week, permission));
+    }
+
+    private WeekOverviewVO overview(String week, List<SubmissionStatusPO> rows) {
         long submitted = rows.stream().filter(row -> STATUS_SUBMITTED.equals(row.getStatus())).count();
         long missing = rows.stream().filter(row -> STATUS_MISSING.equals(row.getStatus())).count();
         long leaders = rows.stream().filter(row -> YES.equals(row.getLeaderCandidate())).count();
@@ -100,6 +141,22 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
         vo.setHasManagerReport(weekFileMapper.exists(weekFileMapper.managerReportPath(week)));
         vo.setGeneratedAt(weekFileMapper.latestModified(week).map(Object::toString).orElse(""));
         return vo;
+    }
+
+    private List<SubmissionStatusPO> visibleRows(String week, ReportPermissionService.ReportPermission permission) {
+        return reportPermissionService.filterRows(selectRows(week), permission);
+    }
+
+    private List<SubmissionStatusPO> visibleRowsOrEmpty(String week, ReportPermissionService.ReportPermission permission) {
+        try {
+            return visibleRows(week, permission);
+        } catch (ResourceNotFoundException e) {
+            return List.of();
+        }
+    }
+
+    private List<SubmissionStatusPO> selectRows(String week) {
+        return submissionStatusMapper.selectByWeek(week);
     }
 
     private SubmissionStatusVO toVO(SubmissionStatusPO po) {

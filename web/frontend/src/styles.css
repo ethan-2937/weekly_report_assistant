@@ -1045,6 +1045,18 @@ textarea {
   margin-top: 22px;
 }
 
+.hero-permission-note {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(26, 115, 232, 0.14);
+  border-radius: 999px;
+  color: var(--sheet-blue-text);
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(232, 240, 254, 0.72);
+}
+
 .hero-showcase {
   position: relative;
   min-height: 230px;

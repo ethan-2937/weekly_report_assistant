@@ -101,7 +101,7 @@
         <button v-if="canViewReports" :class="{ active: currentView === 'dashboard' }" @click="setView('dashboard')">提交概览</button>
         <button v-if="canViewReports" :class="{ active: currentView === 'status' }" @click="setView('status')">未交名单</button>
         <button v-if="canViewReports" :class="{ active: currentView === 'report' }" @click="setView('report')">AI 评价</button>
-        <button v-if="canViewReports" :class="{ active: currentView === 'jobs' }" @click="setView('jobs')">运行状态</button>
+        <button v-if="canRunJobs" :class="{ active: currentView === 'jobs' }" @click="setView('jobs')">运行状态</button>
         <button v-if="isAdmin" :class="{ active: currentView === 'users' }" @click="setView('users')">用户管理</button>
       </nav>
 
@@ -140,13 +140,16 @@
             后端自动拉取钉钉通讯录和周报，Codex skill 生成管理评价，前端展示提交概览、未提交候选、个人工作总结和团队负责人履职情况。
           </p>
           <div class="hero-actions">
-            <el-button type="primary" size="large" round :loading="jobBusy" @click="runJob('previous')">
+            <el-button v-if="canRunJobs" type="primary" size="large" round :loading="jobBusy" @click="runJob('previous')">
               生成上一周
             </el-button>
-            <el-button size="large" round :loading="jobBusy" @click="runJob('current')">
+            <el-button v-if="canRunJobs" size="large" round :loading="jobBusy" @click="runJob('current')">
               当前周测试
             </el-button>
             <el-button size="large" round @click="refreshAll">刷新页面</el-button>
+          </div>
+          <div v-if="!canRunJobs" class="hero-permission-note">
+            当前账号按授权范围查看周报数据，采集任务由系统管理员或全部周报权限账号执行。
           </div>
         </div>
 
@@ -429,12 +432,12 @@
               </el-select>
             </label>
             <label class="admin-form-grid__full">
-              <span>部门权限范围（预留）</span>
+              <span>部门权限范围</span>
               <el-input
                 v-model="userForm.deptScopesText"
                 type="textarea"
-                :rows="3"
-                placeholder="可填写 ALL 或部门名称，多个范围用换行/逗号分隔；当前阶段暂不强制过滤数据"
+                :rows="4"
+                placeholder="一行一个范围：ALL / DEPT:信用业务线 / DEPT:财务 / USER:李晓玲 / USERID:024...。普通文本会自动匹配部门、姓名或 userid。"
               />
             </label>
           </div>
@@ -456,7 +459,7 @@
         </el-dialog>
       </section>
 
-      <section v-if="currentView === 'jobs' && canViewReports" class="page-card">
+      <section v-if="currentView === 'jobs' && canRunJobs" class="page-card">
         <div class="page-header">
           <div>
             <h1>运行状态</h1>
@@ -479,8 +482,7 @@
         <span class="login-eyebrow">ACCESS LIMITED</span>
         <h1>当前账号暂无周报查看权限</h1>
         <p>
-          本上线版本只允许四个“全部周报权限”账号查看完整周报、AI 评价和采集状态。
-          如需开通，请联系系统管理员在用户管理中分配 REPORT_ALL 角色。
+          当前账号没有配置周报可见范围。如需开通，请联系系统管理员分配 REPORT_ALL 角色或配置部门/人员权限范围。
         </p>
         <el-button v-if="isAdmin" type="primary" round @click="setView('users')">进入用户管理</el-button>
       </section>
@@ -697,12 +699,19 @@ let lastScrollY = 0
 
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
-const canViewReports = computed(() => (currentUser.value?.roles || []).includes('REPORT_ALL'))
+const isFullReportAccess = computed(() => {
+  const roles = currentUser.value?.roles || []
+  return roles.includes('ADMIN') || roles.includes('REPORT_ALL')
+})
+const hasScopedReportAccess = computed(() => (currentUser.value?.deptScopes || []).length > 0)
+const canViewReports = computed(() => isFullReportAccess.value || hasScopedReportAccess.value)
+const canRunJobs = computed(() => isFullReportAccess.value)
 const defaultView = computed(() => (canViewReports.value ? 'dashboard' : (isAdmin.value ? 'users' : 'denied')))
 const roleLabel = computed(() => {
   const roles = currentUser.value?.roles || []
   if (roles.includes('ADMIN')) return '系统管理员'
   if (roles.includes('REPORT_ALL')) return '全部周报权限'
+  if (hasScopedReportAccess.value) return '授权范围周报'
   if (roles.includes('HR')) return 'HR'
   if (roles.includes('MANAGER')) return '团队负责人'
   return '普通用户'
@@ -737,6 +746,11 @@ const filteredRows = computed(() => {
 })
 
 async function setView(view) {
+  if (view === 'jobs' && !canRunJobs.value) {
+    currentView.value = defaultView.value
+    ElMessage.error('当前账号没有运行采集任务的权限')
+    return
+  }
   if (reportViews.has(view) && !canViewReports.value) {
     currentView.value = defaultView.value
     ElMessage.error('当前账号没有周报查看权限')
@@ -1222,7 +1236,12 @@ function clearAuth(showLogin = true) {
 async function refreshAll() {
   if (!canViewReports.value) return
   await loadWeeks()
-  await loadJob()
+  if (canRunJobs.value) {
+    await loadJob()
+  } else {
+    latestJob.value = {}
+    jobBusy.value = false
+  }
   if (selectedWeek.value) {
     await loadWeek(selectedWeek.value)
   }
@@ -1255,13 +1274,13 @@ async function loadWeek(week) {
 }
 
 async function loadJob() {
-  if (!canViewReports.value) return
+  if (!canRunJobs.value) return
   latestJob.value = await request('/api/jobs/latest')
   jobBusy.value = latestJob.value.status === 'RUNNING'
 }
 
 async function runJob(weekMode) {
-  if (!canViewReports.value) {
+  if (!canRunJobs.value) {
     ElMessage.error('当前账号没有运行采集任务的权限')
     return
   }

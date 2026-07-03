@@ -105,15 +105,27 @@ Web 推荐使用 Java + Vue 实现：
 当前版本已接入 MySQL + JWT：
 
 - 首次启动会自动创建认证相关表：`sys_user`、`sys_role`、`sys_user_role`、`sys_dept_scope`、`sys_login_log`。
-- 首次启动会预置管理员账号：`admin / admin123`，密码入库时会转成 BCrypt 哈希；当前管理员账号只负责账号管理，不默认查看完整周报数据。
+- 首次启动会预置管理员账号：`admin / admin123`，密码入库时会转成 BCrypt 哈希；`ADMIN` 可以管理账号，也可以查看完整周报。
 - 首次启动会预置 4 个“全部周报权限”账号：`wangkai`、`zhanyi`、`pengweijuan`、`sunxiaoming`。初始密码按“名拼音首字母 + 姓拼音 + @kingdomai.com”的规则生成，例如 `pengweijuan / wjpeng@kingdomai.com`。
 - 用户登录后可在右上角“修改密码”中自行修改初始密码；管理员也可以在“用户管理”中重置密码。
 - 前端先支持用户名密码登录，并保留“钉钉登录”按钮。
-- 后端核心接口 `/api/weeks/**`、`/api/jobs/**`、`/api/files/**` 需要 `REPORT_ALL` 角色；因此当前上线版本只有上述 4 个全权限账号能查看完整周报、AI 评价、运行采集和下载数据。
-- 角色已预留 `ADMIN`、`REPORT_ALL`、`HR`、`MANAGER`、`USER`，后续可以继续扩展负责人按团队查看。
-- `ADMIN` 登录后可以进入“用户管理”，新建账号、分配角色、启停账号、绑定钉钉 `userId/unionId`、重置密码，并预留部门权限范围配置。
+- 方案 B 数据权限已启用：`ADMIN` / `REPORT_ALL` 查看完整周报；其他账号可通过 `sys_dept_scope` 的部门、人员或 `userid` 范围查看授权范围内周报。
+- `/api/weeks/**` 和 `/api/files/**` 在服务层按当前用户权限过滤提交概览、未交名单、AI 评价和 CSV 下载；`/api/jobs/**` 仍仅允许 `ADMIN` / `REPORT_ALL` 触发或查看采集任务。
+- `ADMIN` 登录后可以进入“用户管理”，新建账号、分配角色、启停账号、绑定钉钉 `userId/unionId`、重置密码，并配置部门/人员权限范围。
 - 钉钉登录由钉钉证明身份，本系统仍通过 `sys_user.ding_user_id` 或 `sys_user.ding_union_id` 判断是否允许进入系统。
 - 登录后右上角下拉框提供“提出 bug 或建议”，面向领导使用时只需填写一段反馈内容；系统会自动附带账号、周次、页面信息，记录到 `logs/feedback-YYYY-MM.jsonl`，并优先通过钉钉工作通知直达张艺政。
+
+部门权限范围写法：
+
+```text
+ALL
+DEPT:信用业务线
+DEPT:财务
+USER:李晓玲
+USERID:02485155366824463653
+```
+
+也可以直接填写普通文本，系统会自动尝试按部门、姓名或 `userid` 匹配；为避免误匹配，正式配置推荐使用 `DEPT:`、`USER:`、`USERID:` 前缀。
 
 钉钉登录启用方式：
 
