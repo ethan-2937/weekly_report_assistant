@@ -19,3 +19,8 @@ deploy/
 .vscode/
 *.iml
 .DS_Store
+
+# Python test discovery/cache
+.pytest_cache/
+.coverage
+htmlcov/

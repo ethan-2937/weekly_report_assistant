@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "agentGuideMaxLines": 120,
+  "defaultLineBudgets": {
+    ".java": 300,
+    ".py": 300,
+    ".vue": 400,
+    ".js": 300,
+    ".css": 500
+  },
+  "fileLineBudgets": {
+    "scripts/run_weekly.py": 330,
+    "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/config/WeeklyReportProperties.java": 300,
+    "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/mapper/SysUserMapper.java": 330,
+    "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/AuthServiceImpl.java": 360,
+    "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/FeedbackServiceImpl.java": 650,
+    "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/ReportContentFilter.java": 450,
+    "web/frontend/src/App.vue": 1550,
+    "web/frontend/src/components/MarkdownReport.vue": 360,
+    "web/frontend/src/styles.css": 2350
+  },
+  "protectedFiles": {
+    "weekly_report_template.txt": "7f5c1a6282d6aaeca8c4be8bb741857c1101bde3e0a23497f160d86fc44c0ef3"
+  }
+}

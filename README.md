@@ -1,5 +1,15 @@
 # 周报汇总助手
 
+## Codex / Harness 开发入口
+
+在 Codex 中直接打开 `D:\weekly_report`。先阅读 `AGENTS.md` 和最近的子目录指南，统一验证命令为：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\verify.ps1
+```
+
+产品、架构、质量与隐私边界分别记录在 `docs/PRODUCT.md`、`docs/ARCHITECTURE.md`、`docs/QUALITY.md` 和 `docs/SECURITY_PRIVACY.md`。
+
 本项目完成了一套从钉钉开放平台到 AI 周报分析的端到端链路：
 
 - 打通钉钉企业内部应用，使用 `Client ID / Client Secret` 获取 `accessToken`。
