@@ -71,7 +71,7 @@ rm -rf ~/.codex/skills/weekly-report-assistant
 cp -a codex-skills/weekly-report-assistant ~/.codex/skills/weekly-report-assistant
 ```
 
-这样服务器 Codex 就可以使用 `$weekly-report-assistant`，每周一读取上一周数据并生成正式评价。
+这样服务器 Codex 就可以使用 `$weekly-report-assistant`。周一可生成暂定结果，周四补交截止后应再次读取上一业务周数据并生成最终评价。
 
 ## 6. Docker 启动
 
@@ -142,12 +142,12 @@ git pull
 docker compose up -d --build
 ```
 
-## 9. 周一正式运行提示词
+## 9. 周四最终运行提示词
 
 ```text
 Use $weekly-report-assistant.
 项目路径：/data2/person_path/yzzhang/weekly-report。
-请自动拉取上一周钉钉周报，生成提交状态和分析输入包，然后基于 output/<周次>/analysis/analysis_input.md 生成正式管理评价。
+请自动拉取上一业务周钉钉周报；业务周按周一至周日命名，提交按周四至下一周周三归属。生成提交状态和分析输入包后，基于 output/<周次>/analysis/analysis_input.md 生成正式管理评价。
 每个人评价直接使用最新维度替换旧字段：虚实盘（本周成果）、时间分配健康度、AI使用红黑榜、下周计划合格性、综合结论/需跟进。不要单独新增“筛选标准结论”板块。
 请把风险/阻塞/求助信息中需要老板拍板/协调的事项单独置顶展示。注意：如果钉钉模板没有“风险与求助”字段，不要因为缺失该字段判定模板不合格。请把正式评价保存到 output/<周次>/summary/manager_report.md，供 Web 前端展示。不要输出 config/.env 或任何密钥。
 ```

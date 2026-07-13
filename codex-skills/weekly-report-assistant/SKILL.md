@@ -8,7 +8,7 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 ## Core Workflow
 
 1. Identify the reporting period and data sources before evaluating content.
-   - Prefer explicit user dates. If the user asks for the weekly Monday summary or does not specify dates, use the previous completed ISO week (Monday 00:00 to Sunday 23:59:59, Asia/Shanghai).
+   - Prefer explicit user dates. The report period remains the previous completed ISO week (Monday 00:00 to Sunday 23:59:59, Asia/Shanghai), while submissions are attributed from Thursday 00:00 of that report week through Wednesday 23:59:59.999 of the following week. Monday-through-Wednesday late submissions therefore belong to the previous report week; Thursday starts the next report week's submission window.
    - Locate weekly-report files, DingTalk report JSON, contact/roster exports, and leader lists.
    - If `weekly_report_template.txt`, `team_leader_extra_duties.txt`, `金证优智工作周报模板.txt`, or `团队负责人额外职责.txt` exists in the workspace, read them and treat them as the source of truth.
    - Do not rewrite or reinterpret `weekly_report_template.txt` to fit evaluation needs. It must mirror the real DingTalk template; only change it if the user explicitly says the DingTalk template itself changed.
@@ -69,7 +69,7 @@ When the workspace contains project scripts such as `scripts/run_weekly.py`, pre
 python3 scripts/run_weekly.py
 ```
 
-This project script defaults to `--week previous`, because the company summarizes weekly reports every Monday and analyzes the previous week. Use `--week current` only for testing or when the user explicitly asks for the current incomplete week. Use `--start YYYY-MM-DD --end YYYY-MM-DD` for an explicit custom period.
+This project script defaults to `--week previous`. Monday runs are provisional because the late-submission window remains open through Wednesday; rerun on Thursday for the final submission status. Use `--week current` only for testing or when the user explicitly asks for the current incomplete week. `--start YYYY-MM-DD --end YYYY-MM-DD` describes the report period, and the script derives its Thursday-through-Wednesday submission window automatically.
 
 After the script runs, analyze:
 

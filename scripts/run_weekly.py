@@ -15,6 +15,7 @@ from dingtalk_common import (
     load_env,
     output_root,
     resolve_week_args,
+    submission_window,
     topapi_post,
     write_json,
 )
@@ -122,7 +123,8 @@ def write_submission_outputs(
     reports: list[dict[str, Any]],
     week_label: str,
     template_name: str,
-    range_text: str,
+    period_text: str,
+    submission_window_text: str,
 ) -> None:
     dept_by_id = {dept.get("dept_id"): dept.get("name") for dept in departments}
     reports_by_user = {report.get("creator_id"): report for report in reports if report.get("creator_id")}
@@ -166,7 +168,8 @@ def write_submission_outputs(
     summary_lines = [
         "# 周报提交验证结果",
         "",
-        f"- 统计周期：{week_label}（{range_text}）",
+        f"- 周报周期：{week_label}（{period_text}）",
+        f"- 提交归属窗口：{submission_window_text}（周四截止，周一至周三补交归上一周）",
         f"- 周报模板：{template_name or '未筛选模板'}",
         f"- 通讯录范围人数：{len(rows)}",
         f"- 已提交人数：{len(submitted)}",
@@ -198,7 +201,8 @@ def write_submission_outputs(
         "",
         "## Sources",
         f"- week_label: {week_label}",
-        f"- range: {range_text}",
+        f"- report_period: {period_text}",
+        f"- submission_window: {submission_window_text}",
         f"- template: {template_name or '未筛选模板'}",
         f"- contacts: {len(users)} users",
         f"- reports: {len(reports)} records",
@@ -258,7 +262,8 @@ def main() -> int:
 
     try:
         env = load_env()
-        start, end, week_label = resolve_week_args(args)
+        period_start, period_end, week_label = resolve_week_args(args)
+        submit_start, submit_end = submission_window(period_start, period_end)
         root_dept_id = int(env.get("DINGTALK_ROOT_DEPT_ID", "1"))
         template_name = env.get("DINGTALK_REPORT_TEMPLATE", "").strip()
         out_root = output_root(env)
@@ -275,19 +280,30 @@ def main() -> int:
         reports = download_reports(
             access_token=access_token,
             template_name=template_name,
-            start_ms=int(start.timestamp() * 1000),
-            end_ms=int(end.timestamp() * 1000),
+            start_ms=int(submit_start.timestamp() * 1000),
+            end_ms=int(submit_end.timestamp() * 1000),
         )
         week_out = out_root / week_label
         write_json(week_out / "raw" / "reports.json", reports)
-        range_text = f"{start.strftime('%Y-%m-%d')} 至 {end.strftime('%Y-%m-%d')}"
-        write_submission_outputs(week_out, users, departments, reports, week_label, template_name, range_text)
+        period_text = f"{period_start.strftime('%Y-%m-%d')} 至 {period_end.strftime('%Y-%m-%d')}"
+        submission_window_text = f"{submit_start.strftime('%Y-%m-%d')} 至 {submit_end.strftime('%Y-%m-%d')}"
+        write_submission_outputs(
+            week_out,
+            users,
+            departments,
+            reports,
+            week_label,
+            template_name,
+            period_text,
+            submission_window_text,
+        )
     except (DingTalkError, OSError, json.JSONDecodeError, ValueError) as exc:
         print(f"FAILED: {exc}")
         return 1
 
     print(f"OK: weekly data prepared for {week_label}.")
-    print(f"Range: {start.isoformat()} -> {end.isoformat()}")
+    print(f"Report period: {period_start.isoformat()} -> {period_end.isoformat()}")
+    print(f"Submission window: {submit_start.isoformat()} -> {submit_end.isoformat()}")
     print(f"Users: {len(users)}; departments: {len(departments)}; reports: {len(reports)}")
     print(f"Output: {week_out}")
     return 0

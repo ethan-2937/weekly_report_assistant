@@ -69,9 +69,9 @@ cd /data2/person_path/yzzhang/weekly-report
 docker compose up -d --build
 ```
 
-## 周一正式运行
+## 上一业务周运行
 
-不加参数，默认分析上一周：
+不加参数，默认分析上一业务周；周一结果为暂定，周四补交截止后应重新运行形成最终结果：
 
 ```bash
 cd /data2/person_path/yzzhang/weekly-report
@@ -82,7 +82,7 @@ python3 scripts/run_weekly.py
 
 ```text
 Use $weekly-report-assistant in /data2/person_path/yzzhang/weekly-report.
-请自动拉取上一周钉钉周报，生成提交状态和分析输入包，然后基于 output/<周次>/analysis/analysis_input.md 生成正式管理评价。
+请自动拉取上一业务周钉钉周报；业务周按周一至周日命名，提交按周四至下一周周三归属。生成提交状态和分析输入包后，基于 output/<周次>/analysis/analysis_input.md 生成正式管理评价。
 每个人评价直接使用最新维度替换旧字段：虚实盘（本周成果）、时间分配健康度、AI使用红黑榜、下周计划合格性、综合结论/需跟进。不要单独新增“筛选标准结论”板块。
 请把风险/阻塞/求助信息中需要老板拍板/协调的事项单独置顶展示。注意：如果钉钉模板没有“风险与求助”字段，不要因为缺失该字段判定模板不合格。
 请把正式评价保存到 output/<周次>/summary/manager_report.md，供 Web 前端展示。不要输出 config/.env 或任何密钥。
@@ -90,10 +90,10 @@ Use $weekly-report-assistant in /data2/person_path/yzzhang/weekly-report.
 
 ## Cron 示例
 
-每周一 09:00 自动拉取上一周数据：
+每周四 09:00 在补交截止后自动拉取上一业务周最终数据：
 
 ```bash
-0 9 * * 1 cd /data2/person_path/yzzhang/weekly-report && python3 scripts/run_weekly.py >> logs/weekly.log 2>&1
+0 9 * * 4 cd /data2/person_path/yzzhang/weekly-report && python3 scripts/run_weekly.py >> logs/weekly.log 2>&1
 ```
 
 ## Skill 安装位置

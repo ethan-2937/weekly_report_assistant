@@ -10,6 +10,7 @@ from dingtalk_common import (
     load_env,
     output_root,
     resolve_week_args,
+    submission_window,
     topapi_post,
     write_json,
 )
@@ -42,14 +43,15 @@ def main() -> int:
 
     try:
         env = load_env()
-        start, end, week_label = resolve_week_args(args)
+        period_start, period_end, week_label = resolve_week_args(args)
+        submit_start, submit_end = submission_window(period_start, period_end)
         access_token = get_access_token(env)
         template_name = env.get("DINGTALK_REPORT_TEMPLATE", "").strip()
         reports = download_reports(
             access_token=access_token,
             template_name=template_name,
-            start_ms=int(start.timestamp() * 1000),
-            end_ms=int(end.timestamp() * 1000),
+            start_ms=int(submit_start.timestamp() * 1000),
+            end_ms=int(submit_end.timestamp() * 1000),
         )
         out_path = output_root(env) / week_label / "raw" / "reports.json"
         write_json(out_path, reports)
@@ -58,11 +60,11 @@ def main() -> int:
         return 1
 
     print(f"OK: downloaded {len(reports)} reports for {week_label}.")
-    print(f"Range: {start.isoformat()} -> {end.isoformat()}")
+    print(f"Report period: {period_start.isoformat()} -> {period_end.isoformat()}")
+    print(f"Submission window: {submit_start.isoformat()} -> {submit_end.isoformat()}")
     print(f"Output: {out_path}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

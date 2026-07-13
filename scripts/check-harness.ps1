@@ -31,6 +31,7 @@ $required = @(
     "harness/quality-baseline.json",
     ".env.example",
     "tests/test_dingtalk_common.py",
+    "tests/test_report_collection_window.py",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/util/WeekLabelUtilsTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/config/ProductionCredentialValidatorTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/config/SecurityConfigWebMvcTest.java",

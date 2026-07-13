@@ -111,15 +111,21 @@ def week_range(week: str = "previous") -> tuple[datetime, datetime]:
     return start, end
 
 
+def submission_window(period_start: datetime, period_end: datetime) -> tuple[datetime, datetime]:
+    """Shift a report period to its Thursday-through-Wednesday submission window."""
+    grace_shift = timedelta(days=3)
+    return period_start + grace_shift, period_end + grace_shift
+
+
 def add_week_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--week",
         choices=["previous", "current"],
         default="previous",
-        help="Week to process when --start is not set. Default: previous, because Monday summaries analyze last week.",
+        help="Report week to process. Submissions are attributed from Thursday through the following Wednesday.",
     )
-    parser.add_argument("--start", help="Start date, format YYYY-MM-DD. Overrides --week.")
-    parser.add_argument("--end", help="End date, format YYYY-MM-DD. Default: --start + 6 days.")
+    parser.add_argument("--start", help="Report period start, format YYYY-MM-DD. Overrides --week.")
+    parser.add_argument("--end", help="Report period end, format YYYY-MM-DD. Default: --start + 6 days.")
 
 
 def resolve_week_args(args: argparse.Namespace) -> tuple[datetime, datetime, str]:

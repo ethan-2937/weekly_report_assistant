@@ -57,17 +57,17 @@ weekly-report-mysql # MySQL 8.4
 http://服务器IP:22081/api/auth/dingtalk/callback
 ```
 
-## 周一自动化
+## 周四截止自动化
 
-第一阶段建议仍然用服务器 Codex 或 Web 按钮触发周报拉取与总结。后续可以增加两种方式：
+周一可以用服务器 Codex 或 Web 按钮生成暂定结果；周四补交截止后应再次触发并生成最终结果。自动化可采用两种方式：
 
-1. Spring Scheduler：Java 服务内部每周一自动执行 `scripts/run_weekly.py`。
-2. Linux cron：每周一执行 `docker exec weekly-report python3 scripts/run_weekly.py`，或者给 Web 后端扩展专用任务 Token 后再调用接口。
+1. Spring Scheduler：Java 服务内部每周四自动执行 `scripts/run_weekly.py`。
+2. Linux cron：每周四执行 `docker exec weekly-report python3 scripts/run_weekly.py`，或者给 Web 后端扩展专用任务 Token 后再调用接口。
 
 cron 直接调脚本示例：
 
 ```bash
-0 9 * * 1 docker exec weekly-report python3 /app/scripts/run_weekly.py --week previous
+0 9 * * 4 docker exec weekly-report python3 /app/scripts/run_weekly.py --week previous
 ```
 
 注意：正式 AI 评价仍建议由 Codex skill 生成并写入 `manager_report.md`，因为它需要模型完成管理评价。

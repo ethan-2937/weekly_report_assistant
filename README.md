@@ -20,7 +20,7 @@ powershell -ExecutionPolicy Bypass -File scripts\verify.ps1
 - 编写 `weekly-report-assistant` Codex skill，让服务器上的智能体可以按固定提示词自动执行周报拉取、总结和评价。
 - 设计了本地 Windows 验证、Ubuntu 服务器部署、后续定时任务和权限隔离的迁移方案。
 
-换句话说，这套系统已经具备“每周一自动分析上一周周报”的基础能力：先由脚本稳定采集数据，再由 Codex skill 负责总结、评价、发现风险和输出管理视角结论。
+换句话说，这套系统已经具备“按周归集并在周四截止后分析上一周周报”的基础能力：先由脚本稳定采集数据，再由 Codex skill 负责总结、评价、发现风险和输出管理视角结论。
 
 ## 系统逻辑
 
@@ -52,9 +52,11 @@ Codex weekly-report-assistant skill
 
 ## 周期规则
 
-公司每周一总结周报，因此脚本默认分析“上一完整周”：
+脚本默认分析“上一完整 ISO 周”，并为补交单独使用周四截止规则：
 
-- 默认：上一周周一 00:00 到上一周周日 23:59:59，Asia/Shanghai。
+- 业务周期：上一周周一 00:00 到上一周周日 23:59:59，Asia/Shanghai。
+- 提交归属：该业务周周四 00:00 到下一周周三 23:59:59.999；周一至周三补交仍计入上一业务周。
+- 周一运行得到暂定结果，周四截止后再次运行得到最终提交状态。
 - 测试当前周：加 `--week current`。
 - 指定日期：加 `--start YYYY-MM-DD --end YYYY-MM-DD`。
 
@@ -108,7 +110,7 @@ Web 推荐使用 Java + Vue 实现：
 - Spring Boot 后端读取 `output/<周次>` 下的 CSV/Markdown/JSON 文件，并可手动触发 `scripts/run_weekly.py`。
 - 后端采用传统分层结构：`controller`、`service`、`service.impl`、`mapper`、`po`、`vo`、`config`、`common`、`util`。
 - Vue 前端沿用 `D:\BookStore\VueFronted` 的卡片、胶囊导航、柔和渐变和 Element Plus 表格风格。
-- Codex skill 每周一生成正式评价后，写入 `output/<周次>/summary/manager_report.md`，前端会自动展示。
+- Codex skill 在周四补交截止后生成正式评价，写入 `output/<周次>/summary/manager_report.md`，前端会自动展示；周一运行只作为暂定预览。
 
 ## 登录与权限
 

@@ -12,7 +12,14 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from dingtalk_common import load_env, parse_date, require_env, resolve_week_args, week_range  # noqa: E402
+from dingtalk_common import (  # noqa: E402
+    load_env,
+    parse_date,
+    require_env,
+    resolve_week_args,
+    submission_window,
+    week_range,
+)
 
 
 class DingTalkCommonTests(unittest.TestCase):
@@ -32,6 +39,26 @@ class DingTalkCommonTests(unittest.TestCase):
         self.assertEqual(start, parse_date("2026-07-06"))
         self.assertEqual(end.date().isoformat(), "2026-07-12")
         self.assertEqual(label, "2026-W28")
+
+    def test_report_week_uses_thursday_through_wednesday_submission_window(self) -> None:
+        period_start = parse_date("2026-07-06")
+        period_end = parse_date("2026-07-13") - timedelta(milliseconds=1)
+
+        submit_start, submit_end = submission_window(period_start, period_end)
+
+        self.assertEqual(submit_start, parse_date("2026-07-09"))
+        self.assertEqual(submit_end, parse_date("2026-07-16") - timedelta(milliseconds=1))
+
+    def test_adjacent_submission_windows_have_no_gap_or_overlap(self) -> None:
+        first_start = parse_date("2026-07-06")
+        first_end = parse_date("2026-07-13") - timedelta(milliseconds=1)
+        second_start = first_start + timedelta(days=7)
+        second_end = first_end + timedelta(days=7)
+
+        _, first_submit_end = submission_window(first_start, first_end)
+        second_submit_start, _ = submission_window(second_start, second_end)
+
+        self.assertEqual(first_submit_end + timedelta(milliseconds=1), second_submit_start)
 
     def test_env_file_overrides_process_environment_without_exposing_values(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
