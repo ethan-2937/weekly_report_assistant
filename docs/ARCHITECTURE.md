@@ -18,7 +18,7 @@ MySQL
 
 ## 运行边界
 
-- Python 负责外部采集、周次计算、提交归属窗口、人员匹配、免交名单过滤和生成确定性输入包；`submission_roster.py` 在 CSV/Markdown 生成前按稳定 userid 或精确姓名应用服务器私有配置。
+- Python 负责外部采集、周次计算、提交归属窗口、人员匹配、免交名单过滤和生成确定性输入包；`submission_roster.py` 应用服务器私有免交配置，`leader_compliance.py` 区分负责人个人提交、正文证据、真实附件条目和附件待解析状态，`weekly_outputs.py` 统一生成 CSV/Markdown。
 - Codex Skill 负责从授权输入生成管理评价，不负责身份认证或数据权限。
 - Spring Boot 负责身份、数据范围、文件读取、任务触发和 API。
 - Vue 负责展示和交互，不承担权限裁决。
@@ -32,6 +32,8 @@ controller -> service -> service/impl -> mapper/file/database
 ```
 
 Controller 不得绕过服务层读取文件或数据库。权限过滤应尽量靠近业务返回边界，并覆盖列表、详情、Markdown 和 CSV 下载。
+
+负责人履职链路遵循“确定性证据先于 AI 结论”：Python 输出全部负责人和证据状态，Skill 生成管理结论，Spring 对正式履职表及原始负责人输入逐行过滤，Vue 只渲染授权后的 Markdown。附件元数据不等于附件正文；未接入受控下载与解析前保持“附件待解析”。
 
 ## 认证与配置边界
 

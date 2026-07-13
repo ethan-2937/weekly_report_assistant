@@ -80,6 +80,13 @@ Preferred cell wording examples:
 - 履职结论
 - 缺失项
 
+Every row from `团队负责人履职输入（确定性证据）` must appear in the final compliance table. Preserve these distinctions:
+
+- `未见证据`: no actual attachment entry and no matching body evidence; it may be reported as a missing duty item.
+- `附件待解析` / `有附件待确认` / `疑似已提交（附件名匹配）`: attachment metadata exists but content is unavailable; use `无法判断（附件正文未解析）` for content dimensions and do not call it unsubmitted.
+- `正文有相关证据`: evidence text exists, but the final evaluation must still confirm it describes the managed team rather than only personal work.
+- `不适用（个人周报未提交）`: personal report is missing, so team-summary dimensions cannot be inferred from that report.
+
 ## Missing Submission Rules
 
 - Use stable IDs first: DingTalk `userid`, employee ID, or roster ID.

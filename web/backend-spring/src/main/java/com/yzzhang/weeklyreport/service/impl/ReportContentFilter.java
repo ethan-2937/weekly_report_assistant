@@ -11,6 +11,7 @@ class ReportContentFilter {
     private static final String STATUS_SUBMITTED = "已提交";
     private static final String STATUS_MISSING = "未提交";
     private static final String YES = "是";
+    private final MarkdownTableFilter markdownTables = new MarkdownTableFilter();
 
     String buildSubmissionSummary(String week, List<SubmissionStatusPO> visibleRows) {
         return buildSubmissionSummary(week, visibleRows, "# 周报提交验证结果（授权范围）");
@@ -60,7 +61,14 @@ class ReportContentFilter {
             }
         }
 
-        String leaderSection = buildVisibleLeaderSection(visibleRows);
+        String leaderDetails = markdownTables.filterIdentitySection(
+            content,
+            "团队负责人履职检查",
+            visibility::isVisibleIdentity
+        );
+        String leaderSection = hasText(leaderDetails)
+            ? "## 团队负责人履职检查（授权范围）\n\n" + leaderDetails + "\n"
+            : buildVisibleLeaderSection(visibleRows);
         if (hasText(leaderSection)) {
             builder.append(leaderSection).append("\n");
         }
@@ -84,9 +92,18 @@ class ReportContentFilter {
             .append(visibleRows.stream().filter(row -> STATUS_SUBMITTED.equals(row.getStatus())).count())
             .append("\n\n");
 
-        String missingTable = filterMarkdownTableByHeader(content, "Missing Candidates", visibility);
+        String missingTable = markdownTables.filterByHeader(content, "Missing Candidates", visibility::hit);
         if (hasText(missingTable)) {
             builder.append("## Missing Candidates\n\n").append(missingTable).append("\n");
+        }
+
+        String leaderTable = markdownTables.filterIdentityByHeader(
+            content,
+            "团队负责人履职输入",
+            visibility::isVisibleIdentity
+        );
+        if (hasText(leaderTable)) {
+            builder.append("## 团队负责人履职输入（授权范围）\n\n").append(leaderTable).append("\n");
         }
 
         String submittedReports = filterReportBlocks(content, visibility);
@@ -215,27 +232,6 @@ class ReportContentFilter {
         return builder.toString().trim();
     }
 
-    private String filterMarkdownTableByHeader(String content, String headerKeyword, Visibility visibility) {
-        List<String> lines = lines(content);
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < lines.size(); i++) {
-            if (!lines.get(i).contains(headerKeyword)) {
-                continue;
-            }
-            int index = i + 1;
-            while (index < lines.size() && !lines.get(index).trim().startsWith("|")) {
-                index += 1;
-            }
-            List<String> table = new ArrayList<>();
-            while (index < lines.size() && lines.get(index).trim().startsWith("|")) {
-                table.add(lines.get(index));
-                index += 1;
-            }
-            builder.append(filterTable(table, visibility));
-        }
-        return builder.toString();
-    }
-
     private String filterLines(List<String> source, Visibility visibility) {
         StringBuilder builder = new StringBuilder();
         int index = 0;
@@ -247,7 +243,7 @@ class ReportContentFilter {
                     table.add(source.get(index));
                     index += 1;
                 }
-                builder.append(filterTable(table, visibility));
+                builder.append(markdownTables.filterRows(table, visibility::hit));
                 continue;
             }
             if (visibility.hit(line)) {
@@ -256,23 +252,6 @@ class ReportContentFilter {
             index += 1;
         }
         return builder.toString();
-    }
-
-    private String filterTable(List<String> table, Visibility visibility) {
-        if (table.size() < 2) {
-            return "";
-        }
-        StringBuilder builder = new StringBuilder();
-        builder.append(table.get(0)).append('\n');
-        builder.append(table.get(1)).append('\n');
-        int count = 0;
-        for (int i = 2; i < table.size(); i++) {
-            if (visibility.hit(table.get(i))) {
-                builder.append(table.get(i)).append('\n');
-                count += 1;
-            }
-        }
-        return count == 0 ? "" : builder.append('\n').toString();
     }
 
     private String buildVisibleLeaderSection(List<SubmissionStatusPO> visibleRows) {
@@ -370,6 +349,10 @@ class ReportContentFilter {
 
         boolean isVisibleName(String name) {
             return visibleNames.contains(name);
+        }
+
+        boolean isVisibleIdentity(String name, String userId) {
+            return visibleNames.contains(name) || visibleUserIds.contains(userId);
         }
 
         boolean hit(String line) {

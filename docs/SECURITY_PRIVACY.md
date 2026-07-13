@@ -14,6 +14,7 @@
 - 真实免交名单只保存在未跟踪的 `config/.env`；源码、示例、测试、普通日志和任务记录不得写入真实姓名或 userid。
 - 异常信息不得包含 access token、完整 API 响应或原始周报正文。
 - 数据下载、Markdown 报告和统计 API 使用相同的服务层权限范围。
+- 负责人附件名、附件正文和履职评价属于受限数据；原始负责人输入与正式履职表必须逐行应用同一服务层范围过滤，日志不得输出 fileId、spaceId 或下载地址。
 - 管理员账号管理能力与完整周报读取能力分离。
 - 生产模式默认启用，必须显式配置 `WEEKLY_JWT_SECRET` 和 `WEEKLY_BOOTSTRAP_ADMIN_PASSWORD`；缺失、空值或开发默认值会阻止启动，错误只显示变量名。
 - 本地开发只有显式设置 `WEEKLY_AUTH_DEVELOPMENT_MODE=true` 时才能使用开发默认凭据；Docker 部署不得启用该标志。

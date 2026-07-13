@@ -111,6 +111,60 @@ class ReportCollectionWindowTests(unittest.TestCase):
             self.assertNotIn("虚构免交周报正文", analysis)
             self.assertIn("test-user-002", analysis)
 
+    def test_analysis_input_identifies_submitted_and_missing_team_leads(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env = self._env(temp_dir)
+            users = [
+                {
+                    "userid": "test-user-001",
+                    "name": "示例负责人甲",
+                    "leader": True,
+                    "title": "测试团队负责人",
+                    "dept_id_list": [101],
+                },
+                {
+                    "userid": "test-user-002",
+                    "name": "示例负责人乙",
+                    "leader": True,
+                    "title": "测试团队负责人",
+                    "dept_id_list": [101],
+                },
+            ]
+            departments = [{"dept_id": 101, "name": "测试研发部"}]
+            reports = [
+                {
+                    "creator_id": "test-user-001",
+                    "creator_name": "示例负责人甲",
+                    "contents": [
+                        {
+                            "key": "附件",
+                            "value": '[{"fileName":"虚构团队汇总.docx"}]',
+                        }
+                    ],
+                }
+            ]
+            with (
+                patch.object(sys, "argv", ["run_weekly.py", "--start", "2026-07-06"]),
+                patch.object(run_weekly, "load_env", return_value=env),
+                patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
+                patch.object(run_weekly, "download_contacts", return_value=(users, departments)),
+                patch.object(run_weekly, "download_reports", return_value=reports),
+                redirect_stdout(io.StringIO()),
+            ):
+                exit_code = run_weekly.main()
+
+            self.assertEqual(0, exit_code)
+            analysis = (
+                Path(temp_dir) / "2026-W28" / "analysis" / "analysis_input.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("## 团队负责人履职输入（确定性证据）", analysis)
+            self.assertIn("示例负责人甲", analysis)
+            self.assertIn("示例负责人乙", analysis)
+            self.assertIn("疑似已提交（附件名匹配）", analysis)
+            self.assertIn("不适用（个人周报未提交）", analysis)
+            self.assertIn("- title: 测试团队负责人", analysis)
+            self.assertIn("- leader_candidate: 是", analysis)
+
     def _env(self, output_root: str) -> dict[str, str]:
         return {
             "OUTPUT_ROOT": output_root,

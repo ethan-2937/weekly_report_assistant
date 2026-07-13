@@ -43,7 +43,10 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 
 6. Check team-lead extra responsibilities.
    - A team lead must submit a personal weekly report and a team summary attachment/section.
+   - Use `团队负责人履职输入（确定性证据）` as the authoritative team-lead roster. Include every listed lead in the final compliance table, including leads who did not submit a personal report.
    - Check whether the team summary covers: 整体进度、个人工作评价、风险点、资源需求.
+   - Treat `附件待解析`, `有附件待确认`, and `疑似已提交（附件名匹配）` as evidence states, not final compliance conclusions. Do not claim the summary is missing or unqualified until readable content proves that; write `无法判断（附件正文未解析）` for affected dimensions.
+   - Treat `未见证据` as missing only when the deterministic input confirms there is no actual attachment entry and the report body has no corresponding evidence. An empty attachment JSON array is not a submitted attachment.
    - Check whether the lead appears to have reminded/promoted timely submission only when evidence exists; otherwise mark “未见证据”.
    - Evaluate lead compliance separately from the lead's personal work output.
 
@@ -75,6 +78,7 @@ This project script defaults to `--week previous`. Monday runs are provisional b
 After the script runs, analyze:
 
 - `output/<YYYY-Www>/analysis/analysis_input.md` for report content and missing candidates.
+- The `团队负责人履职输入（确定性证据）` table inside `analysis_input.md` for the complete leader roster, attachment state, and body-evidence hints.
 - `output/<YYYY-Www>/exports/submission_status.csv` for the machine-readable submission table.
 - `output/<YYYY-Www>/summary/submission_check.md` for the submission overview.
 

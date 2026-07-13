@@ -9,7 +9,7 @@
     ".css": 500
   },
   "fileLineBudgets": {
-    "scripts/run_weekly.py": 282,
+    "scripts/run_weekly.py": 134,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/config/WeeklyReportProperties.java": 300,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/mapper/SysUserMapper.java": 330,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/AuthServiceImpl.java": 360,

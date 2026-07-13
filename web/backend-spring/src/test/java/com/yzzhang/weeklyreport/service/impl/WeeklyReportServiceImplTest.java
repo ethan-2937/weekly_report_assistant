@@ -37,6 +37,7 @@ class WeeklyReportServiceImplTest {
     private WeekFileMapper weekFileMapper;
     private WeeklyReportServiceImpl service;
     private Path managerReport;
+    private Path analysisInput;
     private Path submissionSummary;
 
     @BeforeEach
@@ -45,6 +46,7 @@ class WeeklyReportServiceImplTest {
         weekFileMapper = mock(WeekFileMapper.class);
         TemplateComplianceService complianceService = mock(TemplateComplianceService.class);
         managerReport = tempDir.resolve("manager_report.md");
+        analysisInput = tempDir.resolve("analysis_input.md");
         submissionSummary = tempDir.resolve("submission_check.md");
         Files.writeString(managerReport, managerMarkdown(), StandardCharsets.UTF_8);
         Files.writeString(submissionSummary, "完整提交摘要：示例员工乙的受限内容", StandardCharsets.UTF_8);
@@ -52,7 +54,7 @@ class WeeklyReportServiceImplTest {
         when(complianceService.enrich(eq(WEEK), anyList())).thenAnswer(invocation -> invocation.getArgument(1));
         when(weekFileMapper.managerReportPath(WEEK)).thenReturn(managerReport);
         when(weekFileMapper.submissionSummaryPath(WEEK)).thenReturn(submissionSummary);
-        when(weekFileMapper.analysisInputPath(WEEK)).thenReturn(tempDir.resolve("analysis_input.md"));
+        when(weekFileMapper.analysisInputPath(WEEK)).thenReturn(analysisInput);
         when(weekFileMapper.readIfExists(managerReport)).thenReturn(managerMarkdown());
         when(weekFileMapper.readIfExists(submissionSummary)).thenReturn("完整提交摘要：示例员工乙的受限内容");
         when(weekFileMapper.relativize(managerReport)).thenReturn("fictional/manager_report.md");
@@ -95,11 +97,26 @@ class WeeklyReportServiceImplTest {
             .contains("示例员工甲")
             .doesNotContain("示例员工乙", "受限周报正文");
         assertThat(summary.getManagerReport())
-            .contains("示例员工甲", "授权周报正文")
-            .doesNotContain("示例员工乙", "受限周报正文");
+            .contains("示例员工甲", "授权周报正文", "附件待解析：授权负责人证据")
+            .doesNotContain("示例员工乙", "受限周报正文", "未见证据：受限负责人证据");
         assertThat(analysis.getContent())
-            .contains("示例员工甲", "授权周报正文")
-            .doesNotContain("示例员工乙", "受限周报正文");
+            .contains("示例员工甲", "授权周报正文", "附件待解析：授权负责人证据")
+            .doesNotContain("示例员工乙", "受限周报正文", "未见证据：受限负责人证据");
+    }
+
+    @Test
+    void scopedRawAnalysisKeepsOnlyAuthorizedTeamLeadEvidence() throws IOException {
+        Files.delete(managerReport);
+        Files.writeString(analysisInput, analysisMarkdown(), StandardCharsets.UTF_8);
+        when(weekFileMapper.readIfExists(analysisInput)).thenReturn(analysisMarkdown());
+        when(weekFileMapper.relativize(analysisInput)).thenReturn("fictional/analysis_input.md");
+        authenticate(List.of("USER"), List.of("USERID:test-user-001"));
+
+        AnalysisVO analysis = service.getAnalysis(WEEK);
+
+        assertThat(analysis.getContent())
+            .contains("团队负责人履职输入（授权范围）", "示例员工甲", "附件待解析：授权负责人证据")
+            .doesNotContain("示例员工乙", "未见证据：受限负责人证据");
     }
 
     @Test
@@ -139,6 +156,7 @@ class WeeklyReportServiceImplTest {
         row.setUserid(userId);
         row.setDept(dept);
         row.setReportDept(dept);
+        row.setLeaderCandidate("是");
         row.setTitle("测试岗位");
         row.setSubmitTime("2026-07-10 10:00:00");
         return row;
@@ -154,6 +172,34 @@ class WeeklyReportServiceImplTest {
             - 授权周报正文：虚构交付物甲。
 
             ### 示例员工乙
+            - 受限周报正文：虚构交付物乙。
+
+            ## 团队负责人履职检查
+
+            | 负责人 | 管理团队/部门 | 个人周报是否提交 | 团队汇总是否提交 | 履职结论 |
+            |---|---|---|---|---|
+            | 示例员工甲 | 测试研发部 | 已提交 | 附件待解析 | 附件待解析：授权负责人证据 |
+            | 示例员工乙 | 测试市场部 | 已提交 | 未见证据 | 未见证据：受限负责人证据，提及示例员工甲 |
+            """;
+    }
+
+    private String analysisMarkdown() {
+        return """
+            # Weekly Report Analysis Pack
+
+            ## 团队负责人履职输入（确定性证据）
+
+            | 负责人 | userid | 管理团队/部门 | 团队汇总证据 |
+            |---|---|---|---|
+            | 示例员工甲 | test-user-001 | 测试研发部 | 附件待解析：授权负责人证据 |
+            | 示例员工乙 | test-user-002 | 测试市场部 | 未见证据：受限负责人证据，提及示例员工甲 |
+
+            ## Submitted Reports
+
+            ### Report 1: 示例员工甲 (test-user-001)
+            - 授权周报正文：虚构交付物甲。
+
+            ### Report 2: 示例员工乙 (test-user-002)
             - 受限周报正文：虚构交付物乙。
             """;
     }
