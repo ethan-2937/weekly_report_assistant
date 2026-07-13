@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import io
 import sys
 import tempfile
@@ -68,6 +69,47 @@ class ReportCollectionWindowTests(unittest.TestCase):
                 download.call_args.kwargs["end_ms"],
                 self._milliseconds("2026-07-16") - 1,
             )
+
+    def test_exempt_submitters_are_removed_from_all_statistical_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env = self._env(temp_dir)
+            env["WEEKLY_REPORT_EXEMPT_SUBMITTERS"] = "NAME:示例员工甲"
+            users = [
+                {"userid": "test-user-001", "name": "示例员工甲"},
+                {"userid": "test-user-002", "name": "示例员工乙"},
+            ]
+            reports = [
+                {
+                    "creator_id": "test-user-001",
+                    "creator_name": "示例员工甲",
+                    "contents": "虚构免交周报正文",
+                }
+            ]
+            with (
+                patch.object(sys, "argv", ["run_weekly.py", "--start", "2026-07-06"]),
+                patch.object(run_weekly, "load_env", return_value=env),
+                patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
+                patch.object(run_weekly, "download_contacts", return_value=(users, [])),
+                patch.object(run_weekly, "download_reports", return_value=reports),
+                redirect_stdout(io.StringIO()),
+            ):
+                exit_code = run_weekly.main()
+
+            self.assertEqual(0, exit_code)
+            week_root = Path(temp_dir) / "2026-W28"
+            with (week_root / "exports" / "submission_status.csv").open(
+                encoding="utf-8-sig", newline=""
+            ) as file:
+                rows = list(csv.DictReader(file))
+            self.assertEqual(1, len(rows))
+            self.assertEqual("test-user-002", rows[0]["userid"])
+
+            summary = (week_root / "summary" / "submission_check.md").read_text(encoding="utf-8")
+            analysis = (week_root / "analysis" / "analysis_input.md").read_text(encoding="utf-8")
+            self.assertNotIn("示例员工甲", summary)
+            self.assertNotIn("示例员工甲", analysis)
+            self.assertNotIn("虚构免交周报正文", analysis)
+            self.assertIn("test-user-002", analysis)
 
     def _env(self, output_root: str) -> dict[str, str]:
         return {

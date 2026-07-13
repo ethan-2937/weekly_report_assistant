@@ -20,6 +20,13 @@ from dingtalk_common import (
     write_json,
 )
 from download_reports import download_reports
+from report_content import format_dt_ms, report_text
+from submission_roster import (
+    EXEMPT_SUBMITTERS_ENV,
+    filter_exempt_reports,
+    parse_exemption_rules,
+    partition_expected_submitters,
+)
 
 
 def list_sub_departments(access_token: str, dept_id: int) -> list[dict[str, Any]]:
@@ -70,50 +77,6 @@ def dept_names(user: dict[str, Any], dept_by_id: dict[Any, str]) -> str:
     for dept_id in user.get("dept_id_list") or []:
         names.append(dept_by_id.get(dept_id, str(dept_id)))
     return "/".join(names)
-
-
-def format_dt_ms(value: Any) -> str:
-    if not isinstance(value, (int, float)):
-        return ""
-    return __import__("datetime").datetime.fromtimestamp(value / 1000, CN_TZ).strftime("%Y-%m-%d %H:%M:%S")
-
-
-def first_value(obj: dict[str, Any], keys: list[str]) -> Any:
-    for key in keys:
-        if key in obj and obj[key] not in (None, ""):
-            return obj[key]
-    return ""
-
-
-def flatten_content(value: Any) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value
-    if isinstance(value, (int, float, bool)):
-        return str(value)
-    if isinstance(value, list):
-        parts: list[str] = []
-        for item in value:
-            if isinstance(item, dict):
-                title = first_value(item, ["key", "title", "name", "label"])
-                body = first_value(item, ["value", "content", "text", "content_value"])
-                parts.append(f"{title}: {flatten_content(body)}".strip(": "))
-            else:
-                parts.append(flatten_content(item))
-        return "\n".join(part for part in parts if part)
-    if isinstance(value, dict):
-        return "\n".join(f"{key}: {flatten_content(child)}" for key, child in value.items() if flatten_content(child))
-    return str(value)
-
-
-def report_text(report: dict[str, Any]) -> str:
-    for key in ("contents", "content", "text", "report_content", "body"):
-        if key in report:
-            text = flatten_content(report[key])
-            if text:
-                return text
-    return flatten_content(report)
 
 
 def write_submission_outputs(
@@ -283,15 +246,18 @@ def main() -> int:
             start_ms=int(submit_start.timestamp() * 1000),
             end_ms=int(submit_end.timestamp() * 1000),
         )
+        exemption_rules = parse_exemption_rules(env.get(EXEMPT_SUBMITTERS_ENV))
+        expected_users, exempt_userids = partition_expected_submitters(users, exemption_rules)
+        statistical_reports = filter_exempt_reports(reports, exemption_rules, exempt_userids)
         week_out = out_root / week_label
         write_json(week_out / "raw" / "reports.json", reports)
         period_text = f"{period_start.strftime('%Y-%m-%d')} 至 {period_end.strftime('%Y-%m-%d')}"
         submission_window_text = f"{submit_start.strftime('%Y-%m-%d')} 至 {submit_end.strftime('%Y-%m-%d')}"
         write_submission_outputs(
             week_out,
-            users,
+            expected_users,
             departments,
-            reports,
+            statistical_reports,
             week_label,
             template_name,
             period_text,
@@ -304,7 +270,10 @@ def main() -> int:
     print(f"OK: weekly data prepared for {week_label}.")
     print(f"Report period: {period_start.isoformat()} -> {period_end.isoformat()}")
     print(f"Submission window: {submit_start.isoformat()} -> {submit_end.isoformat()}")
-    print(f"Users: {len(users)}; departments: {len(departments)}; reports: {len(reports)}")
+    print(
+        f"Expected users: {len(expected_users)}; exempt users: {len(users) - len(expected_users)}; "
+        f"departments: {len(departments)}; statistical reports: {len(statistical_reports)}"
+    )
     print(f"Output: {week_out}")
     return 0
 

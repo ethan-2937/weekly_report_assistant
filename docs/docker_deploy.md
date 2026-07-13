@@ -35,6 +35,14 @@ output/<周次>/summary/manager_report.md
 
 前端会自动展示这个文件。
 
+周报采集免交名单也配置在服务器 `config/.env`：
+
+```text
+WEEKLY_REPORT_EXEMPT_SUBMITTERS=USERID:test-user-001;NAME:示例员工甲
+```
+
+优先使用稳定 userid；姓名仅作精确兼容匹配。免交人员及其提交会在 CSV、Markdown 和分析输入统计前统一排除，真实名单不得写入仓库。
+
 ## MySQL 与登录
 
 `docker-compose.yml` 会同时启动：

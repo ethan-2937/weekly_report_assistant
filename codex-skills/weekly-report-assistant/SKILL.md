@@ -16,6 +16,7 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 2. Build the expected submitter roster.
    - Prefer stable IDs (`userid`, employee ID) over names.
    - Use DingTalk contacts, exported rosters, or `人员名单/团队负责人/权限配置` files when present.
+   - Apply explicitly configured exemptions before comparing expected and actual submitters. Exempt people and their reports do not count as expected, submitted, missing, or per-person evaluation input. Prefer `USERID:` rules; use exact `NAME:` matching only as a compatibility fallback, and never infer exemptions from title or submission behavior.
    - Do not claim who is missing if no expected roster exists; report that missing-submission statistics are unavailable and state what roster is needed.
 
 3. Build the actual submission list.

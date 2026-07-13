@@ -46,8 +46,11 @@ DINGTALK_APP_SECRET=钉钉应用的 Client Secret
 DINGTALK_AGENT_ID=钉钉应用的 AgentId
 DINGTALK_ROOT_DEPT_ID=1
 DINGTALK_REPORT_TEMPLATE=钉钉周报模板名称
+WEEKLY_REPORT_EXEMPT_SUBMITTERS=USERID:test-user-001;NAME:示例员工甲
 OUTPUT_ROOT=output
 ```
+
+`WEEKLY_REPORT_EXEMPT_SUBMITTERS` 使用英文或中文分号/逗号分隔，优先配置稳定 `USERID:`，无法取得 userid 时才使用完整 `NAME:`。真实免交名单只写入服务器 `config/.env`，不得提交到仓库；匹配为规范化后的完整值，不支持手机号或姓名的模糊匹配。
 
 ## 4. 配置服务端口
 
