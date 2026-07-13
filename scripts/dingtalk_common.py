@@ -30,8 +30,8 @@ def load_env(path: Path = ENV_PATH) -> dict[str, str]:
             key, value = line.split("=", 1)
             values[key.strip().lstrip("\ufeff")] = value.strip().strip('"').strip("'")
 
-    merged = dict(os.environ)
-    merged.update(values)
+    merged = values
+    merged.update(os.environ)
     return merged
 
 

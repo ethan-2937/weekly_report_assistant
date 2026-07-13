@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from dingtalk_common import CN_TZ
@@ -18,6 +19,21 @@ def _first_value(obj: dict[str, Any], keys: list[str]) -> Any:
     return ""
 
 
+def _attachment_names(value: Any) -> str:
+    try:
+        parsed = json.loads(value) if isinstance(value, str) else value
+    except (TypeError, json.JSONDecodeError):
+        return "附件元数据不可读"
+    if not isinstance(parsed, list):
+        return "附件元数据不可读"
+    names = [
+        str(item.get("fileName") or "未命名附件").strip()
+        for item in parsed
+        if isinstance(item, dict)
+    ]
+    return "、".join(names) if names else "无"
+
+
 def _flatten_content(value: Any) -> str:
     if value is None:
         return ""
@@ -31,6 +47,8 @@ def _flatten_content(value: Any) -> str:
             if isinstance(item, dict):
                 title = _first_value(item, ["key", "title", "name", "label"])
                 body = _first_value(item, ["value", "content", "text", "content_value"])
+                if str(title).strip() == "附件":
+                    body = _attachment_names(body)
                 parts.append(f"{title}: {_flatten_content(body)}".strip(": "))
             else:
                 parts.append(_flatten_content(item))

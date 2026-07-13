@@ -6,7 +6,7 @@ Use $weekly-report-assistant.
 请先阅读 README.md、docs/codeup_server_deploy.md、docs/ubuntu_deploy.md，以及 skill 的 SKILL.md。
 不要打印或泄露 config/.env、DINGTALK_APP_SECRET、access_token。
 请运行 python3 scripts/run_weekly.py 拉取上一业务周钉钉周报和通讯录。业务周按周一至周日命名，脚本会自动使用周四至下一周周三的提交归属窗口；周四截止后运行得到最终提交状态。
-运行成功后，读取 output/<周次>/analysis/analysis_input.md；先使用其中“团队负责人履职输入（确定性证据）”建立完整负责人清单。附件待解析/有附件待确认不得判为未提交或不合格，内容维度写“无法判断（附件正文未解析）”。然后生成：
+运行成功后，读取 output/<周次>/analysis/analysis_input.md；先使用其中“团队负责人履职输入（确定性证据）”建立完整负责人清单。附件状态包含 `attachments/team_leads/` 本地路径时，在当前周目录下读取 PDF/Word/Excel/PPT/文本附件并评价；路径不得离开当前周目录。下载或解析失败不得判为未提交或不合格，内容维度写“无法判断”并说明安全原因。然后生成：
 1. 本周提交概览；
 2. 需老板拍板/协调事项，并置顶展示；
 3. 未提交/异常提交名单；

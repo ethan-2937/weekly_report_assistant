@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import Any
 
+from attachment_download import (
+    DownloadedAttachment,
+    extract_attachment_metadata,
+)
 from report_content import report_text
 
 
@@ -55,28 +58,11 @@ def _dept_names(user: dict[str, Any], dept_by_id: dict[Any, str]) -> str:
 
 
 def extract_attachment_evidence(report: dict[str, Any]) -> AttachmentEvidence:
-    file_names: list[str] = []
-    metadata_error = False
-    for item in report.get("contents") or []:
-        if not isinstance(item, dict) or _text(item.get("key")) != "附件":
-            continue
-        raw_value = item.get("value")
-        if raw_value in (None, "", []):
-            continue
-        try:
-            parsed = json.loads(raw_value) if isinstance(raw_value, str) else raw_value
-        except (TypeError, json.JSONDecodeError):
-            metadata_error = True
-            continue
-        if not isinstance(parsed, list):
-            metadata_error = True
-            continue
-        for file_item in parsed:
-            if not isinstance(file_item, dict):
-                metadata_error = True
-                continue
-            file_names.append(_text(file_item.get("fileName")) or "未命名附件")
-    return AttachmentEvidence(tuple(file_names), metadata_error)
+    metadata = extract_attachment_metadata(report)
+    return AttachmentEvidence(
+        tuple(item.file_name for item in metadata.files),
+        metadata.metadata_error,
+    )
 
 
 def _body_evidence(body: str, terms: tuple[str, ...]) -> bool:
@@ -95,9 +81,16 @@ def _leadership_body(report: dict[str, Any]) -> str:
     return report_text({**report, "contents": without_attachments})
 
 
-def _evidence_status(body: str, terms: tuple[str, ...], attachments: AttachmentEvidence) -> str:
+def _evidence_status(
+    body: str,
+    terms: tuple[str, ...],
+    attachments: AttachmentEvidence,
+    downloads: tuple[DownloadedAttachment, ...],
+) -> str:
     if _body_evidence(body, terms):
         return "正文有相关证据"
+    if any(item.local_path for item in downloads):
+        return "待 Codex 解析"
     if attachments.file_names:
         return ATTACHMENT_PENDING
     if attachments.metadata_error:
@@ -117,10 +110,18 @@ def _team_summary_status(body: str, attachments: AttachmentEvidence) -> str:
     return NO_EVIDENCE
 
 
-def _attachment_status(attachments: AttachmentEvidence) -> str:
+def _attachment_status(
+    attachments: AttachmentEvidence,
+    downloads: tuple[DownloadedAttachment, ...],
+) -> str:
+    local_paths = [item.local_path for item in downloads if item.local_path]
+    if local_paths:
+        return "已下载待 Codex 解析：" + "、".join(local_paths)
     if attachments.file_names:
         names = "、".join(attachments.file_names)
-        return f"{len(attachments.file_names)} 个附件，正文未解析：{names}"
+        failures = "、".join(item.status for item in downloads if item.status and not item.local_path)
+        suffix = f"；{failures}" if failures else ""
+        return f"{len(attachments.file_names)} 个附件，正文未解析：{names}{suffix}"
     if attachments.metadata_error:
         return "附件元数据异常"
     return "无附件"
@@ -130,6 +131,7 @@ def build_team_lead_evidence(
     users: list[dict[str, Any]],
     reports: list[dict[str, Any]],
     dept_by_id: dict[Any, str],
+    attachment_downloads: dict[str, tuple[DownloadedAttachment, ...]] | None = None,
 ) -> list[TeamLeadEvidence]:
     reports_by_user = {
         _text(report.get("creator_id")): report
@@ -137,6 +139,7 @@ def build_team_lead_evidence(
         if _text(report.get("creator_id"))
     }
     evidence: list[TeamLeadEvidence] = []
+    attachment_downloads = attachment_downloads or {}
     leaders = [user for user in users if user.get("leader") is True]
     for user in sorted(leaders, key=lambda item: (_dept_names(item, dept_by_id), _text(item.get("name")))):
         report = reports_by_user.get(_text(user.get("userid")))
@@ -161,6 +164,7 @@ def build_team_lead_evidence(
 
         body = _leadership_body(report)
         attachments = extract_attachment_evidence(report)
+        downloads = attachment_downloads.get(_text(user.get("userid")), ())
         evidence.append(
             TeamLeadEvidence(
                 name=_text(user.get("name")),
@@ -169,12 +173,12 @@ def build_team_lead_evidence(
                 title=_text(user.get("title")),
                 personal_report="已提交",
                 team_summary=_team_summary_status(body, attachments),
-                attachment=_attachment_status(attachments),
-                overall_progress=_evidence_status(body, EVIDENCE_TERMS["overall_progress"], attachments),
-                member_evaluation=_evidence_status(body, EVIDENCE_TERMS["member_evaluation"], attachments),
-                risk=_evidence_status(body, EVIDENCE_TERMS["risk"], attachments),
-                resource_need=_evidence_status(body, EVIDENCE_TERMS["resource_need"], attachments),
-                reminder=_evidence_status(body, EVIDENCE_TERMS["reminder"], attachments),
+                attachment=_attachment_status(attachments, downloads),
+                overall_progress=_evidence_status(body, EVIDENCE_TERMS["overall_progress"], attachments, downloads),
+                member_evaluation=_evidence_status(body, EVIDENCE_TERMS["member_evaluation"], attachments, downloads),
+                risk=_evidence_status(body, EVIDENCE_TERMS["risk"], attachments, downloads),
+                resource_need=_evidence_status(body, EVIDENCE_TERMS["resource_need"], attachments, downloads),
+                reminder=_evidence_status(body, EVIDENCE_TERMS["reminder"], attachments, downloads),
             )
         )
     return evidence

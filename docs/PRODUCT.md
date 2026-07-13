@@ -17,7 +17,7 @@
 2. 应交人员来自授权通讯录或明确名单，不能从实交周报反推；明确配置的免交人员在比较前从应交与实交统计中同时排除。
 3. 人员匹配优先使用稳定 ID，重名和无法匹配进入待确认。
 4. 模板合规性只依据真实钉钉模板；管理评价使用独立筛选标准。
-5. 负责人个人周报和团队额外职责分别评价；附件存在但正文尚未解析时必须标记“附件待解析”，不能误判为未提交或留空。
+5. 负责人个人周报和团队额外职责分别评价；负责人附件下载到目标周私有目录后由 Codex 解析，下载或解析失败必须给出明确状态，不能误判为未提交或留空。
 6. 需要协调或拍板的事项在管理报告中置顶，但没有风险字段时不判模板不合格。
 7. 原始数据默认只保存在运行目录，不进入 Git 或普通日志。
 8. 后端权限决定可见数据，前端只负责呈现。
@@ -28,6 +28,7 @@
 ```text
 output/contacts/                         # 授权通讯录缓存
 output/<YYYY-Www>/raw/reports.json       # 原始周报，敏感
+output/<YYYY-Www>/attachments/team_leads/ # 负责人附件，敏感，仅本地
 output/<YYYY-Www>/exports/submission_status.csv
 output/<YYYY-Www>/analysis/analysis_input.md
 output/<YYYY-Www>/summary/submission_check.md

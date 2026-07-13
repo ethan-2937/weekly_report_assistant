@@ -4,6 +4,7 @@ import csv
 from pathlib import Path
 from typing import Any
 
+from attachment_download import DownloadedAttachment
 from leader_compliance import build_team_lead_evidence, render_team_lead_input
 from report_content import format_dt_ms, report_text
 
@@ -38,6 +39,7 @@ def write_submission_outputs(
     template_name: str,
     period_text: str,
     submission_window_text: str,
+    attachment_downloads: dict[str, tuple[DownloadedAttachment, ...]] | None = None,
 ) -> None:
     dept_by_id = {dept.get("dept_id"): dept.get("name") for dept in departments}
     reports_by_user = {report.get("creator_id"): report for report in reports if report.get("creator_id")}
@@ -76,7 +78,12 @@ def write_submission_outputs(
     submitted = [row for row in rows if row["提交状态"] == "已提交"]
     missing = [row for row in rows if row["提交状态"] == "未提交"]
     leaders = [row for row in rows if row["是否负责人候选"] == "是"]
-    leader_evidence = build_team_lead_evidence(users, reports, dept_by_id)
+    leader_evidence = build_team_lead_evidence(
+        users,
+        reports,
+        dept_by_id,
+        attachment_downloads,
+    )
 
     summary_lines = [
         "# 周报提交验证结果",

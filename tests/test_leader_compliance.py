@@ -16,6 +16,7 @@ from leader_compliance import (  # noqa: E402
     extract_attachment_evidence,
     render_team_lead_input,
 )
+from attachment_download import DownloadedAttachment  # noqa: E402
 
 
 class TeamLeadComplianceTests(unittest.TestCase):
@@ -116,6 +117,38 @@ class TeamLeadComplianceTests(unittest.TestCase):
         self.assertEqual(NO_EVIDENCE, evidence.team_summary)
         self.assertEqual("无附件", evidence.attachment)
         self.assertEqual(NO_EVIDENCE, evidence.overall_progress)
+
+    def test_downloaded_local_attachment_is_exposed_for_codex_without_remote_identifiers(self) -> None:
+        users = [self._user("test-user-001", "示例负责人甲", leader=True)]
+        reports = [
+            self._report(
+                contents=[
+                    {
+                        "key": "附件",
+                        "value": json.dumps(
+                            [{"fileName": "测试团队汇总.pdf", "fileId": "fictional-file-id"}],
+                            ensure_ascii=False,
+                        ),
+                    }
+                ]
+            )
+        ]
+        downloads = {
+            "test-user-001": (
+                DownloadedAttachment(
+                    "测试团队汇总.pdf",
+                    "attachments/team_leads/fictional-hash/01_测试团队汇总.pdf",
+                    "已下载",
+                ),
+            )
+        }
+
+        evidence = build_team_lead_evidence(users, reports, {101: "测试研发部"}, downloads)[0]
+        rendered = "\n".join(render_team_lead_input([evidence]))
+
+        self.assertEqual("待 Codex 解析", evidence.overall_progress)
+        self.assertIn("attachments/team_leads/fictional-hash/01_测试团队汇总.pdf", rendered)
+        self.assertNotIn("fictional-file-id", rendered)
 
     def _user(self, userid: str, name: str, leader: bool) -> dict:
         return {

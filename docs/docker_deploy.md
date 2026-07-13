@@ -35,13 +35,15 @@ output/<周次>/summary/manager_report.md
 
 前端会自动展示这个文件。
 
-周报采集免交名单也配置在服务器 `config/.env`：
+Docker 部署的免交名单优先配置在根目录 `.env`，Compose 会显式传入容器：
 
 ```text
 WEEKLY_REPORT_EXEMPT_SUBMITTERS=USERID:test-user-001;NAME:示例员工甲
 ```
 
-优先使用稳定 userid；姓名仅作精确兼容匹配。免交人员及其提交会在 CSV、Markdown 和分析输入统计前统一排除，真实名单不得写入仓库。
+优先使用稳定 userid；姓名仅作精确兼容匹配。直接在宿主机运行脚本时也可写入 `config/.env`；进程环境优先于文件配置。免交人员及其提交会在 CSV、Markdown 和分析输入统计前统一排除，真实名单不得写入仓库。
+
+负责人附件通过钉钉 Drive 下载信息接口写入 `output/<周次>/attachments/team_leads/`。该目录已随 `output/` 忽略并挂载持久化；下载失败不会中断整周采集，分析输入会记录安全失败状态。
 
 ## MySQL 与登录
 

@@ -60,14 +60,27 @@ class DingTalkCommonTests(unittest.TestCase):
 
         self.assertEqual(first_submit_end + timedelta(milliseconds=1), second_submit_start)
 
-    def test_env_file_overrides_process_environment_without_exposing_values(self) -> None:
+    def test_process_environment_overrides_env_file_without_exposing_values(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / ".env"
             env_path.write_text("DINGTALK_APP_KEY=file-value\n", encoding="utf-8")
             with patch.dict(os.environ, {"DINGTALK_APP_KEY": "process-value"}, clear=False):
                 loaded = load_env(env_path)
 
-        self.assertEqual(loaded["DINGTALK_APP_KEY"], "file-value")
+        self.assertEqual(loaded["DINGTALK_APP_KEY"], "process-value")
+
+    def test_empty_env_file_value_does_not_clear_process_exemptions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / ".env"
+            env_path.write_text("WEEKLY_REPORT_EXEMPT_SUBMITTERS=\n", encoding="utf-8")
+            with patch.dict(
+                os.environ,
+                {"WEEKLY_REPORT_EXEMPT_SUBMITTERS": "USERID:test-user-001"},
+                clear=False,
+            ):
+                loaded = load_env(env_path)
+
+        self.assertEqual(loaded["WEEKLY_REPORT_EXEMPT_SUBMITTERS"], "USERID:test-user-001")
 
     def test_required_config_rejects_empty_values(self) -> None:
         with self.assertRaisesRegex(Exception, "DINGTALK_APP_SECRET"):

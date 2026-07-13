@@ -30,7 +30,9 @@ $required = @(
     "docs/tasks/TEMPLATE.md",
     "harness/quality-baseline.json",
     ".env.example",
+    "tests/test_attachment_download.py",
     "tests/test_dingtalk_common.py",
+    "tests/test_leader_compliance.py",
     "tests/test_report_collection_window.py",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/util/WeekLabelUtilsTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/config/ProductionCredentialValidatorTest.java",
@@ -150,6 +152,14 @@ if ($composeConfig -notmatch 'WEEKLY_JWT_SECRET:\?') {
 }
 if ($composeConfig -notmatch 'WEEKLY_BOOTSTRAP_ADMIN_PASSWORD:\?') {
     Add-Failure "docker-compose.yml must require WEEKLY_BOOTSTRAP_ADMIN_PASSWORD instead of using a development fallback."
+}
+if ($composeConfig -notmatch 'WEEKLY_REPORT_EXEMPT_SUBMITTERS:') {
+    Add-Failure "docker-compose.yml must pass WEEKLY_REPORT_EXEMPT_SUBMITTERS into the collection container."
+}
+
+$composeEnvExample = Get-Content -Raw -LiteralPath (Join-Path $root ".env.example") -Encoding UTF8
+if ($composeEnvExample -notmatch 'WEEKLY_REPORT_EXEMPT_SUBMITTERS=') {
+    Add-Failure ".env.example must document WEEKLY_REPORT_EXEMPT_SUBMITTERS for Docker deployments."
 }
 
 if ($failures.Count -gt 0) {

@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import download_reports as download_reports_module  # noqa: E402
 import run_weekly  # noqa: E402
+from attachment_download import DownloadedAttachment  # noqa: E402
 from dingtalk_common import parse_date  # noqa: E402
 
 
@@ -138,7 +139,7 @@ class ReportCollectionWindowTests(unittest.TestCase):
                     "contents": [
                         {
                             "key": "附件",
-                            "value": '[{"fileName":"虚构团队汇总.docx"}]',
+                            "value": '[{"fileName":"虚构团队汇总.docx","fileId":"fictional-file-id","spaceId":"fictional-space-id"}]',
                         }
                     ],
                 }
@@ -149,6 +150,19 @@ class ReportCollectionWindowTests(unittest.TestCase):
                 patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
                 patch.object(run_weekly, "download_contacts", return_value=(users, departments)),
                 patch.object(run_weekly, "download_reports", return_value=reports),
+                patch.object(
+                    run_weekly,
+                    "download_team_lead_attachments",
+                    return_value={
+                        "test-user-001": (
+                            DownloadedAttachment(
+                                "虚构团队汇总.docx",
+                                "attachments/team_leads/fictional-hash/01_虚构团队汇总.docx",
+                                "已下载",
+                            ),
+                        )
+                    },
+                ),
                 redirect_stdout(io.StringIO()),
             ):
                 exit_code = run_weekly.main()
@@ -164,6 +178,9 @@ class ReportCollectionWindowTests(unittest.TestCase):
             self.assertIn("不适用（个人周报未提交）", analysis)
             self.assertIn("- title: 测试团队负责人", analysis)
             self.assertIn("- leader_candidate: 是", analysis)
+            self.assertIn("attachments/team_leads/fictional-hash/01_虚构团队汇总.docx", analysis)
+            self.assertNotIn("fictional-file-id", analysis)
+            self.assertNotIn("fictional-space-id", analysis)
 
     def _env(self, output_root: str) -> dict[str, str]:
         return {

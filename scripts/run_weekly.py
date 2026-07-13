@@ -5,6 +5,7 @@ import json
 from collections import deque
 from typing import Any
 
+from attachment_download import download_team_lead_attachments
 from dingtalk_common import (
     DingTalkError,
     add_week_args,
@@ -103,6 +104,7 @@ def main() -> int:
         statistical_reports = filter_exempt_reports(reports, exemption_rules, exempt_userids)
         week_out = out_root / week_label
         write_json(week_out / "raw" / "reports.json", reports)
+        attachment_downloads = download_team_lead_attachments(access_token, expected_users, statistical_reports, week_out)
         period_text = f"{period_start.strftime('%Y-%m-%d')} 至 {period_end.strftime('%Y-%m-%d')}"
         submission_window_text = f"{submit_start.strftime('%Y-%m-%d')} 至 {submit_end.strftime('%Y-%m-%d')}"
         write_submission_outputs(
@@ -114,6 +116,7 @@ def main() -> int:
             template_name,
             period_text,
             submission_window_text,
+            attachment_downloads,
         )
     except (DingTalkError, OSError, json.JSONDecodeError, ValueError) as exc:
         print(f"FAILED: {exc}")
@@ -122,10 +125,7 @@ def main() -> int:
     print(f"OK: weekly data prepared for {week_label}.")
     print(f"Report period: {period_start.isoformat()} -> {period_end.isoformat()}")
     print(f"Submission window: {submit_start.isoformat()} -> {submit_end.isoformat()}")
-    print(
-        f"Expected users: {len(expected_users)}; exempt users: {len(users) - len(expected_users)}; "
-        f"departments: {len(departments)}; statistical reports: {len(statistical_reports)}"
-    )
+    print(f"Expected users: {len(expected_users)}; exempt users: {len(users) - len(expected_users)}; departments: {len(departments)}; statistical reports: {len(statistical_reports)}")
     print(f"Output: {week_out}")
     return 0
 

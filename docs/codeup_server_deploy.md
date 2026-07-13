@@ -46,11 +46,10 @@ DINGTALK_APP_SECRET=钉钉应用的 Client Secret
 DINGTALK_AGENT_ID=钉钉应用的 AgentId
 DINGTALK_ROOT_DEPT_ID=1
 DINGTALK_REPORT_TEMPLATE=钉钉周报模板名称
-WEEKLY_REPORT_EXEMPT_SUBMITTERS=USERID:test-user-001;NAME:示例员工甲
 OUTPUT_ROOT=output
 ```
 
-`WEEKLY_REPORT_EXEMPT_SUBMITTERS` 使用英文或中文分号/逗号分隔，优先配置稳定 `USERID:`，无法取得 userid 时才使用完整 `NAME:`。真实免交名单只写入服务器 `config/.env`，不得提交到仓库；匹配为规范化后的完整值，不支持手机号或姓名的模糊匹配。
+Docker 部署将 `WEEKLY_REPORT_EXEMPT_SUBMITTERS` 写入根目录 `.env`；直接运行 Python 时也可写入 `config/.env`。该项使用英文或中文分号/逗号分隔，优先配置稳定 `USERID:`，无法取得 userid 时才使用完整 `NAME:`。进程环境优先于文件配置，真实名单不得提交到仓库；匹配为规范化后的完整值，不支持手机号或姓名的模糊匹配。
 
 ## 4. 配置服务端口
 
@@ -63,7 +62,7 @@ nano .env
 chmod 600 .env
 ```
 
-至少填写 `WEEKLY_HOST_PORT`、`MYSQL_ROOT_PASSWORD`、`WEEKLY_JWT_SECRET` 和 `WEEKLY_BOOTSTRAP_ADMIN_PASSWORD`，并保持 `WEEKLY_AUTH_DEVELOPMENT_MODE=false`。不得把真实值写回 `.env.example`。
+至少填写 `WEEKLY_HOST_PORT`、`MYSQL_ROOT_PASSWORD`、`WEEKLY_JWT_SECRET`、`WEEKLY_BOOTSTRAP_ADMIN_PASSWORD` 和实际免交规则 `WEEKLY_REPORT_EXEMPT_SUBMITTERS`，并保持 `WEEKLY_AUTH_DEVELOPMENT_MODE=false`。不得把真实值写回 `.env.example`。
 
 ## 5. 安装 Codex skill
 
@@ -150,7 +149,7 @@ docker compose up -d --build
 ```text
 Use $weekly-report-assistant.
 项目路径：/data2/person_path/yzzhang/weekly-report。
-请自动拉取上一业务周钉钉周报；业务周按周一至周日命名，提交按周四至下一周周三归属。生成提交状态和分析输入包后，基于 output/<周次>/analysis/analysis_input.md 生成正式管理评价。先读取“团队负责人履职输入（确定性证据）”建立完整负责人清单；附件待解析/有附件待确认不得判为未提交或不合格，内容维度写“无法判断（附件正文未解析）”。
+请自动拉取上一业务周钉钉周报；业务周按周一至周日命名，提交按周四至下一周周三归属。生成提交状态和分析输入包后，基于 output/<周次>/analysis/analysis_input.md 生成正式管理评价。先读取“团队负责人履职输入（确定性证据）”建立完整负责人清单；附件状态包含 attachments/team_leads/ 本地路径时，在当前周目录内读取并解析附件。下载或解析失败不得判为未提交或不合格，内容维度写“无法判断”并说明安全原因。
 每个人评价直接使用最新维度替换旧字段：虚实盘（本周成果）、时间分配健康度、AI使用红黑榜、下周计划合格性、综合结论/需跟进。不要单独新增“筛选标准结论”板块。
 请把风险/阻塞/求助信息中需要老板拍板/协调的事项单独置顶展示。注意：如果钉钉模板没有“风险与求助”字段，不要因为缺失该字段判定模板不合格。请把正式评价保存到 output/<周次>/summary/manager_report.md，供 Web 前端展示。不要输出 config/.env 或任何密钥。
 ```
