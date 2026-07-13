@@ -25,6 +25,11 @@ public class SubmissionStatusMapper {
     private static final String HEADER_REPORT_DEPT = "\u5468\u62a5\u90e8\u95e8";
     private static final String HEADER_SUBMIT_TIME = "\u63d0\u4ea4\u65f6\u95f4";
     private static final String HEADER_TEMPLATE = "\u6a21\u677f";
+    private static final String HEADER_TEMPLATE_RATE = "\u6a21\u677f\u586b\u5199\u6b63\u786e\u7387";
+    private static final String HEADER_TEMPLATE_STATUS = "\u6a21\u677f\u5408\u89c4\u72b6\u6001";
+    private static final String HEADER_TEMPLATE_MISSING = "\u6a21\u677f\u7f3a\u5931\u9879";
+    private static final String HEADER_TEMPLATE_PRESENT = "\u6a21\u677f\u547d\u4e2d\u9879";
+    private static final String HEADER_TEMPLATE_DETAIL = "\u6a21\u677f\u68c0\u67e5\u8bf4\u660e";
 
     private final ProjectPathConfig pathConfig;
 
@@ -77,6 +82,32 @@ public class SubmissionStatusMapper {
         po.setSubmitTime(row.getOrDefault(HEADER_SUBMIT_TIME, ""));
         po.setReportId(row.getOrDefault("report_id", ""));
         po.setTemplateName(row.getOrDefault(HEADER_TEMPLATE, ""));
+        po.setTemplateComplianceRate(parsePercent(row.getOrDefault(HEADER_TEMPLATE_RATE, "")));
+        po.setTemplateComplianceStatus(row.getOrDefault(HEADER_TEMPLATE_STATUS, ""));
+        po.setTemplateComplianceMissingFields(splitList(row.getOrDefault(HEADER_TEMPLATE_MISSING, "")));
+        po.setTemplateCompliancePresentFields(splitList(row.getOrDefault(HEADER_TEMPLATE_PRESENT, "")));
+        po.setTemplateComplianceDetail(row.getOrDefault(HEADER_TEMPLATE_DETAIL, ""));
         return po;
+    }
+
+    private Integer parsePercent(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.replace("%", "").trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private List<String> splitList(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return List.of(value.split("[、;；]")).stream()
+            .map(String::trim)
+            .filter(item -> !item.isBlank())
+            .toList();
     }
 }

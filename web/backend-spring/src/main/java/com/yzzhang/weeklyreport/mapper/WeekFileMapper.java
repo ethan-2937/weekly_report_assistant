@@ -54,6 +54,10 @@ public class WeekFileMapper {
         return weekDir(week).resolve("analysis").resolve("analysis_input.md").normalize();
     }
 
+    public Path rawReportsPath(String week) {
+        return weekDir(week).resolve("raw").resolve("reports.json").normalize();
+    }
+
     public String readIfExists(Path path) {
         try {
             return Files.exists(path) ? Files.readString(path, StandardCharsets.UTF_8) : "";

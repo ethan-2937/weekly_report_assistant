@@ -209,6 +209,58 @@
         </div>
 
         <div class="dashboard-layout">
+          <div class="soft-panel compliance-panel">
+            <div class="side-title compliance-title">
+              <div>
+                <h2>已提交名单 · 模板填写正确率</h2>
+                <p>按当前钉钉四项模板核对：本周完成成果、工时投入分析、AI应用及效果、下周计划。</p>
+              </div>
+              <el-tag effect="light" round :type="averageTemplateComplianceTagType">
+                平均 {{ averageTemplateComplianceRate }}
+              </el-tag>
+            </div>
+
+            <el-table
+              v-if="submittedComplianceRows.length"
+              :data="submittedComplianceRows"
+              class="soft-table compliance-table"
+              height="430"
+              row-key="report_id"
+            >
+              <el-table-column prop="姓名" label="姓名" width="128" fixed />
+              <el-table-column prop="部门" label="部门" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="提交时间" label="提交时间" min-width="168" />
+              <el-table-column label="模板填写正确率" min-width="220">
+                <template #default="{ row }">
+                  <div class="compliance-rate-cell">
+                    <strong>{{ formatTemplateRate(row) }}</strong>
+                    <el-progress
+                      :percentage="templateComplianceRate(row) ?? 0"
+                      :show-text="false"
+                      :stroke-width="10"
+                      :color="templateProgressColor(row)"
+                    />
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="合规状态" width="118">
+                <template #default="{ row }">
+                  <el-tag :type="templateComplianceTagType(row)" effect="light">
+                    {{ row['模板合规状态'] || '无法判断' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="缺失项 / 说明" min-width="300" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span :class="['missing-fields-text', { clear: missingFields(row).length === 0 }]">
+                    {{ templateComplianceHint(row) }}
+                  </span>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-empty v-else description="暂无已提交人员，生成周报数据后会显示模板填写正确率。" />
+          </div>
+
           <div class="soft-panel">
             <div class="side-title">
               <div>
@@ -734,6 +786,35 @@ const submissionRate = computed(() => {
   const submitted = Number(overview.value.submittedCount || 0)
   if (!expected) return '-'
   return `${Math.round((submitted / expected) * 100)}%`
+})
+const submittedComplianceRows = computed(() => rows.value
+  .map((row, index) => ({ row, index }))
+  .filter(item => item.row['提交状态'] === '已提交')
+  .sort((left, right) => {
+    const leftRate = templateComplianceRate(left.row)
+    const rightRate = templateComplianceRate(right.row)
+    const normalizedLeft = leftRate === null ? 101 : leftRate
+    const normalizedRight = rightRate === null ? 101 : rightRate
+    if (normalizedLeft !== normalizedRight) return normalizedLeft - normalizedRight
+    return left.index - right.index
+  })
+  .map(item => item.row))
+const averageTemplateComplianceValue = computed(() => {
+  const rates = submittedComplianceRows.value
+    .map(templateComplianceRate)
+    .filter(rate => rate !== null)
+  if (!rates.length) return null
+  return Math.round(rates.reduce((sum, rate) => sum + rate, 0) / rates.length)
+})
+const averageTemplateComplianceRate = computed(() =>
+  averageTemplateComplianceValue.value === null ? '-' : `${averageTemplateComplianceValue.value}%`
+)
+const averageTemplateComplianceTagType = computed(() => {
+  const rate = averageTemplateComplianceValue.value
+  if (rate === null) return 'info'
+  if (rate >= 100) return 'success'
+  if (rate >= 75) return 'warning'
+  return 'danger'
 })
 const filteredRows = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
@@ -1351,6 +1432,52 @@ function formatDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString('zh-CN', { hour12: false })
+}
+
+function templateComplianceRate(row) {
+  const value = row?.['模板填写正确率']
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value.replace('%', '').trim())
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
+function formatTemplateRate(row) {
+  const rate = templateComplianceRate(row)
+  return rate === null ? '-' : `${rate}%`
+}
+
+function missingFields(row) {
+  const value = row?.['模板缺失项']
+  if (Array.isArray(value)) return value.filter(Boolean)
+  if (typeof value === 'string' && value.trim()) {
+    return value.split(/[、;；]/).map(item => item.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function templateComplianceHint(row) {
+  const missing = missingFields(row)
+  if (missing.length) return `缺失或未填写：${missing.join('、')}`
+  return row?.['模板检查说明'] || '四项必填模板字段均已填写'
+}
+
+function templateComplianceTagType(row) {
+  const status = row?.['模板合规状态']
+  if (status === '符合模板') return 'success'
+  if (status === '需补充' || status === '不完整') return 'warning'
+  if (status === '疑似旧模板' || status === '不合规') return 'danger'
+  return 'info'
+}
+
+function templateProgressColor(row) {
+  const rate = templateComplianceRate(row)
+  if (rate === null) return '#9ca3af'
+  if (rate >= 100) return '#34a853'
+  if (rate >= 75) return '#fbbc04'
+  return '#ea4335'
 }
 
 function jobStatusType(status) {

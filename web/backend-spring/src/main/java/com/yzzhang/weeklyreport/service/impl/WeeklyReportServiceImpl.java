@@ -5,6 +5,7 @@ import com.yzzhang.weeklyreport.mapper.SubmissionStatusMapper;
 import com.yzzhang.weeklyreport.mapper.WeekFileMapper;
 import com.yzzhang.weeklyreport.po.SubmissionStatusPO;
 import com.yzzhang.weeklyreport.service.ReportPermissionService;
+import com.yzzhang.weeklyreport.service.TemplateComplianceService;
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
 import com.yzzhang.weeklyreport.util.WeekLabelUtils;
 import com.yzzhang.weeklyreport.vo.AnalysisVO;
@@ -28,16 +29,19 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
     private final SubmissionStatusMapper submissionStatusMapper;
     private final WeekFileMapper weekFileMapper;
     private final ReportPermissionService reportPermissionService;
+    private final TemplateComplianceService templateComplianceService;
     private final ReportContentFilter reportContentFilter = new ReportContentFilter();
 
     public WeeklyReportServiceImpl(
         SubmissionStatusMapper submissionStatusMapper,
         WeekFileMapper weekFileMapper,
-        ReportPermissionService reportPermissionService
+        ReportPermissionService reportPermissionService,
+        TemplateComplianceService templateComplianceService
     ) {
         this.submissionStatusMapper = submissionStatusMapper;
         this.weekFileMapper = weekFileMapper;
         this.reportPermissionService = reportPermissionService;
+        this.templateComplianceService = templateComplianceService;
     }
 
     @Override
@@ -55,14 +59,17 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
     public List<SubmissionStatusVO> listSubmissionStatus(String week) {
         assertWeek(week);
         ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
-        return visibleRows(week, permission).stream().map(this::toVO).toList();
+        return templateComplianceService.enrich(week, visibleRows(week, permission))
+            .stream()
+            .map(this::toVO)
+            .toList();
     }
 
     @Override
     public SummaryVO getSummary(String week) {
         assertWeek(week);
         ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
-        List<SubmissionStatusPO> allRows = selectRows(week);
+        List<SubmissionStatusPO> allRows = templateComplianceService.enrich(week, selectRows(week));
         List<SubmissionStatusPO> visibleRows = reportPermissionService.filterRows(allRows, permission);
         WeekOverviewVO base = overview(week, visibleRows);
         SummaryVO vo = new SummaryVO();
@@ -88,7 +95,7 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
         Path source = Files.exists(manager) ? manager : analysis;
         String content = weekFileMapper.readIfExists(source);
         if (!permission.fullAccess()) {
-            List<SubmissionStatusPO> allRows = selectRows(week);
+            List<SubmissionStatusPO> allRows = templateComplianceService.enrich(week, selectRows(week));
             List<SubmissionStatusPO> visibleRows = reportPermissionService.filterRows(allRows, permission);
             content = Files.exists(manager)
                 ? reportContentFilter.filterManagerReport(content, week, allRows, visibleRows)
@@ -106,22 +113,15 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
     public Path getSubmissionStatusCsv(String week) {
         assertWeek(week);
         ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
-        Path csv = submissionStatusMapper.csvPath(week);
-        if (!Files.exists(csv)) {
-            throw new ResourceNotFoundException("submission_status.csv not found for " + week);
+        List<SubmissionStatusPO> rows = templateComplianceService.enrich(week, visibleRows(week, permission));
+        try {
+            Path exported = Files.createTempFile("submission_status_" + week + "_", ".csv");
+            Files.writeString(exported, reportContentFilter.toCsv(rows), StandardCharsets.UTF_8);
+            exported.toFile().deleteOnExit();
+            return exported;
+        } catch (IOException e) {
+            throw new ResourceNotFoundException("failed to create submission_status.csv: " + e.getMessage());
         }
-        if (!permission.fullAccess()) {
-            List<SubmissionStatusPO> visibleRows = visibleRows(week, permission);
-            try {
-                Path filtered = Files.createTempFile("submission_status_" + week + "_", ".csv");
-                Files.writeString(filtered, reportContentFilter.toCsv(visibleRows), StandardCharsets.UTF_8);
-                filtered.toFile().deleteOnExit();
-                return filtered;
-            } catch (IOException e) {
-                throw new ResourceNotFoundException("failed to create filtered submission_status.csv: " + e.getMessage());
-            }
-        }
-        return csv;
     }
 
     private WeekOverviewVO overview(String week, ReportPermissionService.ReportPermission permission) {
@@ -171,6 +171,11 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
         vo.setSubmitTime(po.getSubmitTime());
         vo.setReportId(po.getReportId());
         vo.setTemplateName(po.getTemplateName());
+        vo.setTemplateComplianceRate(po.getTemplateComplianceRate());
+        vo.setTemplateComplianceStatus(po.getTemplateComplianceStatus());
+        vo.setTemplateComplianceMissingFields(po.getTemplateComplianceMissingFields());
+        vo.setTemplateCompliancePresentFields(po.getTemplateCompliancePresentFields());
+        vo.setTemplateComplianceDetail(po.getTemplateComplianceDetail());
         return vo;
     }
 

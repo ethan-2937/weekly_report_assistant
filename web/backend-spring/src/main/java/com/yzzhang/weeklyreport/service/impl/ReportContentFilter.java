@@ -98,7 +98,7 @@ class ReportContentFilter {
     }
 
     String toCsv(List<SubmissionStatusPO> rows) {
-        StringBuilder builder = new StringBuilder("\ufeff提交状态,姓名,userid,部门,是否负责人候选,职务,周报部门,提交时间,report_id,模板\n");
+        StringBuilder builder = new StringBuilder("\ufeff提交状态,姓名,userid,部门,是否负责人候选,职务,周报部门,提交时间,report_id,模板,模板填写正确率,模板合规状态,模板缺失项,模板命中项,模板检查说明\n");
         for (SubmissionStatusPO row : rows) {
             builder.append(csv(row.getStatus())).append(',')
                 .append(csv(row.getName())).append(',')
@@ -109,7 +109,12 @@ class ReportContentFilter {
                 .append(csv(row.getReportDept())).append(',')
                 .append(csv(row.getSubmitTime())).append(',')
                 .append(csv(row.getReportId())).append(',')
-                .append(csv(row.getTemplateName())).append('\n');
+                .append(csv(row.getTemplateName())).append(',')
+                .append(csv(formatRate(row))).append(',')
+                .append(csv(row.getTemplateComplianceStatus())).append(',')
+                .append(csv(String.join("、", safeList(row.getTemplateComplianceMissingFields())))).append(',')
+                .append(csv(String.join("、", safeList(row.getTemplateCompliancePresentFields())))).append(',')
+                .append(csv(row.getTemplateComplianceDetail())).append('\n');
         }
         return builder.toString();
     }
@@ -121,11 +126,13 @@ class ReportContentFilter {
             return;
         }
         if (includeSubmitTime) {
-            builder.append("\n| 姓名 | 部门 | 提交时间 |\n|---|---|---|\n");
+            builder.append("\n| 姓名 | 部门 | 提交时间 | 模板填写正确率 | 缺失项 |\n|---|---|---|---|---|\n");
             for (SubmissionStatusPO row : rows) {
                 builder.append("| ").append(cell(row.getName())).append(" | ")
                     .append(cell(row.getDept())).append(" | ")
-                    .append(cell(row.getSubmitTime())).append(" |\n");
+                    .append(cell(row.getSubmitTime())).append(" | ")
+                    .append(cell(formatRate(row))).append(" | ")
+                    .append(cell(formatMissingFields(row))).append(" |\n");
             }
         } else {
             builder.append("\n| 姓名 | 部门 | 职务 |\n|---|---|---|\n");
@@ -329,6 +336,23 @@ class ReportContentFilter {
 
     private String cell(String value) {
         return value == null ? "" : value.replace("|", "\\|");
+    }
+
+    private List<String> safeList(List<String> values) {
+        return values == null ? List.of() : values;
+    }
+
+    private String formatRate(SubmissionStatusPO row) {
+        Integer rate = row.getTemplateComplianceRate();
+        return rate == null ? "-" : rate + "%";
+    }
+
+    private String formatMissingFields(SubmissionStatusPO row) {
+        List<String> missing = safeList(row.getTemplateComplianceMissingFields());
+        if (missing.isEmpty()) {
+            return "无";
+        }
+        return String.join("、", missing);
     }
 
     private boolean hasText(String value) {

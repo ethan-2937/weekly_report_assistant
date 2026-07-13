@@ -2,6 +2,8 @@ package com.yzzhang.weeklyreport.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 public class SubmissionStatusVO {
     @JsonProperty("\u63d0\u4ea4\u72b6\u6001")
     private String status;
@@ -22,6 +24,16 @@ public class SubmissionStatusVO {
     private String reportId;
     @JsonProperty("\u6a21\u677f")
     private String templateName;
+    @JsonProperty("\u6a21\u677f\u586b\u5199\u6b63\u786e\u7387")
+    private Integer templateComplianceRate;
+    @JsonProperty("\u6a21\u677f\u5408\u89c4\u72b6\u6001")
+    private String templateComplianceStatus;
+    @JsonProperty("\u6a21\u677f\u7f3a\u5931\u9879")
+    private List<String> templateComplianceMissingFields = List.of();
+    @JsonProperty("\u6a21\u677f\u547d\u4e2d\u9879")
+    private List<String> templateCompliancePresentFields = List.of();
+    @JsonProperty("\u6a21\u677f\u68c0\u67e5\u8bf4\u660e")
+    private String templateComplianceDetail;
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -43,4 +55,14 @@ public class SubmissionStatusVO {
     public void setReportId(String reportId) { this.reportId = reportId; }
     public String getTemplateName() { return templateName; }
     public void setTemplateName(String templateName) { this.templateName = templateName; }
+    public Integer getTemplateComplianceRate() { return templateComplianceRate; }
+    public void setTemplateComplianceRate(Integer templateComplianceRate) { this.templateComplianceRate = templateComplianceRate; }
+    public String getTemplateComplianceStatus() { return templateComplianceStatus; }
+    public void setTemplateComplianceStatus(String templateComplianceStatus) { this.templateComplianceStatus = templateComplianceStatus; }
+    public List<String> getTemplateComplianceMissingFields() { return templateComplianceMissingFields; }
+    public void setTemplateComplianceMissingFields(List<String> templateComplianceMissingFields) { this.templateComplianceMissingFields = templateComplianceMissingFields == null ? List.of() : templateComplianceMissingFields; }
+    public List<String> getTemplateCompliancePresentFields() { return templateCompliancePresentFields; }
+    public void setTemplateCompliancePresentFields(List<String> templateCompliancePresentFields) { this.templateCompliancePresentFields = templateCompliancePresentFields == null ? List.of() : templateCompliancePresentFields; }
+    public String getTemplateComplianceDetail() { return templateComplianceDetail; }
+    public void setTemplateComplianceDetail(String templateComplianceDetail) { this.templateComplianceDetail = templateComplianceDetail; }
 }

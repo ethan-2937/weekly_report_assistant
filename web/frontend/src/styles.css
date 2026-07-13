@@ -1468,6 +1468,65 @@ textarea {
   font-size: 20px;
 }
 
+.compliance-panel {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(52, 168, 83, 0.12), transparent 24%),
+    radial-gradient(circle at 0% 100%, rgba(26, 115, 232, 0.1), transparent 28%),
+    #ffffff;
+}
+
+.compliance-panel::before {
+  position: absolute;
+  inset: 0;
+  border-top: 5px solid rgba(52, 168, 83, 0.72);
+  content: "";
+  pointer-events: none;
+}
+
+.compliance-title {
+  position: relative;
+  z-index: 1;
+  padding: 2px 2px 4px;
+}
+
+.compliance-title h2 {
+  color: var(--sheet-title);
+}
+
+.compliance-title .el-tag {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.compliance-table {
+  position: relative;
+  z-index: 1;
+}
+
+.compliance-rate-cell {
+  display: grid;
+  grid-template-columns: 48px minmax(96px, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.compliance-rate-cell strong {
+  color: var(--sheet-title);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+.missing-fields-text {
+  color: var(--sheet-red-text);
+  font-weight: 800;
+}
+
+.missing-fields-text.clear {
+  color: var(--sheet-green-text);
+}
+
 .markdown-report {
   display: grid;
   gap: 12px;
