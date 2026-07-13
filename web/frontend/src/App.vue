@@ -4,78 +4,14 @@
     <strong>正在确认登录状态...</strong>
   </div>
 
-  <section v-else-if="!currentUser" class="login-shell login-shell--official">
-    <div class="login-orbit login-orbit--one"></div>
-    <div class="login-orbit login-orbit--two"></div>
-
-    <div class="login-stage">
-      <aside class="login-poster">
-        <div class="login-poster__brand">
-          <span class="brand-mark brand-logo-wrap">
-            <img :src="youzhiLogo" alt="优智科技 Youzhi" />
-          </span>
-          <span>
-            <strong>优智周报系统</strong>
-            <small>周报汇总与评价平台</small>
-          </span>
-        </div>
-        <div class="login-poster__copy">
-          <span class="login-eyebrow">MANAGEMENT CONSOLE</span>
-          <h1>工作周报汇总与评价系统</h1>
-          <p>统一登录、权限分级、钉钉身份绑定，提供安全、规范的周报汇总与评价入口。</p>
-        </div>
-        <div class="login-poster__note">
-          <span>周报数据仅向授权账号开放</span>
-          <strong>请使用本人账号登录，首次登录后及时修改初始密码。</strong>
-        </div>
-      </aside>
-
-      <div class="login-card login-card--official">
-        <div class="login-card__head">
-          <span class="login-eyebrow">SECURE SIGN IN</span>
-          <h2>登录周报系统</h2>
-          <p>请使用系统账号登录；已绑定钉钉身份的用户可直接走钉钉授权。</p>
-        </div>
-
-        <el-alert
-          v-if="loginError"
-          :title="loginError"
-          type="error"
-          show-icon
-          :closable="false"
-        />
-
-        <div class="login-form">
-          <label>
-            <span>用户名</span>
-            <el-input v-model="loginForm.username" size="large" placeholder="请输入用户名" @keyup.enter="login" />
-          </label>
-          <label>
-            <span>密码</span>
-            <el-input
-              v-model="loginForm.password"
-              size="large"
-              type="password"
-              show-password
-              placeholder="请输入密码"
-              @keyup.enter="login"
-            />
-          </label>
-          <el-button type="primary" size="large" round :loading="loginBusy" @click="login">
-            进入工作台
-          </el-button>
-          <el-button class="ding-login-btn" size="large" round :loading="dingtalkBusy" @click="loginWithDingTalk">
-            使用钉钉登录
-          </el-button>
-        </div>
-
-        <div class="login-hint login-hint--official">
-          <strong>安全提示</strong>
-          <span>正式使用前请及时修改初始密码，并由管理员按需配置账号权限与钉钉身份绑定。</span>
-        </div>
-      </div>
-    </div>
-  </section>
+  <LoginView
+    v-else-if="!currentUser"
+    :error="loginError"
+    :busy="loginBusy"
+    :dingtalk-busy="dingtalkBusy"
+    @login="login"
+    @dingtalk-login="loginWithDingTalk"
+  />
 
   <div v-else :class="['app-shell', { 'app-shell--report': currentView === 'report' }]">
     <div class="header-reveal-zone" aria-hidden="true" @mouseenter="revealHeader"></div>
@@ -678,23 +614,14 @@
     </button>
   </div>
 </template>
-
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { changeCurrentPassword } from './api/auth.js'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
 import MarkdownReport from './components/MarkdownReport.vue'
-
-const TOKEN_KEY = 'weekly_report_jwt'
-
-const authLoading = ref(true)
-const loginBusy = ref(false)
-const dingtalkBusy = ref(false)
-const loginError = ref('')
-const token = ref(localStorage.getItem(TOKEN_KEY) || '')
-const currentUser = ref(null)
-const loginForm = reactive({ username: 'admin', password: '' })
-
+import { useAuth } from './composables/useAuth.js'
+import LoginView from './features/auth/LoginView.vue'
 const adminUsers = ref([])
 const adminRoles = ref([])
 const adminLoading = ref(false)
@@ -746,18 +673,31 @@ const jobBusy = ref(false)
 const headerHidden = ref(false)
 const headerHovered = ref(false)
 const filters = reactive({ keyword: '', status: '', leader: '' })
-const reportViews = new Set(['dashboard', 'status', 'report', 'jobs'])
+const reportViews = new Set(['dashboard', 'status', 'report'])
 let lastScrollY = 0
-
+const {
+  authLoading,
+  loginBusy,
+  dingtalkBusy,
+  loginError,
+  currentUser,
+  request,
+  restoreSession,
+  signIn,
+  startDingTalkLogin,
+  signOut
+} = useAuth({ onAuthInvalidated: resetWorkspaceState })
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
+const isAdmin = computed(() => (currentUser.value?.roles || []).includes('ADMIN'))
 const isFullReportAccess = computed(() => {
   const roles = currentUser.value?.roles || []
-  return roles.includes('ADMIN') || roles.includes('REPORT_ALL')
+  return roles.includes('REPORT_ALL')
 })
-const hasScopedReportAccess = computed(() => (currentUser.value?.deptScopes || []).length > 0)
+const hasScopedReportAccess = computed(() => (currentUser.value?.deptScopes || [])
+  .some(scope => String(scope || '').trim()))
 const canViewReports = computed(() => isFullReportAccess.value || hasScopedReportAccess.value)
-const canRunJobs = computed(() => isFullReportAccess.value)
+const canRunJobs = computed(() => isAdmin.value || isFullReportAccess.value)
 const defaultView = computed(() => (canViewReports.value ? 'dashboard' : (isAdmin.value ? 'users' : 'denied')))
 const roleLabel = computed(() => {
   const roles = currentUser.value?.roles || []
@@ -768,7 +708,6 @@ const roleLabel = computed(() => {
   if (roles.includes('MANAGER')) return '团队负责人'
   return '普通用户'
 })
-const isAdmin = computed(() => (currentUser.value?.roles || []).includes('ADMIN'))
 const currentViewLabel = computed(() => ({
   dashboard: '提交概览',
   status: '未交名单',
@@ -893,112 +832,18 @@ function handleHeaderScroll() {
   lastScrollY = currentScrollY
 }
 
-async function request(path, options = {}) {
-  const { skipAuth, ...fetchOptions } = options
-  const headers = new Headers(fetchOptions.headers || {})
-  if (!skipAuth && token.value) {
-    headers.set('Authorization', `Bearer ${token.value}`)
-  }
-  if (fetchOptions.body && !(fetchOptions.body instanceof FormData) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
-  }
-
-  const response = await fetch(path, { ...fetchOptions, headers })
-  const contentType = response.headers.get('content-type') || ''
-  const data = contentType.includes('application/json')
-    ? await response.json().catch(() => ({}))
-    : await response.text().catch(() => '')
-
-  if (response.status === 401 && !skipAuth) {
-    clearAuth()
-    throw new Error('登录已过期，请重新登录')
-  }
-  if (!response.ok) {
-    throw new Error(data?.error || data || `HTTP ${response.status}`)
-  }
-  return data
-}
-
 async function initAuth() {
-  authLoading.value = true
-  loginError.value = ''
-  readAuthQuery()
-  try {
-    if (token.value) {
-      currentUser.value = await request('/api/auth/me')
-      await enterWorkspace()
-    }
-  } catch (error) {
-    clearAuth(false)
-    loginError.value = error.message
-  } finally {
-    authLoading.value = false
-  }
+  await restoreSession(enterWorkspace)
 }
-
-function readAuthQuery() {
-  const url = new URL(window.location.href)
-  const queryToken = url.searchParams.get('token')
-  const authError = url.searchParams.get('auth_error')
-  if (queryToken) {
-    token.value = queryToken
-    localStorage.setItem(TOKEN_KEY, queryToken)
-  }
-  if (authError) {
-    loginError.value = authError
-  }
-  if (queryToken || authError || url.searchParams.get('login')) {
-    url.searchParams.delete('token')
-    url.searchParams.delete('auth_error')
-    url.searchParams.delete('login')
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
-  }
-}
-
-async function login() {
-  if (!loginForm.username || !loginForm.password) {
-    loginError.value = '请输入用户名和密码'
-    return
-  }
-  try {
-    loginBusy.value = true
-    loginError.value = ''
-    const data = await request('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(loginForm),
-      skipAuth: true
-    })
-    applyLogin(data)
-    ElMessage.success('登录成功')
-    await enterWorkspace()
-  } catch (error) {
-    loginError.value = error.message
-  } finally {
-    loginBusy.value = false
-  }
+async function login(credentials) {
+  const data = await signIn(credentials)
+  if (!data) return
+  ElMessage.success('登录成功')
+  await enterWorkspace()
 }
 
 async function loginWithDingTalk() {
-  try {
-    dingtalkBusy.value = true
-    loginError.value = ''
-    const data = await request('/api/auth/dingtalk/login-url', { skipAuth: true })
-    if (!data.enabled || !data.loginUrl) {
-      loginError.value = data.message || '钉钉登录暂未启用'
-      return
-    }
-    window.location.href = data.loginUrl
-  } catch (error) {
-    loginError.value = error.message
-  } finally {
-    dingtalkBusy.value = false
-  }
-}
-
-function applyLogin(data) {
-  token.value = data.token
-  currentUser.value = data.user
-  localStorage.setItem(TOKEN_KEY, data.token)
+  await startDingTalkLogin()
 }
 
 async function enterWorkspace() {
@@ -1157,12 +1002,9 @@ async function changeOwnPassword() {
   }
   try {
     changePasswordSaving.value = true
-    await request('/api/auth/password', {
-      method: 'POST',
-      body: JSON.stringify({
-        oldPassword: changePasswordForm.oldPassword,
-        newPassword: changePasswordForm.newPassword
-      })
+    await changeCurrentPassword({ request }, {
+      oldPassword: changePasswordForm.oldPassword,
+      newPassword: changePasswordForm.newPassword
     })
     changePasswordDialogVisible.value = false
     ElMessage.success('密码已修改，下次登录请使用新密码')
@@ -1290,19 +1132,11 @@ function handleAccountCommand(command) {
 }
 
 async function logout() {
-  try {
-    await request('/api/auth/logout', { method: 'POST' })
-  } catch (error) {
-    // JWT is stateless, so the frontend can always clear local login state.
-  }
-  clearAuth()
+  await signOut()
   ElMessage.success('已退出登录')
 }
 
-function clearAuth(showLogin = true) {
-  token.value = ''
-  currentUser.value = null
-  localStorage.removeItem(TOKEN_KEY)
+function resetWorkspaceState() {
   weeks.value = []
   selectedWeek.value = ''
   summary.value = {}
@@ -1318,9 +1152,6 @@ function clearAuth(showLogin = true) {
   Object.assign(changePasswordForm, { oldPassword: '', newPassword: '', confirmPassword: '' })
   resetFeedbackForm()
   currentView.value = 'dashboard'
-  if (showLogin) {
-    authLoading.value = false
-  }
 }
 
 async function refreshAll() {
@@ -1406,25 +1237,19 @@ async function downloadCsv() {
     return
   }
   if (!selectedWeek.value) return
-  const response = await fetch(`/api/files/${selectedWeek.value}/submission-status/download`, {
-    headers: token.value ? { Authorization: `Bearer ${token.value}` } : {}
-  })
-  if (response.status === 401) {
-    clearAuth()
-    ElMessage.error('登录已过期，请重新登录')
-    return
+  try {
+    const blob = await request(`/api/files/${selectedWeek.value}/submission-status/download`, {
+      responseType: 'blob'
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `submission_status_${selectedWeek.value}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    ElMessage.error(error.message)
   }
-  if (!response.ok) {
-    ElMessage.error(`下载失败：HTTP ${response.status}`)
-    return
-  }
-  const blob = await response.blob()
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `submission_status_${selectedWeek.value}.csv`
-  link.click()
-  URL.revokeObjectURL(url)
 }
 
 function formatDate(value) {

@@ -115,15 +115,15 @@ Web 推荐使用 Java + Vue 实现：
 当前版本已接入 MySQL + JWT：
 
 - 首次启动会自动创建认证相关表：`sys_user`、`sys_role`、`sys_user_role`、`sys_dept_scope`、`sys_login_log`。
-- 首次启动会预置管理员账号：`admin / admin123`，密码入库时会转成 BCrypt 哈希；`ADMIN` 可以管理账号，也可以查看完整周报。
-- 首次启动会预置 4 个“全部周报权限”账号：`wangkai`、`zhanyi`、`pengweijuan`、`sunxiaoming`。初始密码按“名拼音首字母 + 姓拼音 + @kingdomai.com”的规则生成，例如 `pengweijuan / wjpeng@kingdomai.com`。
+- 首次启动会按配置预置管理员账号，密码入库时会转成 BCrypt 哈希；生产模式必须通过 `WEEKLY_BOOTSTRAP_ADMIN_PASSWORD` 提供非默认初始密码。
+- 兼容初始化器仍会维护既有的全部周报权限账号；其历史引导策略需要单独安全审查，仓库文档不再发布账号或初始密码规则。
 - 用户登录后可在右上角“修改密码”中自行修改初始密码；管理员也可以在“用户管理”中重置密码。
 - 前端先支持用户名密码登录，并保留“钉钉登录”按钮。
-- 方案 B 数据权限已启用：`ADMIN` / `REPORT_ALL` 查看完整周报；其他账号可通过 `sys_dept_scope` 的部门、人员或 `userid` 范围查看授权范围内周报。
+- 方案 B 数据权限已启用：`REPORT_ALL` 查看完整周报；`ADMIN` 只管理账号，不因角色自动读取完整周报，需通过 `sys_dept_scope` 获得部门、人员或 `userid` 范围。
 - `/api/weeks/**` 和 `/api/files/**` 在服务层按当前用户权限过滤提交概览、未交名单、AI 评价和 CSV 下载；`/api/jobs/**` 仍仅允许 `ADMIN` / `REPORT_ALL` 触发或查看采集任务。
 - `ADMIN` 登录后可以进入“用户管理”，新建账号、分配角色、启停账号、绑定钉钉 `userId/unionId`、重置密码，并配置部门/人员权限范围。
 - 钉钉登录由钉钉证明身份，本系统仍通过 `sys_user.ding_user_id` 或 `sys_user.ding_union_id` 判断是否允许进入系统。
-- 登录后右上角下拉框提供“提出 bug 或建议”，面向领导使用时只需填写一段反馈内容；系统会自动附带账号、周次、页面信息，记录到 `logs/feedback-YYYY-MM.jsonl`，并优先通过钉钉工作通知直达张艺政。
+- 登录后右上角下拉框提供“提出 bug 或建议”，系统会自动附带账号、周次、页面信息，记录到 `logs/feedback-YYYY-MM.jsonl`，并按部署配置发送钉钉工作通知。
 
 部门权限范围写法：
 
@@ -164,10 +164,12 @@ password: 空
 $env:SPRING_DATASOURCE_URL="jdbc:mysql://localhost:3306/weekly_report?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
 $env:SPRING_DATASOURCE_USERNAME="root"
 $env:SPRING_DATASOURCE_PASSWORD="你的密码"
-$env:WEEKLY_JWT_SECRET="至少32字节的正式JWT密钥"
+$env:WEEKLY_AUTH_DEVELOPMENT_MODE="false"
+$env:WEEKLY_JWT_SECRET="<由部署平台注入>"
+$env:WEEKLY_BOOTSTRAP_ADMIN_PASSWORD="<由部署平台注入>"
 ```
 
-正式使用前建议修改 `admin` 密码，并把 `WEEKLY_JWT_SECRET`、MySQL 密码写到服务器根目录 `.env`，不要提交真实密钥。
+生产模式缺少上述两个变量、值为空或仍为开发默认值时会拒绝启动。真实凭据和 MySQL 密码只写入服务器未跟踪的 `.env` 或密钥管理服务。
 
 本地启动：
 
@@ -177,6 +179,7 @@ npm install
 npm run build
 
 cd ..\backend-spring
+$env:WEEKLY_AUTH_DEVELOPMENT_MODE="true"
 java -jar target\weekly-report-backend-1.0.0.jar
 ```
 
@@ -190,7 +193,7 @@ Docker 部署：
 
 ```bash
 cp .env.example .env
-# 按需修改 .env 里的 MYSQL_ROOT_PASSWORD、WEEKLY_JWT_SECRET、WEEKLY_HOST_PORT
+# 必须填写 WEEKLY_JWT_SECRET 和 WEEKLY_BOOTSTRAP_ADMIN_PASSWORD；不要启用开发模式
 docker compose up -d --build
 ```
 

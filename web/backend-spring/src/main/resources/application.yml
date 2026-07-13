@@ -18,6 +18,7 @@ weekly:
   frontend-dist: ${WEEKLY_FRONTEND_DIST:}
   python-bin: ${PYTHON_BIN:}
   auth:
+    development-mode: ${WEEKLY_AUTH_DEVELOPMENT_MODE:false}
     jwt-secret: ${WEEKLY_JWT_SECRET:weekly-report-local-dev-secret-change-me-2026}
     token-expire-minutes: ${WEEKLY_JWT_EXPIRE_MINUTES:720}
     bootstrap-admin-username: ${WEEKLY_BOOTSTRAP_ADMIN_USERNAME:admin}

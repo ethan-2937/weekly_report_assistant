@@ -29,8 +29,15 @@ $required = @(
     "docs/HARNESS_GUIDE.md",
     "docs/tasks/TEMPLATE.md",
     "harness/quality-baseline.json",
+    ".env.example",
     "tests/test_dingtalk_common.py",
-    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/util/WeekLabelUtilsTest.java"
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/util/WeekLabelUtilsTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/config/ProductionCredentialValidatorTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/config/SecurityConfigWebMvcTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/ReportPermissionServiceImplTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/WeeklyReportServiceImplTest.java",
+    "web/frontend/src/api/client.test.js",
+    "web/frontend/src/composables/useAuth.test.js"
 )
 
 foreach ($relative in $required) {
@@ -124,6 +131,24 @@ if ($javaTests.Count -eq 0) {
 $pythonTests = @(Get-ChildItem -Path (Join-Path $root "tests") -Filter "test_*.py" -Recurse -File -ErrorAction SilentlyContinue)
 if ($pythonTests.Count -eq 0) {
     Add-Failure "No Python tests found. Add deterministic unittest coverage under tests/."
+}
+
+$frontendPackage = Get-Content -Raw -LiteralPath (Join-Path $root "web/frontend/package.json") -Encoding UTF8 | ConvertFrom-Json
+if (-not $frontendPackage.scripts.test) {
+    Add-Failure "web/frontend/package.json must define a deterministic frontend test command."
+}
+
+$applicationConfig = Get-Content -Raw -LiteralPath (Join-Path $root "web/backend-spring/src/main/resources/application.yml") -Encoding UTF8
+if ($applicationConfig -notmatch 'WEEKLY_AUTH_DEVELOPMENT_MODE:false') {
+    Add-Failure "Production credential validation must be the default; local development mode must be explicit."
+}
+
+$composeConfig = Get-Content -Raw -LiteralPath (Join-Path $root "docker-compose.yml") -Encoding UTF8
+if ($composeConfig -notmatch 'WEEKLY_JWT_SECRET:\?') {
+    Add-Failure "docker-compose.yml must require WEEKLY_JWT_SECRET instead of using a development fallback."
+}
+if ($composeConfig -notmatch 'WEEKLY_BOOTSTRAP_ADMIN_PASSWORD:\?') {
+    Add-Failure "docker-compose.yml must require WEEKLY_BOOTSTRAP_ADMIN_PASSWORD instead of using a development fallback."
 }
 
 if ($failures.Count -gt 0) {

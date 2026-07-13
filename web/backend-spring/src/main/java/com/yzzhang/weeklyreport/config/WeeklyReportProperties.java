@@ -51,12 +51,24 @@ public class WeeklyReportProperties {
     }
 
     public static class Auth {
-        private String jwtSecret = "weekly-report-local-dev-secret-change-me-2026";
+        public static final String DEVELOPMENT_JWT_SECRET = "weekly-report-local-dev-secret-change-me-2026";
+        public static final String DEVELOPMENT_ADMIN_PASSWORD = "admin123";
+
+        private boolean developmentMode;
+        private String jwtSecret = DEVELOPMENT_JWT_SECRET;
         private long tokenExpireMinutes = 720;
         private String bootstrapAdminUsername = "admin";
-        private String bootstrapAdminPassword = "admin123";
+        private String bootstrapAdminPassword = DEVELOPMENT_ADMIN_PASSWORD;
         private String bootstrapAdminRealName = "系统管理员";
         private DingTalk dingtalk = new DingTalk();
+
+        public boolean isDevelopmentMode() {
+            return developmentMode;
+        }
+
+        public void setDevelopmentMode(boolean developmentMode) {
+            this.developmentMode = developmentMode;
+        }
 
         public String getJwtSecret() {
             return jwtSecret;

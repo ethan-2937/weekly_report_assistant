@@ -23,8 +23,7 @@ public class ReportPermissionServiceImpl implements ReportPermissionService {
             .filter(this::hasText)
             .distinct()
             .toList();
-        boolean fullAccess = roles.contains("ADMIN")
-            || roles.contains("REPORT_ALL")
+        boolean fullAccess = roles.contains("REPORT_ALL")
             || scopes.stream().anyMatch(scope -> "ALL".equalsIgnoreCase(scope));
         ReportPermission permission = new ReportPermission(fullAccess, scopes);
         if (!permission.hasScopedAccess()) {

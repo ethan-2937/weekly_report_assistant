@@ -5,7 +5,7 @@
 ```bash
 cd /data2/person_path/yzzhang/weekly-report
 cp .env.example .env
-# 修改 .env：WEEKLY_HOST_PORT、MYSQL_ROOT_PASSWORD、WEEKLY_JWT_SECRET
+# 必须填写 WEEKLY_JWT_SECRET 和 WEEKLY_BOOTSTRAP_ADMIN_PASSWORD；不要启用开发模式
 docker compose up -d --build
 ```
 
@@ -44,17 +44,12 @@ weekly-report       # Spring Boot + Vue 静态资源
 weekly-report-mysql # MySQL 8.4
 ```
 
-首次启动时，后端会自动创建认证表并预置管理员：
+首次启动时，后端会自动创建认证表，并使用 `.env` 中的配置预置管理员。密码会以 BCrypt 哈希写入 MySQL，不会明文保存。正式使用要求：
 
-```text
-admin / admin123
-```
-
-密码会以 BCrypt 哈希写入 MySQL，不会明文保存。正式使用前建议：
-
-1. 修改根目录 `.env` 里的 `MYSQL_ROOT_PASSWORD` 和 `WEEKLY_JWT_SECRET`。
-2. 登录系统后尽快更换或禁用默认管理员密码。
-3. 如果启用钉钉登录，再补充 `WEEKLY_DINGTALK_LOGIN_ENABLED=true`、`WEEKLY_DINGTALK_CLIENT_ID`、`WEEKLY_DINGTALK_CLIENT_SECRET`、`WEEKLY_DINGTALK_REDIRECT_URI`。
+1. 根目录 `.env` 必须提供非空、非开发默认值的 `WEEKLY_JWT_SECRET` 和 `WEEKLY_BOOTSTRAP_ADMIN_PASSWORD`。
+2. 保持 `WEEKLY_AUTH_DEVELOPMENT_MODE=false`；缺失安全凭据时 Compose 或 Spring 启动会直接失败。
+3. 配置部署专用的 `MYSQL_ROOT_PASSWORD`，不要提交真实值。
+4. 如果启用钉钉登录，再补充 `WEEKLY_DINGTALK_LOGIN_ENABLED=true`、`WEEKLY_DINGTALK_CLIENT_ID`、`WEEKLY_DINGTALK_CLIENT_SECRET`、`WEEKLY_DINGTALK_REDIRECT_URI`。
 
 钉钉回调地址示例：
 

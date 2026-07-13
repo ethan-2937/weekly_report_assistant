@@ -51,14 +51,16 @@ OUTPUT_ROOT=output
 
 ## 4. 配置服务端口
 
-服务器运维当前开放 `22080-22099`，本项目已验证 `22081` 可用。根目录 `.env` 是 Docker Compose 配置，不同于 `config/.env`。
+服务器运维端口按实际环境分配。根目录 `.env` 是 Docker Compose 配置，不同于 `config/.env`，必须包含生产认证凭据。
 
 ```bash
 cd /data2/person_path/yzzhang/weekly-report
-cat > .env <<'EOF'
-WEEKLY_HOST_PORT=22081
-EOF
+cp .env.example .env
+nano .env
+chmod 600 .env
 ```
+
+至少填写 `WEEKLY_HOST_PORT`、`MYSQL_ROOT_PASSWORD`、`WEEKLY_JWT_SECRET` 和 `WEEKLY_BOOTSTRAP_ADMIN_PASSWORD`，并保持 `WEEKLY_AUTH_DEVELOPMENT_MODE=false`。不得把真实值写回 `.env.example`。
 
 ## 5. 安装 Codex skill
 

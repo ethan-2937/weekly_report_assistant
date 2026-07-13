@@ -33,6 +33,12 @@ controller -> service -> service/impl -> mapper/file/database
 
 Controller 不得绕过服务层读取文件或数据库。权限过滤应尽量靠近业务返回边界，并覆盖列表、详情、Markdown 和 CSV 下载。
 
+## 认证与配置边界
+
+- 前端 `api/client.js` 统一处理 fetch、Authorization、响应解析、敏感错误清洗和 401；`composables/useAuth.js` 统一处理 token 持久化、OAuth 回调和登录态失效。
+- `features/auth/LoginView.vue` 只负责登录呈现和提交事件，用户名密码与钉钉登录协议仍由既有后端接口提供。
+- Spring 启动时由 `ProductionCredentialValidator` 校验 JWT secret 和初始管理员密码。生产模式是默认值；只有显式开发模式允许本地默认凭据。
+
 ## 活动与历史实现
 
 - 活动后端：`web/backend-spring/`。

@@ -14,7 +14,9 @@
 - 异常信息不得包含 access token、完整 API 响应或原始周报正文。
 - 数据下载、Markdown 报告和统计 API 使用相同的服务层权限范围。
 - 管理员账号管理能力与完整周报读取能力分离。
-- 生产环境必须覆盖开发用 JWT 和初始密码；默认值只允许本地引导。
+- 生产模式默认启用，必须显式配置 `WEEKLY_JWT_SECRET` 和 `WEEKLY_BOOTSTRAP_ADMIN_PASSWORD`；缺失、空值或开发默认值会阻止启动，错误只显示变量名。
+- 本地开发只有显式设置 `WEEKLY_AUTH_DEVELOPMENT_MODE=true` 时才能使用开发默认凭据；Docker 部署不得启用该标志。
+- 前端 API 错误只采用受限的 JSON `error` 字段，并清洗当前 token、请求密码及常见 Bearer/JWT 形态；不得拼接完整响应。
 - 反馈通知失败时返回最小必要信息，不泄露内部凭据或通讯录。
 
 ## 变更审查

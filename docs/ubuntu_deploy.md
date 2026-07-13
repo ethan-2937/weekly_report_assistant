@@ -41,6 +41,9 @@ npm run build
 
 cd ../backend-spring
 mvn -DskipTests package
+export WEEKLY_AUTH_DEVELOPMENT_MODE=false
+export WEEKLY_JWT_SECRET='<由部署平台注入>'
+export WEEKLY_BOOTSTRAP_ADMIN_PASSWORD='<由部署平台注入>'
 java -jar target/weekly-report-backend-1.0.0.jar
 ```
 
@@ -56,6 +59,8 @@ http://服务器IP:8088
 export WEEKLY_REPORT_PORT=8090
 java -jar target/weekly-report-backend-1.0.0.jar
 ```
+
+仅本地开发可显式设置 `WEEKLY_AUTH_DEVELOPMENT_MODE=true` 使用开发默认值；服务器不得启用。生产值缺失、为空或仍为开发默认值时 Spring 会拒绝启动，错误只指出需要配置的环境变量。
 
 更推荐 Docker 部署，见 `docs/docker_deploy.md`：
 
