@@ -737,12 +737,21 @@ const submissionRate = computed(() => {
 })
 const filteredRows = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
-  return rows.value.filter(row => {
-    const text = `${row['姓名'] || ''} ${row['部门'] || ''} ${row['职务'] || ''}`.toLowerCase()
-    return (!keyword || text.includes(keyword))
-      && (!filters.status || row['提交状态'] === filters.status)
-      && (!filters.leader || row['是否负责人候选'] === filters.leader)
-  })
+  return rows.value
+    .map((row, index) => ({ row, index }))
+    .filter(item => {
+      const text = `${item.row['姓名'] || ''} ${item.row['部门'] || ''} ${item.row['职务'] || ''}`.toLowerCase()
+      return (!keyword || text.includes(keyword))
+        && (!filters.status || item.row['提交状态'] === filters.status)
+        && (!filters.leader || item.row['是否负责人候选'] === filters.leader)
+    })
+    .sort((left, right) => {
+      const leftMissing = left.row['提交状态'] === '未提交'
+      const rightMissing = right.row['提交状态'] === '未提交'
+      if (leftMissing !== rightMissing) return leftMissing ? -1 : 1
+      return left.index - right.index
+    })
+    .map(item => item.row)
 })
 
 async function setView(view) {
