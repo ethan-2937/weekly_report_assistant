@@ -10,6 +10,7 @@
 - `codex_evaluation_harness.py` / `codex_evaluation_workspace.py`：评价指纹、覆盖/隐私校验、状态锁和仅含授权输入的临时工作区。
 - `report_content.py`：将钉钉报告内容规范化为分析输入文本。
 - `leader_compliance.py`：从负责人身份、正文和附件元数据生成确定性履职证据，不负责猜测附件正文。
+- `leader_subordinates.py`：优先读取负责人下属 userid；缺失时按共享钉钉部门生成待上级确认候选，并标记未交下属风险。
 - `attachment_download.py`：使用钉钉 Drive 下载信息接口受控下载负责人附件，不记录远程凭据或短期 URL。
 - `weekly_outputs.py`：统一生成提交 CSV、摘要和带负责人证据的分析输入包。
 - `download_contacts.py`、`download_reports.py`：单独采集入口。

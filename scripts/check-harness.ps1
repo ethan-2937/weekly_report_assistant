@@ -41,6 +41,7 @@ $required = @(
     "tests/test_codex_evaluation_harness.py",
     "scripts/codex_evaluation_harness.py",
     "scripts/codex_evaluation_workspace.py",
+    "scripts/leader_subordinates.py",
     "scripts/run_codex_evaluation.py",
     "scripts/run_codex_evaluation.sh",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/util/WeekLabelUtilsTest.java",

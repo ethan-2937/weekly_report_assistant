@@ -84,6 +84,25 @@ def write_submission_outputs(
         dept_by_id,
         attachment_downloads,
     )
+    with (exports_dir / "leader_subordinates.csv").open("w", newline="", encoding="utf-8-sig") as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=["负责人", "负责人userid", "部门", "映射来源", "下属员工", "下属userid", "未提交下属", "履职风险"],
+        )
+        writer.writeheader()
+        for item in leader_evidence:
+            writer.writerow(
+                {
+                    "负责人": item.name,
+                    "负责人userid": item.userid,
+                    "部门": item.dept,
+                    "映射来源": item.subordinate_source,
+                    "下属员工": "、".join(item.subordinate_names),
+                    "下属userid": "、".join(item.subordinate_userids),
+                    "未提交下属": "、".join(item.subordinate_missing_names),
+                    "履职风险": item.subordinate_status,
+                }
+            )
 
     summary_lines = [
         "# 周报提交验证结果",

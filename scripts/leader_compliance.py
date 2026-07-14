@@ -7,6 +7,7 @@ from attachment_download import (
     DownloadedAttachment,
     extract_attachment_metadata,
 )
+from leader_subordinates import map_subordinates
 from report_content import report_text
 
 
@@ -44,6 +45,11 @@ class TeamLeadEvidence:
     risk: str
     resource_need: str
     reminder: str
+    subordinate_names: tuple[str, ...] = ()
+    subordinate_userids: tuple[str, ...] = ()
+    subordinate_source: str = "无法判断"
+    subordinate_missing_names: tuple[str, ...] = ()
+    subordinate_status: str = "无法判断"
 
 
 def _text(value: Any) -> str:
@@ -141,7 +147,12 @@ def build_team_lead_evidence(
     evidence: list[TeamLeadEvidence] = []
     attachment_downloads = attachment_downloads or {}
     leaders = [user for user in users if user.get("leader") is True]
+    subordinate_by_leader = {
+        _text(user.get("userid")): map_subordinates(user, users, reports_by_user)
+        for user in leaders
+    }
     for user in sorted(leaders, key=lambda item: (_dept_names(item, dept_by_id), _text(item.get("name")))):
+        subordinate = subordinate_by_leader.get(_text(user.get("userid")), ((), (), "无法判断", (), "无法判断"))
         report = reports_by_user.get(_text(user.get("userid")))
         if not report:
             evidence.append(
@@ -158,6 +169,11 @@ def build_team_lead_evidence(
                     risk=NOT_APPLICABLE,
                     resource_need=NOT_APPLICABLE,
                     reminder=NOT_APPLICABLE,
+                    subordinate_names=subordinate[0],
+                    subordinate_userids=subordinate[1],
+                    subordinate_source=subordinate[2],
+                    subordinate_missing_names=subordinate[3],
+                    subordinate_status=subordinate[4],
                 )
             )
             continue
@@ -179,6 +195,11 @@ def build_team_lead_evidence(
                 risk=_evidence_status(body, EVIDENCE_TERMS["risk"], attachments, downloads),
                 resource_need=_evidence_status(body, EVIDENCE_TERMS["resource_need"], attachments, downloads),
                 reminder=_evidence_status(body, EVIDENCE_TERMS["reminder"], attachments, downloads),
+                subordinate_names=subordinate[0],
+                subordinate_userids=subordinate[1],
+                subordinate_source=subordinate[2],
+                subordinate_missing_names=subordinate[3],
+                subordinate_status=subordinate[4],
             )
         )
     return evidence
@@ -219,5 +240,33 @@ def render_team_lead_input(evidence: list[TeamLeadEvidence]) -> list[str]:
             item.reminder,
         )
         lines.append("| " + " | ".join(_cell(value) for value in values) + " |")
+    lines.append("")
+    lines.extend(
+        [
+            "## 负责人下属映射（待上级确认）",
+            "",
+            "> 有明确下属 userid 时优先使用；没有时按共享钉钉所属部门生成候选。部门回退只是待确认名单，不代表正式汇报关系。",
+            "",
+            "| 负责人 | 负责人 userid | 映射来源 | 下属人数 | 下属员工 | 未提交下属 | 履职风险 |",
+            "|---|---|---|---:|---|---|---|",
+        ]
+    )
+    for item in evidence:
+        lines.append(
+            "| "
+            + " | ".join(
+                _cell(value)
+                for value in (
+                    item.name,
+                    item.userid,
+                    item.subordinate_source,
+                    str(len(item.subordinate_names)),
+                    "、".join(item.subordinate_names) or "无",
+                    "、".join(item.subordinate_missing_names) or "无",
+                    item.subordinate_status,
+                )
+            )
+            + " |"
+        )
     lines.append("")
     return lines

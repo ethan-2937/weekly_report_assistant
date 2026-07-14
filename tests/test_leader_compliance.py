@@ -118,6 +118,40 @@ class TeamLeadComplianceTests(unittest.TestCase):
         self.assertEqual("无附件", evidence.attachment)
         self.assertEqual(NO_EVIDENCE, evidence.overall_progress)
 
+    def test_department_fallback_lists_same_department_and_marks_missing_subordinate(self) -> None:
+        users = [
+            self._user("test-leader-001", "示例负责人甲", leader=True),
+            self._user("test-user-002", "示例员工乙", leader=False),
+            self._user("test-user-003", "示例员工丙", leader=False),
+            self._user("test-user-004", "示例员工丁", leader=False),
+        ]
+        users[2]["dept_id_list"] = [101]
+        users[3]["dept_id_list"] = [202]
+        reports = [
+            self._report("test-leader-001"),
+            self._report("test-user-002"),
+        ]
+
+        evidence = build_team_lead_evidence(users[:3] + [users[3]], reports, {101: "测试研发部", 202: "测试市场部"})[0]
+
+        self.assertEqual("DEPT", evidence.subordinate_source)
+        self.assertEqual(("示例员工丙", "示例员工乙"), evidence.subordinate_names)
+        self.assertEqual(("示例员工丙",), evidence.subordinate_missing_names)
+        self.assertEqual("不合格（下属未提交）", evidence.subordinate_status)
+
+    def test_explicit_subordinate_userids_override_department_fallback(self) -> None:
+        leader = self._user("test-leader-001", "示例负责人甲", leader=True)
+        leader["subordinate_userids"] = ["test-user-003"]
+        users = [leader, self._user("test-user-002", "示例员工乙", leader=False), self._user("test-user-003", "示例员工丙", leader=False)]
+        users[2]["dept_id_list"] = [202]
+
+        evidence = build_team_lead_evidence(users, [self._report("test-leader-001"), self._report("test-user-003")], {101: "测试研发部", 202: "测试市场部"})[0]
+
+        self.assertEqual("USERID", evidence.subordinate_source)
+        self.assertEqual(("示例员工丙",), evidence.subordinate_names)
+        self.assertEqual((), evidence.subordinate_missing_names)
+        self.assertEqual("已按 userid 映射", evidence.subordinate_status)
+
     def test_downloaded_local_attachment_is_exposed_for_codex_without_remote_identifiers(self) -> None:
         users = [self._user("test-user-001", "示例负责人甲", leader=True)]
         reports = [

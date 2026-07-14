@@ -171,7 +171,12 @@ class ReportCollectionWindowTests(unittest.TestCase):
             analysis = (
                 Path(temp_dir) / "2026-W28" / "analysis" / "analysis_input.md"
             ).read_text(encoding="utf-8")
+            leader_mapping = (
+                Path(temp_dir) / "2026-W28" / "exports" / "leader_subordinates.csv"
+            ).read_text(encoding="utf-8-sig")
             self.assertIn("## 团队负责人履职输入（确定性证据）", analysis)
+            self.assertIn("## 负责人下属映射（待上级确认）", analysis)
+            self.assertIn("负责人userid", leader_mapping)
             self.assertIn("示例负责人甲", analysis)
             self.assertIn("示例负责人乙", analysis)
             self.assertIn("疑似已提交（附件名匹配）", analysis)

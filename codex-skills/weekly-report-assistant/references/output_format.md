@@ -88,6 +88,14 @@ Every row from `团队负责人履职输入（确定性证据）` must appear in
 - `待 Codex 解析` with a local `attachments/team_leads/` path: open the file under the current week directory, inspect its content, and replace the placeholder with a supported conclusion; never follow a path outside that week.
 - `不适用（个人周报未提交）`: personal report is missing, so team-summary dimensions cannot be inferred from that report.
 
+### Subordinate mapping evidence
+
+- Prefer a deterministic subordinate userid list when the input provides one.
+- When no subordinate userid list exists, use shared DingTalk department membership as a candidate mapping and label it `按所属部门映射，待上级确认`; do not guess cross-department reporting relationships.
+- Exempt people are excluded before counting missing subordinates.
+- A mapped non-exempt subordinate who has not submitted makes the leader compliance conclusion `不合格（下属未提交）`.
+- Keep the detailed mapping for internal confirmation input; do not expose userid values in the formal manager report.
+
 ## Missing Submission Rules
 
 - Use stable IDs first: DingTalk `userid`, employee ID, or roster ID.

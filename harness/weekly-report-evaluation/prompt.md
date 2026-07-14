@@ -17,6 +17,7 @@ Evaluation requirements:
 2. Include every roster name from `submission_status.csv`. Submitted employees receive a five-dimension evaluation; missing employees appear in the missing/exception section and must not receive invented work conclusions.
 3. Use the exact current business rules from the Skill: stable submission statistics, template compliance separate from management screening, concrete deliverables, time-allocation evidence, AI tool/scenario/effect, dated next-week outputs, and evidence-based support needs.
 4. Include every row from `团队负责人履职输入（确定性证据）` in the leader compliance table. Parse only locally referenced attachments inside the current week directory. An unreadable or pending attachment means `无法判断`, not `未提交` or `不合格`.
+   Use the separate `负责人下属映射（待上级确认）` table as deterministic evidence: explicit userid mappings take precedence; department mappings remain provisional. If a mapped non-exempt subordinate is missing, mark that leader's compliance conclusion `不合格（下属未提交）`.
 5. Keep conclusions concise and evidence-based. Do not invent metrics, duties, dates, role baselines, attachment content, risks, or AI usage.
 6. Do not expose userid, unionId, fileId, spaceId, local paths, tokens, credentials, raw API data, or full report bodies.
 

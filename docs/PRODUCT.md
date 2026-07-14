@@ -31,6 +31,7 @@ output/contacts/                         # 授权通讯录缓存
 output/<YYYY-Www>/raw/reports.json       # 原始周报，敏感
 output/<YYYY-Www>/attachments/team_leads/ # 负责人附件，敏感，仅本地
 output/<YYYY-Www>/exports/submission_status.csv
+output/<YYYY-Www>/exports/leader_subordinates.csv # 负责人下属确认表，敏感，仅本地
 output/<YYYY-Www>/analysis/analysis_input.md
 output/<YYYY-Www>/summary/submission_check.md
 output/<YYYY-Www>/summary/manager_report.md

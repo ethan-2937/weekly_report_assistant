@@ -52,6 +52,7 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Treat `未见证据` as missing only when the deterministic input confirms there is no actual attachment entry and the report body has no corresponding evidence. An empty attachment JSON array is not a submitted attachment.
    - Check whether the lead appears to have reminded/promoted timely submission only when evidence exists; otherwise mark “未见证据”.
    - Evaluate lead compliance separately from the lead's personal work output.
+   - For subordinate coverage, prefer an explicit subordinate userid list. If none exists, use the deterministic DingTalk department membership candidate list and label it `待上级确认`; do not infer cross-department reporting lines. If a mapped, non-exempt subordinate is missing, the leader compliance conclusion must record `不合格（下属未提交）`.
 
 7. Produce manager-facing outputs.
    - Start with a concise executive summary.
