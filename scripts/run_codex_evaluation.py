@@ -47,7 +47,6 @@ def collection_command(mode: str) -> list[str]:
     if mode == "host":
         return [sys.executable, str(ROOT / "scripts" / "run_weekly.py"), "--week", "previous"]
     raise EvaluationHarnessError("COLLECTION_MODE_INVALID")
-
 def codex_command(
     codex_bin: str,
     prompt: str,
@@ -85,9 +84,12 @@ def codex_command(
     if base_url := configured.get("WEEKLY_CODEX_BASE_URL", "").strip():
         if not base_url.startswith("https://") or any(char in base_url for char in ('"', "'", " ", "\t", "\r", "\n", "@")):
             raise EvaluationHarnessError("CODEX_BASE_URL_INVALID")
-        command[-1:-1] = ["-c", f'base_url="{base_url}"']
+        command[-1:-1] = [
+            "-c", 'model_provider="crs"', "-c", 'model_providers.crs.name="crs"',
+            "-c", f'model_providers.crs.base_url="{base_url}"', "-c", 'model_providers.crs.wire_api="responses"',
+            "-c", 'model_providers.crs.requires_openai_auth=true', "-c", 'model_providers.crs.env_key="CRS_OAI_KEY"',
+        ]
     return command
-
 def render_prompt(label: str) -> str:
     try:
         template = PROMPT_PATH.read_text(encoding="utf-8")
@@ -105,14 +107,12 @@ def render_prompt(label: str) -> str:
         raise EvaluationHarnessError("PROMPT_PLACEHOLDER_UNRESOLVED")
     return template
 
-
 def resolve_codex_bin(configured: dict[str, str]) -> str:
     configured_bin = configured.get("WEEKLY_CODEX_BIN", "").strip()
     candidate = configured_bin or shutil.which("codex") or ""
     if not candidate:
         raise EvaluationHarnessError("CODEX_BIN_NOT_FOUND")
     return candidate
-
 def installed_skill_path(environment: dict[str, str]) -> Path:
     home = Path(environment.get("CODEX_HOME") or (Path.home() / ".codex"))
     return home / "skills" / "weekly-report-assistant" / "SKILL.md"

@@ -173,7 +173,9 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
             {"WEEKLY_CODEX_REASONING_EFFORT": "high", "WEEKLY_CODEX_BASE_URL": "https://proxy.example.invalid/openai"},
             workspace,
         )
-        self.assertIn('base_url="https://proxy.example.invalid/openai"', proxied)
+        self.assertIn('model_provider="crs"', proxied)
+        self.assertIn('model_providers.crs.base_url="https://proxy.example.invalid/openai"', proxied)
+        self.assertIn('model_providers.crs.wire_api="responses"', proxied)
 
         legacy = codex_command(
             "/usr/local/bin/codex",

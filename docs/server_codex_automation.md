@@ -68,7 +68,7 @@ WEEKLY_CODEX_MAX_ATTEMPTS_PER_INPUT=3
 
 `WEEKLY_CODEX_MODEL` 留空时使用该 Codex CLI 的可用默认模型，避免仓库硬编码未来可能不可用的型号。`high` 推理强度用于提高评价一致性；如果额度或耗时压力较大，可在验证效果后改为 `medium`。
 
-`WEEKLY_CODEX_BASE_URL` 只应写入服务器私有 `config/.env`，必须是 HTTPS 地址；Harness 会显式传入该地址并继续忽略其他用户配置，避免代理配置之外的本地规则改变自动任务行为。
+`WEEKLY_CODEX_BASE_URL` 只应写入服务器私有 `config/.env`，必须是 HTTPS 地址；配置该地址后，Harness 会显式传入公司 `crs` provider、`responses` 协议和 `CRS_OAI_KEY` 环境变量名，并继续忽略其他用户配置，避免代理配置之外的本地规则改变自动任务行为。
 
 ## 安装与预检
 
