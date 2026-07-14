@@ -35,5 +35,5 @@
 ## 交付
 
 - 决策：服务器使用 Linux cron 调用仓库内 Harness；Codex CLI 本身只提供非交互 `codex exec`，不在服务器 CLI 中提供 Scheduled 管理界面。模型不直接写正式报告，由 Harness 校验结构化输出后原子落盘。
-- 剩余风险：服务器 Codex 登录状态、CLI 版本、模型额度和 Office/PDF 解析工具需要部署时验证；Harness 会在新旧 CLI 间选择审批参数，但仍要求 `--ask-for-approval` 或 `--full-auto` 之一；输入变化后的评价是完整重建，不做脆弱的局部文本补丁。
+- 剩余风险：服务器 Codex 登录状态、CLI 版本、模型额度、网络/代理和 Office/PDF 解析工具需要部署时验证；Harness 会在新旧 CLI 间选择审批参数，并通过私有 `WEEKLY_CODEX_BASE_URL` 显式支持受控 HTTPS 代理；输入变化后的评价是完整重建，不做脆弱的局部文本补丁。
 - 延后工作：Web 展示自动评价运行历史、钉钉管理员结果通知、systemd timer 和多机分布式锁。

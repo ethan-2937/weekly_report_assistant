@@ -27,12 +27,10 @@ from codex_evaluation_harness import (
 from codex_evaluation_workspace import isolated_evaluation_workspace
 from dingtalk_common import CN_TZ, load_env, output_root, week_range
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PROMPT_PATH = ROOT / "harness" / "weekly-report-evaluation" / "prompt.md"
 SCHEMA_PATH = ROOT / "harness" / "weekly-report-evaluation" / "output-schema.json"
 REPO_SKILL_PATH = ROOT / "codex-skills" / "weekly-report-assistant" / "SKILL.md"
-
 
 def week_label(week: str = "previous") -> str:
     start, _ = week_range(week)
@@ -50,7 +48,6 @@ def collection_command(mode: str) -> list[str]:
         return [sys.executable, str(ROOT / "scripts" / "run_weekly.py"), "--week", "previous"]
     raise EvaluationHarnessError("COLLECTION_MODE_INVALID")
 
-
 def codex_command(
     codex_bin: str,
     prompt: str,
@@ -61,7 +58,11 @@ def codex_command(
     effort = configured.get("WEEKLY_CODEX_REASONING_EFFORT", "high").strip() or "high"
     if effort not in {"low", "medium", "high", "xhigh"}:
         raise EvaluationHarnessError("CODEX_REASONING_EFFORT_INVALID")
-    approval_flags = ["--ask-for-approval", "never"] if approval_mode == "explicit" else ["--full-auto"]
+    approval_flags = {
+        "explicit": ["--ask-for-approval", "never"],
+        "legacy": ["--full-auto"],
+        "config": ["-c", 'approval_policy="never"'],
+    }[approval_mode]
     command = [
         codex_bin,
         "exec",
@@ -81,8 +82,11 @@ def codex_command(
     if model:
         command.extend(["--model", model])
     command.append(prompt)
+    if base_url := configured.get("WEEKLY_CODEX_BASE_URL", "").strip():
+        if not base_url.startswith("https://") or any(char in base_url for char in ('"', "'", " ", "\t", "\r", "\n", "@")):
+            raise EvaluationHarnessError("CODEX_BASE_URL_INVALID")
+        command[-1:-1] = ["-c", f'base_url="{base_url}"']
     return command
-
 
 def render_prompt(label: str) -> str:
     try:
@@ -108,7 +112,6 @@ def resolve_codex_bin(configured: dict[str, str]) -> str:
     if not candidate:
         raise EvaluationHarnessError("CODEX_BIN_NOT_FOUND")
     return candidate
-
 
 def installed_skill_path(environment: dict[str, str]) -> Path:
     home = Path(environment.get("CODEX_HOME") or (Path.home() / ".codex"))
@@ -144,6 +147,8 @@ def preflight(codex_bin: str, environment: dict[str, str]) -> str:
         return "explicit"
     if "--full-auto" in help_text:
         return "legacy"
+    if "--config" in help_text or "-c, --config" in help_text:
+        return "config"
     raise EvaluationHarnessError("CODEX_APPROVAL_MODE_UNSUPPORTED")
 
 

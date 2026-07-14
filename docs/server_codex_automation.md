@@ -43,7 +43,7 @@ Harness 会根据 `codex exec --help` 自动选择审批参数：新 CLI 使用 
 ## 前置条件
 
 1. 宿主机安装并登录 Codex CLI，运行用户与 cron 用户必须相同。
-2. `codex exec --help` 必须支持 `--ephemeral`、`--output-schema`、`--sandbox`、`--ignore-rules`，以及 `--ask-for-approval` 或 `--full-auto` 之一。
+2. `codex exec --help` 必须支持 `--ephemeral`、`--output-schema`、`--sandbox`、`--ignore-rules`，以及 `--ask-for-approval`、`--full-auto` 或 `-c/--config` 之一。
 3. 同步仓库 Skill 到 `~/.codex/skills/weekly-report-assistant`；Harness 会比较 `SKILL.md`，过期时拒绝运行。
 4. Docker 服务已启动；推荐让 Harness 通过容器完成钉钉采集，Codex 本身仍运行在宿主机。
 5. `output/`、`logs/` 和项目目录对运行用户可写，临时目录应有足够空间容纳当前周附件。
@@ -57,6 +57,8 @@ Harness 会根据 `codex exec --help` 自动选择审批参数：新 CLI 使用 
 ```text
 WEEKLY_CODEX_COLLECTION_MODE=docker
 WEEKLY_CODEX_BIN=codex
+# Optional approved HTTPS proxy; set this when Codex cannot reach its service directly.
+WEEKLY_CODEX_BASE_URL=https://proxy.example.invalid/openai
 WEEKLY_CODEX_MODEL=
 WEEKLY_CODEX_REASONING_EFFORT=high
 WEEKLY_CODEX_COLLECTION_TIMEOUT_SECONDS=600
@@ -65,6 +67,8 @@ WEEKLY_CODEX_MAX_ATTEMPTS_PER_INPUT=3
 ```
 
 `WEEKLY_CODEX_MODEL` 留空时使用该 Codex CLI 的可用默认模型，避免仓库硬编码未来可能不可用的型号。`high` 推理强度用于提高评价一致性；如果额度或耗时压力较大，可在验证效果后改为 `medium`。
+
+`WEEKLY_CODEX_BASE_URL` 只应写入服务器私有 `config/.env`，必须是 HTTPS 地址；Harness 会显式传入该地址并继续忽略其他用户配置，避免代理配置之外的本地规则改变自动任务行为。
 
 ## 安装与预检
 

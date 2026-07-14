@@ -21,6 +21,7 @@
 - 本地开发只有显式设置 `WEEKLY_AUTH_DEVELOPMENT_MODE=true` 时才能使用开发默认凭据；Docker 部署不得启用该标志。
 - 前端 API 错误只采用受限的 JSON `error` 字段，并清洗当前 token、请求密码及常见 Bearer/JWT 形态；不得拼接完整响应。
 - 自动评价 Codex 只接收当前业务周的分析包、提交 CSV、负责人附件和政策快照；子进程移除 DingTalk/MySQL/JWT/免交及通用 secret/token/password 环境变量，仅允许临时 `workspace-write`、无审批且禁用网络。模型输出必须通过章节、人员覆盖和敏感字段校验后才写入正式报告。
+- 自动评价如需代理，只允许通过私有 `WEEKLY_CODEX_BASE_URL` 显式传入 HTTPS 地址；不直接加载完整 Codex 用户配置，避免本地规则、路径或其他凭据进入自动任务。
 - 反馈通知失败时返回最小必要信息，不泄露内部凭据或通讯录。
 - 周日提醒只向每位缺交人员发送不含他人信息的私人工作通知；管理员结果只包含周次、汇总人数和安全错误原因，不包含姓名、userid、周报正文或原始钉钉响应。
 - 提醒候选 userid 只存在于受控进程输出和内存中，不写普通日志；`output/<week>/reminders/sunday-1800.json` 只保存阶段、汇总人数和时间。远程发送结果不确定时不得自动重发员工通知。

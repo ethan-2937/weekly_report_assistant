@@ -167,6 +167,14 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         self.assertIn(str(workspace), command)
         self.assertNotIn("danger-full-access", joined)
 
+        proxied = codex_command(
+            "/usr/local/bin/codex",
+            "safe prompt",
+            {"WEEKLY_CODEX_REASONING_EFFORT": "high", "WEEKLY_CODEX_BASE_URL": "https://proxy.example.invalid/openai"},
+            workspace,
+        )
+        self.assertIn('base_url="https://proxy.example.invalid/openai"', proxied)
+
         legacy = codex_command(
             "/usr/local/bin/codex",
             "safe prompt",
@@ -176,6 +184,15 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         )
         self.assertIn("--full-auto", legacy)
         self.assertNotIn("--ask-for-approval", legacy)
+
+        configured = codex_command(
+            "/usr/local/bin/codex",
+            "safe prompt",
+            {"WEEKLY_CODEX_REASONING_EFFORT": "high"},
+            workspace,
+            "config",
+        )
+        self.assertIn('approval_policy="never"', configured)
 
     def test_structured_result_requires_completed_matching_week(self) -> None:
         report = self._valid_report()
