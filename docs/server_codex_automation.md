@@ -36,12 +36,14 @@ Codex 使用：
 -c 'web_search="disabled"'
 ```
 
+Harness 会根据 `codex exec --help` 自动选择审批参数：新 CLI 使用 `--ask-for-approval never`，不支持该参数的旧 CLI 使用兼容的 `--full-auto`。两种模式都限制在临时工作区，且不会授权生产目录写入。
+
 `workspace-write` 只用于临时隔离目录内的附件解析中间文件，不授权生产目录写入；正式报告由 Python 校验后原子替换。模型失败、超时、输出不完整或泄露内部标识时，上一次有效 `manager_report.md` 保持不变。
 
 ## 前置条件
 
 1. 宿主机安装并登录 Codex CLI，运行用户与 cron 用户必须相同。
-2. `codex exec --help` 必须支持 `--ephemeral`、`--output-schema`、`--sandbox` 和 `--ignore-rules`。
+2. `codex exec --help` 必须支持 `--ephemeral`、`--output-schema`、`--sandbox`、`--ignore-rules`，以及 `--ask-for-approval` 或 `--full-auto` 之一。
 3. 同步仓库 Skill 到 `~/.codex/skills/weekly-report-assistant`；Harness 会比较 `SKILL.md`，过期时拒绝运行。
 4. Docker 服务已启动；推荐让 Harness 通过容器完成钉钉采集，Codex 本身仍运行在宿主机。
 5. `output/`、`logs/` 和项目目录对运行用户可写，临时目录应有足够空间容纳当前周附件。

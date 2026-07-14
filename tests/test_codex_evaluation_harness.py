@@ -167,6 +167,16 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         self.assertIn(str(workspace), command)
         self.assertNotIn("danger-full-access", joined)
 
+        legacy = codex_command(
+            "/usr/local/bin/codex",
+            "safe prompt",
+            {"WEEKLY_CODEX_REASONING_EFFORT": "high"},
+            workspace,
+            "legacy",
+        )
+        self.assertIn("--full-auto", legacy)
+        self.assertNotIn("--ask-for-approval", legacy)
+
     def test_structured_result_requires_completed_matching_week(self) -> None:
         report = self._valid_report()
         stdout = (

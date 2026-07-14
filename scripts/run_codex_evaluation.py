@@ -51,16 +51,23 @@ def collection_command(mode: str) -> list[str]:
     raise EvaluationHarnessError("COLLECTION_MODE_INVALID")
 
 
-def codex_command(codex_bin: str, prompt: str, configured: dict[str, str], workspace: Path) -> list[str]:
+def codex_command(
+    codex_bin: str,
+    prompt: str,
+    configured: dict[str, str],
+    workspace: Path,
+    approval_mode: str = "explicit",
+) -> list[str]:
     effort = configured.get("WEEKLY_CODEX_REASONING_EFFORT", "high").strip() or "high"
     if effort not in {"low", "medium", "high", "xhigh"}:
         raise EvaluationHarnessError("CODEX_REASONING_EFFORT_INVALID")
+    approval_flags = ["--ask-for-approval", "never"] if approval_mode == "explicit" else ["--full-auto"]
     command = [
         codex_bin,
         "exec",
         "--ephemeral",
         "--sandbox", "workspace-write",
-        "--ask-for-approval", "never",
+        *approval_flags,
         "--cd", str(workspace),
         "--skip-git-repo-check",
         "--ignore-user-config",
@@ -108,7 +115,7 @@ def installed_skill_path(environment: dict[str, str]) -> Path:
     return home / "skills" / "weekly-report-assistant" / "SKILL.md"
 
 
-def preflight(codex_bin: str, environment: dict[str, str]) -> None:
+def preflight(codex_bin: str, environment: dict[str, str]) -> str:
     skill_path = installed_skill_path(environment)
     if not skill_path.is_file():
         raise EvaluationHarnessError("CODEX_SKILL_NOT_INSTALLED")
@@ -133,6 +140,11 @@ def preflight(codex_bin: str, environment: dict[str, str]) -> None:
     required_flags = ("--ephemeral", "--output-schema", "--sandbox", "--ignore-rules")
     if result.returncode != 0 or any(flag not in help_text for flag in required_flags):
         raise EvaluationHarnessError("CODEX_CLI_TOO_OLD")
+    if "--ask-for-approval" in help_text:
+        return "explicit"
+    if "--full-auto" in help_text:
+        return "legacy"
+    raise EvaluationHarnessError("CODEX_APPROVAL_MODE_UNSUPPORTED")
 
 
 def run_checked(
@@ -214,7 +226,7 @@ def main() -> int:
     attempt = 0
     try:
         codex_bin = resolve_codex_bin(configured)
-        preflight(codex_bin, codex_environment)
+        approval_mode = preflight(codex_bin, codex_environment)
         if args.preflight:
             print("OK: Codex evaluation preflight passed.")
             return 0
@@ -246,7 +258,7 @@ def main() -> int:
             prompt = render_prompt(label)
             with isolated_evaluation_workspace(ROOT, week_root, prompt, SCHEMA_PATH) as workspace:
                 codex = run_checked(
-                    codex_command(codex_bin, prompt, configured, workspace),
+                    codex_command(codex_bin, prompt, configured, workspace, approval_mode),
                     timeout,
                     codex_environment,
                     cwd=workspace,
