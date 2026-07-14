@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import os
 import sys
 import tempfile
@@ -8,11 +9,13 @@ import unittest
 from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from dingtalk_common import (  # noqa: E402
+    api_post,
     load_env,
     parse_date,
     require_env,
@@ -85,6 +88,27 @@ class DingTalkCommonTests(unittest.TestCase):
     def test_required_config_rejects_empty_values(self) -> None:
         with self.assertRaisesRegex(Exception, "DINGTALK_APP_SECRET"):
             require_env({"DINGTALK_APP_SECRET": ""}, "DINGTALK_APP_SECRET")
+
+    def test_http_errors_redact_query_tokens_and_sensitive_response_values(self) -> None:
+        secret_token = "fictional-sensitive-token"
+        secret_app = "fictional-sensitive-app-secret"
+        response = f'access_token={secret_token} appSecret={secret_app}'.encode()
+        http_error = HTTPError(
+            f"https://example.invalid/api?access_token={secret_token}",
+            500,
+            "error",
+            {},
+            io.BytesIO(response),
+        )
+
+        with patch("dingtalk_common.request.urlopen", side_effect=http_error):
+            with self.assertRaises(Exception) as raised:
+                api_post(f"https://example.invalid/api?access_token={secret_token}", {})
+
+        message = str(raised.exception)
+        self.assertNotIn(secret_token, message)
+        self.assertNotIn(secret_app, message)
+        self.assertIn("HTTP 500", message)
 
 
 if __name__ == "__main__":

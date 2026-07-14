@@ -1,0 +1,85 @@
+package com.yzzhang.weeklyreport.service.reminder;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yzzhang.weeklyreport.config.ProjectPathConfig;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.util.Optional;
+
+@Component
+public class ReminderRunStore {
+    private static final String STATE_FILE = "sunday-1800.json";
+
+    private final ProjectPathConfig pathConfig;
+    private final ObjectMapper objectMapper;
+
+    public ReminderRunStore(ProjectPathConfig pathConfig, ObjectMapper objectMapper) {
+        this.pathConfig = pathConfig;
+        this.objectMapper = objectMapper;
+    }
+
+    public Optional<ReminderRunState> load(String weekLabel) {
+        Path path = statePath(weekLabel);
+        if (!Files.exists(path)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(objectMapper.readValue(path.toFile(), ReminderRunState.class));
+        } catch (IOException ex) {
+            throw new SubmissionReminderException("提醒任务状态读取失败", ex);
+        }
+    }
+
+    public void save(ReminderRunState state) {
+        Path target = statePath(state.weekLabel());
+        Path temporary = target.resolveSibling(STATE_FILE + ".tmp");
+        try {
+            Files.createDirectories(target.getParent());
+            objectMapper.writeValue(temporary.toFile(), state);
+            try {
+                Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException ex) {
+            throw new SubmissionReminderException("提醒任务状态写入失败", ex);
+        }
+    }
+
+    public ReminderRunState state(ReminderCandidateSnapshot snapshot, String phase) {
+        return new ReminderRunState(
+            snapshot.weekLabel(),
+            phase,
+            snapshot.expectedCount(),
+            snapshot.submittedCount(),
+            snapshot.missingUserIds().size(),
+            Instant.now().toString()
+        );
+    }
+
+    private Path statePath(String weekLabel) {
+        if (weekLabel == null || !weekLabel.matches("\\d{4}-W\\d{2}")) {
+            throw new SubmissionReminderException("提醒任务周次无效");
+        }
+        return pathConfig.outputRoot()
+            .resolve(weekLabel)
+            .resolve("reminders")
+            .resolve(STATE_FILE)
+            .normalize();
+    }
+
+    public record ReminderRunState(
+        String weekLabel,
+        String phase,
+        int expectedCount,
+        int submittedCount,
+        int missingCount,
+        String updatedAt
+    ) {}
+}

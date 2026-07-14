@@ -67,6 +67,40 @@ weekly-report-mysql # MySQL 8.4
 http://服务器IP:22081/api/auth/dingtalk/callback
 ```
 
+## 周日未交提醒
+
+提醒功能默认关闭。启用前必须确认：
+
+1. `config/.env` 中的 `DINGTALK_REPORT_TEMPLATE` 是指定周报模板，采集凭据能够读取通讯录和周报。
+2. `WEEKLY_REPORT_EXEMPT_SUBMITTERS` 在容器中生效，免交人数与预期一致。
+3. 现有反馈通知接收人和 `WEEKLY_FEEDBACK_DINGTALK_*` 工作通知凭据有效。
+4. 钉钉企业应用可见范围覆盖所有应交人员，而不只是管理员。
+
+先运行只输出汇总数字、不会发消息的预检：
+
+```bash
+docker compose exec weekly-report python3 /app/scripts/submission_reminder.py
+```
+
+预检只应显示周次、截止时间和应交/已交/未交/待确认人数，不应显示姓名、userid 或 token。核对无误后在根目录 `.env` 设置：
+
+```text
+WEEKLY_SUBMISSION_REMINDER_ENABLED=true
+WEEKLY_SUBMISSION_REMINDER_CRON=0 0 18 * * SUN
+WEEKLY_SUBMISSION_REMINDER_ZONE=Asia/Shanghai
+WEEKLY_SUBMISSION_REMINDER_PROCESS_TIMEOUT_SECONDS=180
+```
+
+然后重建并重新创建应用容器：
+
+```bash
+docker compose up -d --build --force-recreate weekly-report
+```
+
+正常情况下，Spring 在每周日 18:00 实时检查当前业务周：未交人员分别收到私人工作通知，配置的反馈接收人无论执行成功或失败都会收到汇总结果。周日结果只是提醒，不是周三补交截止后的最终缺交结论。
+
+防重复状态写入 `output/<YYYY-Www>/reminders/sunday-1800.json`，只包含任务阶段、汇总人数和时间。若员工通知的远程结果不确定，系统不会自动重发，管理员结果通知会要求人工检查。
+
 ## 周四截止自动化
 
 周一可以用服务器 Codex 或 Web 按钮生成暂定结果；周四补交截止后应再次触发并生成最终结果。自动化可采用两种方式：

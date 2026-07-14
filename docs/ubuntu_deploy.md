@@ -15,6 +15,7 @@ weekly-report/
     .env.example
   scripts/
     run_weekly.py
+    submission_reminder.py
     test_token.py
     download_contacts.py
     download_reports.py
@@ -95,6 +96,8 @@ Use $weekly-report-assistant in /data2/person_path/yzzhang/weekly-report.
 ```bash
 0 9 * * 4 cd /data2/person_path/yzzhang/weekly-report && python3 scripts/run_weekly.py >> logs/weekly.log 2>&1
 ```
+
+周日提醒由 Spring Scheduler 提供，不需要再配置一条 cron。功能默认关闭；先运行 `python3 scripts/submission_reminder.py` 核对仅含人数的预检结果，再设置 `WEEKLY_SUBMISSION_REMINDER_ENABLED=true` 并重启 Java 服务。详细前置条件和 Docker 配置见 `docs/docker_deploy.md`。
 
 ## Skill 安装位置
 

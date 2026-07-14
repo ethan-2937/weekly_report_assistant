@@ -82,3 +82,20 @@ def filter_exempt_reports(
         if _normalize_identity(report.get("creator_id")) not in exempt_userids
         and not rules.matches(report.get("creator_id"), report.get("creator_name"))
     ]
+
+
+def missing_expected_userids(
+    expected_users: list[dict[str, Any]], reports: list[dict[str, Any]]
+) -> tuple[list[str], int, int]:
+    expected_userids = {
+        userid
+        for user in expected_users
+        if (userid := _normalize_identity(user.get("userid")))
+    }
+    submitted_userids = {
+        userid
+        for report in reports
+        if (userid := _normalize_identity(report.get("creator_id"))) in expected_userids
+    }
+    unresolved_count = len(expected_users) - len(expected_userids)
+    return sorted(expected_userids - submitted_userids), len(submitted_userids), unresolved_count

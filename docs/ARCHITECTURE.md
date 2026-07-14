@@ -14,13 +14,19 @@ DingTalk APIs
 MySQL
     -> users, roles, scopes, login logs, jobs
     -> Spring Security/JWT
+
+Spring Sunday scheduler
+    -> Python current-week reminder snapshot
+    -> stable userid + exemption comparison
+    -> DingTalk work-notice adapter
+    -> missing employees + configured administrator result
 ```
 
 ## 运行边界
 
-- Python 负责外部采集、周次计算、提交归属窗口、人员匹配、免交名单过滤、负责人附件下载和生成确定性输入包；`submission_roster.py` 应用服务器私有免交配置，`attachment_download.py` 通过钉钉 Drive 短期下载信息受控落盘，`leader_compliance.py` 生成履职证据，`weekly_outputs.py` 统一生成 CSV/Markdown。
+- Python 负责外部采集、周次计算、提交归属窗口、人员匹配、免交名单过滤、负责人附件下载和生成确定性输入包；`submission_roster.py` 应用服务器私有免交配置，`submission_reminder.py` 只生成截至当前时刻的轻量候选快照，不写正式周报输出，`attachment_download.py` 通过钉钉 Drive 短期下载信息受控落盘，`leader_compliance.py` 生成履职证据，`weekly_outputs.py` 统一生成 CSV/Markdown。
 - Codex Skill 负责从授权输入生成管理评价，不负责身份认证或数据权限。
-- Spring Boot 负责身份、数据范围、文件读取、任务触发和 API。
+- Spring Boot 负责身份、数据范围、文件读取、任务触发、周日定时编排和钉钉工作通知；反馈与周报提醒复用同一通知适配器。
 - Vue 负责展示和交互，不承担权限裁决。
 - MySQL 保存认证、权限和任务状态；周报正文当前以文件形式保存。
 
@@ -40,6 +46,7 @@ Controller 不得绕过服务层读取文件或数据库。权限过滤应尽量
 - 前端 `api/client.js` 统一处理 fetch、Authorization、响应解析、敏感错误清洗和 401；`composables/useAuth.js` 统一处理 token 持久化、OAuth 回调和登录态失效。
 - `features/auth/LoginView.vue` 只负责登录呈现和提交事件，用户名密码与钉钉登录协议仍由既有后端接口提供。
 - Spring 启动时由 `ProductionCredentialValidator` 校验 JWT secret 和初始管理员密码。生产模式是默认值；只有显式开发模式允许本地默认凭据。
+- 周日提醒默认关闭；启用后固定使用 `Asia/Shanghai`，候选进程有超时且返回值不进入普通日志。同一周只落盘不含姓名和 userid 的阶段/汇总状态，用于阻止不确定发送后的自动重试。
 
 ## 活动与历史实现
 

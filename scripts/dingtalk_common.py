@@ -3,10 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib import error, request
+from urllib.parse import urlsplit, urlunsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,20 +54,31 @@ def api_post(url: str, payload: dict[str, Any], token: str | None = None) -> dic
         with request.urlopen(req, timeout=30) as resp:
             body = resp.read().decode("utf-8")
     except error.HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace")
-        raise DingTalkError(f"HTTP {exc.code} for {url}: {body}") from exc
+        raise DingTalkError(f"HTTP {exc.code} for {_safe_url(url)}") from exc
     except error.URLError as exc:
-        raise DingTalkError(f"Network error for {url}: {exc}") from exc
+        raise DingTalkError(f"Network error for {_safe_url(url)}: {_safe_response(str(exc.reason))}") from exc
 
     try:
         parsed = json.loads(body)
     except json.JSONDecodeError as exc:
-        raise DingTalkError(f"Non-JSON response from {url}: {body[:300]}") from exc
+        raise DingTalkError(f"Non-JSON response from {_safe_url(url)}") from exc
 
     errcode = parsed.get("errcode")
     if errcode not in (None, 0):
-        raise DingTalkError(f"DingTalk API error {errcode}: {parsed.get('errmsg') or parsed}")
+        raise DingTalkError(f"DingTalk API error {errcode}: {_safe_response(str(parsed.get('errmsg') or 'unknown error'))}")
     return parsed
+
+
+def _safe_url(url: str) -> str:
+    parts = urlsplit(url)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+
+
+def _safe_response(value: str) -> str:
+    text = value.replace("\r", " ").replace("\n", " ").strip()
+    text = re.sub(r"(?i)(access[_-]?token|appsecret|app_secret)([=:]\s*)[^,;&\s]+", r"\1\2***", text)
+    text = re.sub(r"(?i)bearer\s+[A-Za-z0-9._~+/=-]+", "Bearer ***", text)
+    return text[:160] if text else "request failed"
 
 
 def get_access_token(env: dict[str, str] | None = None) -> str:
@@ -101,8 +114,8 @@ def parse_date(value: str) -> datetime:
     return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=CN_TZ)
 
 
-def week_range(week: str = "previous") -> tuple[datetime, datetime]:
-    now = datetime.now(CN_TZ)
+def week_range(week: str = "previous", now: datetime | None = None) -> tuple[datetime, datetime]:
+    now = (now or datetime.now(CN_TZ)).astimezone(CN_TZ)
     offset = -1 if week == "previous" else 0
     start = (now - timedelta(days=now.weekday()) + timedelta(weeks=offset)).replace(
         hour=0, minute=0, second=0, microsecond=0

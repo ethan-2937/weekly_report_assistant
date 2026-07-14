@@ -34,11 +34,15 @@ $required = @(
     "tests/test_dingtalk_common.py",
     "tests/test_leader_compliance.py",
     "tests/test_report_collection_window.py",
+    "tests/test_submission_reminder.py",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/util/WeekLabelUtilsTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/config/ProductionCredentialValidatorTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/config/SecurityConfigWebMvcTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/ReportPermissionServiceImplTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/WeeklyReportServiceImplTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/SubmissionReminderServiceTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/notification/DingTalkWorkNoticeClientTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/notification/FeedbackRecipientResolverTest.java",
     "web/frontend/src/api/client.test.js",
     "web/frontend/src/composables/useAuth.test.js"
 )
@@ -156,10 +160,16 @@ if ($composeConfig -notmatch 'WEEKLY_BOOTSTRAP_ADMIN_PASSWORD:\?') {
 if ($composeConfig -notmatch 'WEEKLY_REPORT_EXEMPT_SUBMITTERS:') {
     Add-Failure "docker-compose.yml must pass WEEKLY_REPORT_EXEMPT_SUBMITTERS into the collection container."
 }
+if ($composeConfig -notmatch 'WEEKLY_SUBMISSION_REMINDER_ENABLED:') {
+    Add-Failure "docker-compose.yml must pass WEEKLY_SUBMISSION_REMINDER_ENABLED into the application container."
+}
 
 $composeEnvExample = Get-Content -Raw -LiteralPath (Join-Path $root ".env.example") -Encoding UTF8
 if ($composeEnvExample -notmatch 'WEEKLY_REPORT_EXEMPT_SUBMITTERS=') {
     Add-Failure ".env.example must document WEEKLY_REPORT_EXEMPT_SUBMITTERS for Docker deployments."
+}
+if ($composeEnvExample -notmatch 'WEEKLY_SUBMISSION_REMINDER_ENABLED=') {
+    Add-Failure ".env.example must document WEEKLY_SUBMISSION_REMINDER_ENABLED for Docker deployments."
 }
 
 if ($failures.Count -gt 0) {

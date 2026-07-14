@@ -9,11 +9,11 @@
     ".css": 500
   },
   "fileLineBudgets": {
-    "scripts/run_weekly.py": 134,
+    "scripts/run_weekly.py": 88,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/config/WeeklyReportProperties.java": 300,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/mapper/SysUserMapper.java": 330,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/AuthServiceImpl.java": 360,
-    "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/FeedbackServiceImpl.java": 650,
+    "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/FeedbackServiceImpl.java": 334,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/ReportContentFilter.java": 450,
     "web/frontend/src/App.vue": 1324,
     "web/frontend/src/components/MarkdownReport.vue": 360,

@@ -64,6 +64,8 @@ chmod 600 .env
 
 至少填写 `WEEKLY_HOST_PORT`、`MYSQL_ROOT_PASSWORD`、`WEEKLY_JWT_SECRET`、`WEEKLY_BOOTSTRAP_ADMIN_PASSWORD` 和实际免交规则 `WEEKLY_REPORT_EXEMPT_SUBMITTERS`，并保持 `WEEKLY_AUTH_DEVELOPMENT_MODE=false`。不得把真实值写回 `.env.example`。
 
+周日未交提醒默认关闭。首次部署先保持 `WEEKLY_SUBMISSION_REMINDER_ENABLED=false`，完成下述预检和钉钉应用可见范围核对后再启用；完整说明见 `docs/docker_deploy.md`。
+
 ## 5. 安装 Codex skill
 
 ```bash
@@ -90,6 +92,14 @@ docker compose logs -f --tail=100
 curl http://127.0.0.1:22081/api/health
 curl http://127.0.0.1:22081/api/weeks
 ```
+
+周日提醒预检只输出汇总人数，不发送消息或显示 userid：
+
+```bash
+docker compose exec weekly-report python3 /app/scripts/submission_reminder.py
+```
+
+预检应在本周周四 00:00 之后执行。确认模板、应交人数、免交人数、反馈通知接收人和应用可见范围后，在根 `.env` 设置 `WEEKLY_SUBMISSION_REMINDER_ENABLED=true`，再执行 `docker compose up -d --build --force-recreate weekly-report`。正常任务在周日 18:00 执行，成功或失败都会向配置的反馈接收人发送汇总结果。
 
 访问地址：
 

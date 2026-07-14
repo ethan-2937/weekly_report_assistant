@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from submission_roster import (  # noqa: E402
     filter_exempt_reports,
+    missing_expected_userids,
     parse_exemption_rules,
     partition_expected_submitters,
 )
@@ -74,6 +75,24 @@ class SubmissionRosterTests(unittest.TestCase):
 
         self.assertIn("WEEKLY_REPORT_EXEMPT_SUBMITTERS", str(raised.exception))
         self.assertNotIn(sensitive_identity, str(raised.exception))
+
+    def test_missing_userids_are_deduplicated_and_unresolved_users_are_counted(self) -> None:
+        users = [
+            {"userid": "test-user-001", "name": "示例员工甲"},
+            {"userid": "test-user-002", "name": "示例员工乙"},
+            {"userid": "", "name": "待确认人员"},
+        ]
+        reports = [
+            {"creator_id": "test-user-001"},
+            {"creator_id": "test-user-001"},
+            {"creator_id": "outside-user"},
+        ]
+
+        missing, submitted_count, unresolved_count = missing_expected_userids(users, reports)
+
+        self.assertEqual(["test-user-002"], missing)
+        self.assertEqual(1, submitted_count)
+        self.assertEqual(1, unresolved_count)
 
 
 if __name__ == "__main__":

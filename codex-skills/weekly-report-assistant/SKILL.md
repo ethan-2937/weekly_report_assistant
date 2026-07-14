@@ -28,6 +28,7 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Match by stable ID when possible; fall back to exact normalized name only when IDs are unavailable.
    - Output counts: 应交人数、已交人数、未交人数、重复/异常提交数.
    - Keep an “无法确认” bucket for unmatched submissions or roster ambiguity.
+   - Treat the Sunday 18:00 current-week snapshot as a provisional reminder only. It covers submissions from Thursday 00:00 through the detection time; Monday-through-Wednesday late submissions are still allowed for that business week, so do not label Sunday candidates as finally overdue.
 
 5. Evaluate each submitted weekly report.
    - Summarize: 做了哪些工作, 关键交付物, 效果如何, 工时健康度, AI使用质量, 风险/求助, 下周计划.
@@ -87,6 +88,8 @@ After the script runs, analyze:
 When producing the formal HR-facing evaluation, write it to `output/<YYYY-Www>/summary/manager_report.md`. The Java + Vue web interface reads that exact file and displays it as the AI evaluation page. Include the standard sections: 本周提交概览, 需老板拍板/协调事项, 未提交/异常提交名单, 员工五维评价, 团队负责人履职检查, 共性风险与下周关注点, 数据质量与需要人工确认事项.
 
 Do not print `.env`, `DINGTALK_APP_SECRET`, or access tokens. If `scripts/run_weekly.py` fails because permissions are missing, report the exact missing DingTalk scope from the error message and stop before inventing missing-submission results.
+
+`scripts/submission_reminder.py` is a deterministic Sunday reminder preflight. Its default output contains counts only and does not send a notification; the `--json` form contains private userid data and is reserved for the Spring subprocess boundary. Do not paste that machine output into chat or logs.
 
 ## Output Standard
 

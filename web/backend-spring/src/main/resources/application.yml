@@ -43,3 +43,8 @@ weekly:
     env-path: ${WEEKLY_FEEDBACK_ENV_PATH:}
     access-token-url: ${WEEKLY_FEEDBACK_DINGTALK_TOKEN_URL:https://api.dingtalk.com/v1.0/oauth2/accessToken}
     async-send-url: ${WEEKLY_FEEDBACK_DINGTALK_SEND_URL:https://oapi.dingtalk.com/topapi/message/corpconversation/asyncsend_v2}
+  submission-reminder:
+    enabled: ${WEEKLY_SUBMISSION_REMINDER_ENABLED:false}
+    cron: ${WEEKLY_SUBMISSION_REMINDER_CRON:0 0 18 * * SUN}
+    zone: ${WEEKLY_SUBMISSION_REMINDER_ZONE:Asia/Shanghai}
+    process-timeout-seconds: ${WEEKLY_SUBMISSION_REMINDER_PROCESS_TIMEOUT_SECONDS:180}
