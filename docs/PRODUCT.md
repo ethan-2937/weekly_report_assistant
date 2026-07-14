@@ -34,9 +34,12 @@ output/<YYYY-Www>/exports/submission_status.csv
 output/<YYYY-Www>/analysis/analysis_input.md
 output/<YYYY-Www>/summary/submission_check.md
 output/<YYYY-Www>/summary/manager_report.md
+output/<YYYY-Www>/automation/evaluation_state.json # 自动评价状态，仅含摘要和散列
 ```
 
 `manager_report.md` 是 AI 评价页的正式输入。路径或结构变化属于跨 Python、Skill、Spring 和 Vue 的契约变更。
+
+服务器自动评价在周一至周三检测上一业务周的补交、负责人附件和评价规则输入；输入无变化时保留有效报告并跳过模型调用，周四补交窗口关闭后生成最终版本。状态文件不包含姓名、userid、周报正文或凭据。
 
 ## UI 约定
 

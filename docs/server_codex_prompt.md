@@ -1,5 +1,7 @@
 # 服务器 Codex 交接提示词
 
+自动运行优先使用 `scripts/run_codex_evaluation.sh`，安装、预检和 cron 见 `docs/server_codex_automation.md`。下面的长提示词只作为自动 Harness 不可用时的人工回退，不应再用于日常定时操作。
+
 ```text
 Use $weekly-report-assistant.
 项目路径：/data2/person_path/yzzhang/weekly-report。

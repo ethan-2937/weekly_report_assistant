@@ -77,6 +77,8 @@ cp -a codex-skills/weekly-report-assistant ~/.codex/skills/weekly-report-assista
 
 这样服务器 Codex 就可以使用 `$weekly-report-assistant`。周一可生成暂定结果，周四补交截止后应再次读取上一业务周数据并生成最终评价。
 
+自动评价 Harness 会机械检查已安装 Skill 与仓库版本一致；每次拉取包含 Skill 变更的代码后都必须重新复制。完整的 `codex exec` 预检、隔离、变更指纹和 cron 配置见 `docs/server_codex_automation.md`。
+
 ## 6. Docker 启动
 
 ```bash
@@ -154,7 +156,21 @@ git pull
 docker compose up -d --build
 ```
 
-## 9. 周四最终运行提示词
+## 9. Codex 自动评价
+
+优先执行：
+
+```bash
+cd /data2/person_path/yzzhang/weekly-report
+chmod 700 scripts/run_codex_evaluation.sh
+./scripts/run_codex_evaluation.sh --preflight
+./scripts/run_codex_evaluation.sh --dry-run
+./scripts/run_codex_evaluation.sh
+```
+
+确认首次输出正确后，按 `docs/server_codex_automation.md` 安装周一至周三的变更检查和周四最终评价 cron。Harness 会在没有新周报、附件或规则变化时跳过 Codex；有补交时完整重建并机械验证正式评价。
+
+## 10. 人工回退提示词
 
 ```text
 Use $weekly-report-assistant.

@@ -15,6 +15,8 @@ weekly-report/
     .env.example
   scripts/
     run_weekly.py
+    run_codex_evaluation.py
+    run_codex_evaluation.sh
     submission_reminder.py
     test_token.py
     download_contacts.py
@@ -81,6 +83,8 @@ python3 scripts/run_weekly.py
 
 ## Codex 提示词
 
+日常评价推荐使用自动 Harness，见 `docs/server_codex_automation.md`。它会在周一至周三检测补交变化，仅在输入变化时重新生成完整评价，并在周四形成最终版本。以下提示词仅作人工回退。
+
 ```text
 Use $weekly-report-assistant in /data2/person_path/yzzhang/weekly-report.
 请自动拉取上一业务周钉钉周报；业务周按周一至周日命名，提交按周四至下一周周三归属。生成提交状态和分析输入包后，基于 output/<周次>/analysis/analysis_input.md 生成正式管理评价。
@@ -96,6 +100,8 @@ Use $weekly-report-assistant in /data2/person_path/yzzhang/weekly-report.
 ```bash
 0 9 * * 4 cd /data2/person_path/yzzhang/weekly-report && python3 scripts/run_weekly.py >> logs/weekly.log 2>&1
 ```
+
+如果启用 Codex 自动评价，不再单独配置上面的采集 cron；自动评价 Harness 每次会先采集再按输入指纹决定是否调用 Codex。推荐 cron 和预检步骤见 `docs/server_codex_automation.md`。
 
 周日提醒由 Spring Scheduler 提供，不需要再配置一条 cron。功能默认关闭；先运行 `python3 scripts/submission_reminder.py` 核对仅含人数的预检结果，再设置 `WEEKLY_SUBMISSION_REMINDER_ENABLED=true` 并重启 Java 服务。详细前置条件和 Docker 配置见 `docs/docker_deploy.md`。
 
