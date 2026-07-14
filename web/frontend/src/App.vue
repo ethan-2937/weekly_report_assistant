@@ -105,119 +105,30 @@
         </div>
       </section>
 
-      <section v-if="canViewReports" class="category-strip">
+      <section v-if="canViewReports && currentView !== 'dashboard'" class="category-strip">
         <button v-for="week in weeks" :key="week.week" :class="{ active: selectedWeek === week.week }" @click="selectWeek(week.week)">
           {{ week.week }}
         </button>
         <span v-if="weeks.length === 0" class="muted">暂无周次数据，请先生成一次。</span>
       </section>
 
-      <section v-if="currentView === 'dashboard' && canViewReports" class="page-card">
-        <div class="page-header">
-          <div>
-            <h1>提交概览</h1>
-            <p>{{ selectedWeek || '未选择周次' }} · 数据生成时间 {{ formatDate(overview.generatedAt) }}</p>
-          </div>
-          <el-button round :disabled="!selectedWeek" @click="downloadCsv">下载提交表</el-button>
-        </div>
-
-        <div class="stat-grid">
-          <article class="stat-card">
-            <small>应交候选</small>
-            <strong>{{ overview.expectedCount }}</strong>
-            <span>来自钉钉通讯录授权范围</span>
-          </article>
-          <article class="stat-card success">
-            <small>已提交</small>
-            <strong>{{ overview.submittedCount }}</strong>
-            <span>按 userid 精准匹配</span>
-          </article>
-          <article class="stat-card danger">
-            <small>未提交候选</small>
-            <strong>{{ overview.missingCount }}</strong>
-            <span>需结合排除规则复核</span>
-          </article>
-          <article class="stat-card info">
-            <small>负责人候选</small>
-            <strong>{{ overview.leaderCandidateCount }}</strong>
-            <span>来自钉钉 leader 字段</span>
-          </article>
-        </div>
-
-        <div class="dashboard-layout">
-          <div class="soft-panel compliance-panel">
-            <div class="side-title compliance-title">
-              <div>
-                <h2>已提交名单 · 模板填写正确率</h2>
-                <p>按当前钉钉四项模板核对：本周完成成果、工时投入分析、AI应用及效果、下周计划。</p>
-              </div>
-              <el-tag effect="light" round :type="averageTemplateComplianceTagType">
-                平均 {{ averageTemplateComplianceRate }}
-              </el-tag>
-            </div>
-
-            <el-table
-              v-if="submittedComplianceRows.length"
-              :data="submittedComplianceRows"
-              class="soft-table compliance-table"
-              height="430"
-              row-key="report_id"
-            >
-              <el-table-column prop="姓名" label="姓名" width="128" fixed />
-              <el-table-column prop="部门" label="部门" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="提交时间" label="提交时间" min-width="168" />
-              <el-table-column label="模板填写正确率" min-width="220">
-                <template #default="{ row }">
-                  <div class="compliance-rate-cell">
-                    <strong>{{ formatTemplateRate(row) }}</strong>
-                    <el-progress
-                      :percentage="templateComplianceRate(row) ?? 0"
-                      :show-text="false"
-                      :stroke-width="10"
-                      :color="templateProgressColor(row)"
-                    />
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="合规状态" width="118">
-                <template #default="{ row }">
-                  <el-tag :type="templateComplianceTagType(row)" effect="light">
-                    {{ row['模板合规状态'] || '无法判断' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="缺失项 / 说明" min-width="300" show-overflow-tooltip>
-                <template #default="{ row }">
-                  <span :class="['missing-fields-text', { clear: missingFields(row).length === 0 }]">
-                    {{ templateComplianceHint(row) }}
-                  </span>
-                </template>
-              </el-table-column>
-            </el-table>
-            <el-empty v-else description="暂无已提交人员，生成周报数据后会显示模板填写正确率。" />
-          </div>
-
-          <div class="soft-panel">
-            <div class="side-title">
-              <div>
-                <h2>提交摘要</h2>
-                <p>由 Python 采集脚本自动生成。</p>
-              </div>
-            </div>
-            <MarkdownReport
-              :content="summary.submissionSummary"
-              empty-text="暂无提交摘要。"
-              variant="compact"
-            />
-          </div>
-        </div>
-      </section>
+      <SubmissionOverview
+        v-if="currentView === 'dashboard' && canViewReports"
+        :overview="overview"
+        :rows="rows"
+        :summary="summary"
+        :weeks="weeks"
+        :selected-week="selectedWeek"
+        @select-week="selectWeek"
+        @navigate-missing="showMissingReports"
+        @download="downloadCsv"
+      />
 
       <section v-if="currentView === 'status' && canViewReports" class="page-card">
         <div class="page-header">
           <div>
             <h1>提交状态</h1>
-            <p>支持按姓名、部门、提交状态和负责人候选筛选。</p>
+            <p>支持按姓名、部门、提交状态和负责人筛选。</p>
           </div>
           <el-button round @click="downloadCsv">下载 CSV</el-button>
         </div>
@@ -228,7 +139,7 @@
             <el-option label="已提交" value="已提交" />
             <el-option label="未提交" value="未提交" />
           </el-select>
-          <el-select v-model="filters.leader" clearable placeholder="负责人候选">
+          <el-select v-model="filters.leader" clearable placeholder="负责人">
             <el-option label="是" value="是" />
             <el-option label="否" value="否" />
           </el-select>
@@ -250,55 +161,12 @@
         </el-table>
       </section>
 
-      <section v-if="currentView === 'report' && canViewReports" class="page-card report-page">
-        <div class="report-hero-card">
-          <div class="report-hero-main">
-            <span class="report-eyebrow">WEEKLY AI REVIEW · {{ selectedWeek || '未选择周次' }}</span>
-            <h1>AI 周报评价看板</h1>
-            <p>
-              聚焦虚实盘、时间分配健康度、AI 使用红黑榜、下周计划合格性，以及需要老板拍板的协调事项。
-            </p>
-          </div>
-          <div class="report-status-card">
-            <span :class="['status-dot', analysis.isManagerReport ? 'ready' : 'waiting']"></span>
-            <strong>{{ analysis.isManagerReport ? '正式评价已生成' : '等待正式评价' }}</strong>
-            <small>{{ analysis.source || (analysis.isManagerReport ? 'manager_report.md' : 'analysis_input.md') }}</small>
-          </div>
-        </div>
-
-        <div class="report-kpi-strip">
-          <article>
-            <small>提交率</small>
-            <strong>{{ submissionRate }}</strong>
-            <span>{{ overview.submittedCount || 0 }} / {{ overview.expectedCount || 0 }}</span>
-          </article>
-          <article>
-            <small>未提交候选</small>
-            <strong>{{ overview.missingCount || 0 }}</strong>
-            <span>优先核对排除规则</span>
-          </article>
-          <article>
-            <small>负责人候选</small>
-            <strong>{{ overview.leaderCandidateCount || 0 }}</strong>
-            <span>需检查履职材料</span>
-          </article>
-          <article>
-            <small>评价模式</small>
-            <strong>{{ analysis.isManagerReport ? '正式' : '预览' }}</strong>
-            <span>{{ analysis.isManagerReport ? '可直接阅读' : '等待 Codex 产出' }}</span>
-          </article>
-        </div>
-
-        <div v-if="!analysis.isManagerReport" class="notice-card">
-          <strong>下一步：</strong>
-          在服务器 Codex 中运行 skill，让它基于本周 `analysis_input.md` 生成 `output/{{ selectedWeek }}/summary/manager_report.md`，刷新页面后即可展示正式评价。
-        </div>
-        <MarkdownReport
-          :content="analysis.content"
-          empty-text="暂无 AI 评价内容。"
-          variant="report"
-        />
-      </section>
+      <EvaluationView
+        v-if="currentView === 'report' && canViewReports"
+        :selected-week="selectedWeek"
+        :analysis="analysis"
+        :overview="overview"
+      />
 
       <section v-if="currentView === 'users' && isAdmin" class="page-card admin-page">
         <div class="admin-hero">
@@ -618,10 +486,21 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { changeCurrentPassword } from './api/auth.js'
+import {
+  fetchWeekAnalysis,
+  fetchWeeks,
+  fetchWeekSubmissionStatus,
+  fetchWeekSummary,
+  normalizeSubmissionStatus,
+  normalizeWeekAnalysis,
+  normalizeWeekOverview,
+  normalizeWeekSummary
+} from './api/weeks.js'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
-import MarkdownReport from './components/MarkdownReport.vue'
 import { useAuth } from './composables/useAuth.js'
 import LoginView from './features/auth/LoginView.vue'
+import EvaluationView from './features/evaluation/EvaluationView.vue'
+import SubmissionOverview from './features/overview/SubmissionOverview.vue'
 const adminUsers = ref([])
 const adminRoles = ref([])
 const adminLoading = ref(false)
@@ -687,6 +566,7 @@ const {
   startDingTalkLogin,
   signOut
 } = useAuth({ onAuthInvalidated: resetWorkspaceState })
+const weekClient = { request }
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
 const isAdmin = computed(() => (currentUser.value?.roles || []).includes('ADMIN'))
@@ -719,41 +599,6 @@ const currentViewLabel = computed(() => ({
 const userInitial = computed(() => {
   const name = currentUser.value?.realName || currentUser.value?.username || 'U'
   return String(name).slice(0, 2).toUpperCase()
-})
-const submissionRate = computed(() => {
-  const expected = Number(overview.value.expectedCount || 0)
-  const submitted = Number(overview.value.submittedCount || 0)
-  if (!expected) return '-'
-  return `${Math.round((submitted / expected) * 100)}%`
-})
-const submittedComplianceRows = computed(() => rows.value
-  .map((row, index) => ({ row, index }))
-  .filter(item => item.row['提交状态'] === '已提交')
-  .sort((left, right) => {
-    const leftRate = templateComplianceRate(left.row)
-    const rightRate = templateComplianceRate(right.row)
-    const normalizedLeft = leftRate === null ? 101 : leftRate
-    const normalizedRight = rightRate === null ? 101 : rightRate
-    if (normalizedLeft !== normalizedRight) return normalizedLeft - normalizedRight
-    return left.index - right.index
-  })
-  .map(item => item.row))
-const averageTemplateComplianceValue = computed(() => {
-  const rates = submittedComplianceRows.value
-    .map(templateComplianceRate)
-    .filter(rate => rate !== null)
-  if (!rates.length) return null
-  return Math.round(rates.reduce((sum, rate) => sum + rate, 0) / rates.length)
-})
-const averageTemplateComplianceRate = computed(() =>
-  averageTemplateComplianceValue.value === null ? '-' : `${averageTemplateComplianceValue.value}%`
-)
-const averageTemplateComplianceTagType = computed(() => {
-  const rate = averageTemplateComplianceValue.value
-  if (rate === null) return 'info'
-  if (rate >= 100) return 'success'
-  if (rate >= 75) return 'warning'
-  return 'danger'
 })
 const filteredRows = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
@@ -1170,7 +1015,8 @@ async function refreshAll() {
 
 async function loadWeeks() {
   if (!canViewReports.value) return
-  weeks.value = await request('/api/weeks')
+  const data = await fetchWeeks(weekClient)
+  weeks.value = Array.isArray(data) ? data.map(normalizeWeekOverview) : []
   if (!selectedWeek.value && weeks.value.length) {
     selectedWeek.value = weeks.value[0].week
   }
@@ -1182,16 +1028,21 @@ async function selectWeek(week) {
   await loadWeek(week)
 }
 
+async function showMissingReports() {
+  filters.status = '未提交'
+  await setView('status')
+}
+
 async function loadWeek(week) {
   if (!week || !canViewReports.value) return
   const [summaryData, analysisData, statusRows] = await Promise.all([
-    request(`/api/weeks/${week}/summary`),
-    request(`/api/weeks/${week}/analysis`),
-    request(`/api/weeks/${week}/submission-status`)
+    fetchWeekSummary(weekClient, week),
+    fetchWeekAnalysis(weekClient, week),
+    fetchWeekSubmissionStatus(weekClient, week)
   ])
-  summary.value = summaryData
-  analysis.value = analysisData
-  rows.value = statusRows
+  summary.value = normalizeWeekSummary(summaryData)
+  analysis.value = normalizeWeekAnalysis(analysisData)
+  rows.value = normalizeSubmissionStatus(statusRows)
 }
 
 async function loadJob() {
@@ -1257,52 +1108,6 @@ function formatDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString('zh-CN', { hour12: false })
-}
-
-function templateComplianceRate(row) {
-  const value = row?.['模板填写正确率']
-  if (typeof value === 'number' && Number.isFinite(value)) return value
-  if (typeof value === 'string' && value.trim()) {
-    const parsed = Number(value.replace('%', '').trim())
-    return Number.isFinite(parsed) ? parsed : null
-  }
-  return null
-}
-
-function formatTemplateRate(row) {
-  const rate = templateComplianceRate(row)
-  return rate === null ? '-' : `${rate}%`
-}
-
-function missingFields(row) {
-  const value = row?.['模板缺失项']
-  if (Array.isArray(value)) return value.filter(Boolean)
-  if (typeof value === 'string' && value.trim()) {
-    return value.split(/[、;；]/).map(item => item.trim()).filter(Boolean)
-  }
-  return []
-}
-
-function templateComplianceHint(row) {
-  const missing = missingFields(row)
-  if (missing.length) return `缺失或未填写：${missing.join('、')}`
-  return row?.['模板检查说明'] || '四项必填模板字段均已填写'
-}
-
-function templateComplianceTagType(row) {
-  const status = row?.['模板合规状态']
-  if (status === '符合模板') return 'success'
-  if (status === '需补充' || status === '不完整') return 'warning'
-  if (status === '疑似旧模板' || status === '不合规') return 'danger'
-  return 'info'
-}
-
-function templateProgressColor(row) {
-  const rate = templateComplianceRate(row)
-  if (rate === null) return '#9ca3af'
-  if (rate >= 100) return '#34a853'
-  if (rate >= 75) return '#fbbc04'
-  return '#ea4335'
 }
 
 function jobStatusType(status) {

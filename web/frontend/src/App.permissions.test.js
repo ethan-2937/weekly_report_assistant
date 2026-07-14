@@ -1,0 +1,98 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
+import App from './App.vue'
+
+const auth = vi.hoisted(() => ({
+  currentUser: null,
+  request: vi.fn().mockResolvedValue([]),
+  restoreSession: vi.fn(async callback => callback?.())
+}))
+
+vi.mock('./composables/useAuth.js', () => ({
+  useAuth: () => ({
+    authLoading: ref(false),
+    loginBusy: ref(false),
+    dingtalkBusy: ref(false),
+    loginError: ref(''),
+    currentUser: auth.currentUser,
+    request: auth.request,
+    restoreSession: auth.restoreSession,
+    signIn: vi.fn(),
+    startDingTalkLogin: vi.fn(),
+    signOut: vi.fn()
+  })
+}))
+
+vi.mock('element-plus', () => ({
+  ElMessage: { error: vi.fn(), success: vi.fn(), warning: vi.fn() }
+}))
+
+describe('application role menus and permission guards', () => {
+  it('shows report and job menus to an all-report user without exposing admin', async () => {
+    const wrapper = await mountAs({ roles: ['REPORT_ALL'], deptScopes: [] })
+
+    expect(menuLabels(wrapper)).toEqual(['提交概览', '未交名单', 'AI 评价', '运行状态'])
+    expect(wrapper.find('.admin-page').exists()).toBe(false)
+    expect(wrapper.text()).toContain('全部周报权限')
+  })
+
+  it('keeps an admin without report scope inside user management', async () => {
+    const wrapper = await mountAs({ roles: ['ADMIN'], deptScopes: [] })
+
+    expect(menuLabels(wrapper)).toEqual(['运行状态', '用户管理'])
+    expect(wrapper.find('.home-hero').exists()).toBe(false)
+    expect(wrapper.find('.admin-page').exists()).toBe(true)
+  })
+
+  it('allows scoped report viewing without job or admin controls', async () => {
+    const wrapper = await mountAs({ roles: ['MANAGER'], deptScopes: ['虚构研发部'] })
+
+    expect(menuLabels(wrapper)).toEqual(['提交概览', '未交名单', 'AI 评价'])
+    expect(wrapper.text()).toContain('授权范围周报')
+    expect(wrapper.find('.home-hero').exists()).toBe(true)
+    expect(wrapper.find('.admin-page').exists()).toBe(false)
+  })
+})
+
+async function mountAs(user) {
+  auth.currentUser = ref({
+    username: 'fictional-user',
+    realName: '测试用户',
+    ...user
+  })
+  auth.request.mockResolvedValue([])
+
+  const wrapper = mount(App, {
+    global: {
+      stubs: elementStubs(),
+      directives: { loading: () => {} }
+    }
+  })
+  await flushPromises()
+  return wrapper
+}
+
+function menuLabels(wrapper) {
+  return wrapper.findAll('.decor-nav button').map(item => item.text())
+}
+
+function elementStubs() {
+  const withSlot = { template: '<div><slot /></div>' }
+  return {
+    ElAlert: true,
+    ElButton: withSlot,
+    ElDialog: true,
+    ElDropdown: withSlot,
+    ElDropdownItem: withSlot,
+    ElDropdownMenu: withSlot,
+    ElEmpty: true,
+    ElInput: true,
+    ElOption: true,
+    ElProgress: true,
+    ElSelect: true,
+    ElTable: true,
+    ElTableColumn: true,
+    ElTag: withSlot
+  }
+}

@@ -1,0 +1,74 @@
+.report-section-group,
+.report-section-content {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.report-section-group--focus {
+  padding: 12px;
+  border: 1px solid rgba(52, 168, 83, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(234, 245, 238, 0.42), rgba(255, 255, 255, 0.88));
+}
+
+.report-section-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 18px;
+  border: 1px solid var(--sheet-line);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #172033, #27364d);
+  color: white;
+  cursor: pointer;
+  text-align: left;
+}
+
+.report-section-toggle > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.report-section-toggle small {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.report-section-toggle strong {
+  color: white;
+  font-size: 17px;
+}
+
+.report-section-toggle__action {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.report-section-toggle:focus-visible {
+  outline: 3px solid rgba(66, 133, 244, 0.34);
+  outline-offset: 3px;
+}
+
+.report-section-group.is-collapsed {
+  gap: 0;
+}
+
+:deep(.report-cell.is-subordinate-missing) {
+  box-shadow: inset 4px 0 0 #b42318;
+  font-weight: 900;
+}
+
+@media (max-width: 620px) {
+  .report-section-toggle {
+    padding: 13px 14px;
+  }
+}

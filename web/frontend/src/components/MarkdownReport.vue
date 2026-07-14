@@ -6,10 +6,31 @@
 
     <template v-else>
       <section
-        v-for="(block, index) in blocks"
-        :key="`${block.type}-${index}`"
-        :class="['report-block', `report-block--${block.type}`, block.level ? `level-${block.level}` : '', blockTone(block)]"
+        v-for="section in sections"
+        :key="section.id"
+        :class="['report-section-group', { 'report-section-group--focus': section.focus, 'is-collapsed': section.collapsible && !isOpen(section.id) }]"
+        :aria-label="section.focus ? '本周重点' : undefined"
       >
+        <button
+          v-if="section.collapsible"
+          type="button"
+          class="report-section-toggle"
+          :aria-expanded="isOpen(section.id)"
+          @click="toggleSection(section.id)"
+        >
+          <span>
+            <small>{{ section.kicker }}</small>
+            <strong>{{ section.title }}</strong>
+          </span>
+          <span class="report-section-toggle__action">{{ isOpen(section.id) ? '收起' : '展开' }}</span>
+        </button>
+
+        <div v-show="!section.collapsible || isOpen(section.id)" class="report-section-content">
+          <section
+            v-for="(block, index) in section.blocks"
+            :key="`${section.id}-${block.type}-${index}`"
+            :class="['report-block', `report-block--${block.type}`, block.level ? `level-${block.level}` : '', blockTone(block)]"
+          >
         <component v-if="block.type === 'heading'" :is="headingTag(block.level)" class="report-heading">
           <span class="heading-kicker">{{ headingLabel(block.level) }}</span>
           <span class="heading-text"><InlineText :parts="inlineParts(block.text)" /></span>
@@ -59,14 +80,18 @@
           </table>
         </div>
 
-        <pre v-else-if="block.type === 'code'" class="report-code"><code>{{ block.text }}</code></pre>
+            <pre v-else-if="block.type === 'code'" class="report-code"><code>{{ block.text }}</code></pre>
+          </section>
+        </div>
       </section>
     </template>
   </article>
 </template>
 
 <script setup>
-import { computed, defineComponent, h } from 'vue'
+import { computed, defineComponent, h, ref, watch } from 'vue'
+import { inlineParts, parseMarkdown } from './markdown/markdownParser.js'
+import { buildSections, prepareReportBlocks } from './markdown/reportSections.js'
 
 const props = defineProps({
   content: {
@@ -103,7 +128,24 @@ const InlineText = defineComponent({
   }
 })
 
-const blocks = computed(() => parseMarkdown(props.content))
+const blocks = computed(() => prepareReportBlocks(parseMarkdown(props.content)))
+const sections = computed(() => buildSections(blocks.value, props.variant))
+const openSections = ref(new Set())
+
+watch(() => props.content, () => {
+  openSections.value = new Set()
+})
+
+function isOpen(sectionId) {
+  return openSections.value.has(sectionId)
+}
+
+function toggleSection(sectionId) {
+  const next = new Set(openSections.value)
+  if (next.has(sectionId)) next.delete(sectionId)
+  else next.add(sectionId)
+  openSections.value = next
+}
 
 function headingTag(level) {
   return level <= 2 ? 'h2' : 'h3'
@@ -131,6 +173,9 @@ function cellClass(value, header) {
   const text = `${value}`
   const headerText = `${header}`
   const classes = ['report-cell']
+  if (/不合格\s*[（(]下属未提交[）)]/.test(text)) {
+    classes.push('is-subordinate-missing')
+  }
   if (/状态|进度|结果|是否|风险|备注|负责人|候选|提交|虚实盘|健康度|红黑榜|计划|结论|跟进/.test(headerText)) {
     classes.push('is-key-field')
   }
@@ -176,152 +221,6 @@ function statusTone(value) {
   return ''
 }
 
-function parseMarkdown(content) {
-  const lines = content.replace(/\r\n/g, '\n').split('\n')
-  const result = []
-  let index = 0
-
-  while (index < lines.length) {
-    const line = lines[index]
-
-    if (!line.trim()) {
-      index += 1
-      continue
-    }
-
-    if (line.trim().startsWith('```')) {
-      const code = []
-      index += 1
-      while (index < lines.length && !lines[index].trim().startsWith('```')) {
-        code.push(lines[index])
-        index += 1
-      }
-      if (index < lines.length) index += 1
-      result.push({ type: 'code', text: code.join('\n') })
-      continue
-    }
-
-    if (isTableStart(lines, index)) {
-      const tableLines = []
-      while (index < lines.length && /^\s*\|/.test(lines[index])) {
-        tableLines.push(lines[index])
-        index += 1
-      }
-      const parsed = parseTable(tableLines)
-      if (parsed) result.push(parsed)
-      continue
-    }
-
-    const headingMatch = line.match(/^(#{1,4})\s+(.+)$/)
-    if (headingMatch) {
-      result.push({ type: 'heading', level: headingMatch[1].length, text: cleanText(headingMatch[2]) })
-      index += 1
-      continue
-    }
-
-    if (/^\s*[-*]\s+/.test(line)) {
-      const items = []
-      while (index < lines.length && /^\s*[-*]\s+/.test(lines[index])) {
-        items.push(cleanText(lines[index].replace(/^\s*[-*]\s+/, '')))
-        index += 1
-      }
-      result.push({ type: 'list', items })
-      continue
-    }
-
-    if (/^\s*\d+\.\s+/.test(line)) {
-      const items = []
-      while (index < lines.length && /^\s*\d+\.\s+/.test(lines[index])) {
-        items.push(cleanText(lines[index].replace(/^\s*\d+\.\s+/, '')))
-        index += 1
-      }
-      result.push({ type: 'ordered-list', items })
-      continue
-    }
-
-    if (/^>\s+/.test(line)) {
-      const quote = []
-      while (index < lines.length && /^>\s+/.test(lines[index])) {
-        quote.push(cleanText(lines[index].replace(/^>\s+/, '')))
-        index += 1
-      }
-      result.push({ type: 'quote', text: quote.join(' ') })
-      continue
-    }
-
-    const paragraph = []
-    while (index < lines.length && lines[index].trim() && !isSpecialBlock(lines, index)) {
-      paragraph.push(cleanText(lines[index]))
-      index += 1
-    }
-    if (paragraph.length) {
-      result.push({ type: 'paragraph', text: paragraph.join(' ') })
-    } else {
-      index += 1
-    }
-  }
-
-  return result
-}
-
-function isSpecialBlock(lines, index) {
-  const line = lines[index]
-  return line.trim().startsWith('```')
-    || /^(#{1,4})\s+/.test(line)
-    || /^\s*[-*]\s+/.test(line)
-    || /^\s*\d+\.\s+/.test(line)
-    || /^>\s+/.test(line)
-    || isTableStart(lines, index)
-}
-
-function isTableStart(lines, index) {
-  return /^\s*\|/.test(lines[index] || '') && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[index + 1] || '')
-}
-
-function parseTable(tableLines) {
-  if (tableLines.length < 2) return null
-  const headers = splitTableRow(tableLines[0])
-  const rows = tableLines.slice(2).map(splitTableRow).filter(row => row.some(Boolean))
-  return { type: 'table', headers, rows }
-}
-
-function splitTableRow(line) {
-  return line.trim()
-    .replace(/^\|/, '')
-    .replace(/\|$/, '')
-    .split('|')
-    .map(cell => cleanText(cell.trim()))
-}
-
-function cleanText(text) {
-  return text.replace(/`([^`]+)`/g, '`$1`').trim()
-}
-
-function inlineParts(text) {
-  const parts = []
-  const pattern = /(\[[^\]]+\]\([^)]+\)|`[^`]+`|\*\*[^*]+\*\*)/g
-  let lastIndex = 0
-  let match
-
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: 'text', text: text.slice(lastIndex, match.index) })
-    }
-    const token = match[0]
-    if (token.startsWith('**')) {
-      parts.push({ type: 'strong', text: token.slice(2, -2) })
-    } else if (token.startsWith('`')) {
-      parts.push({ type: 'code', text: token.slice(1, -1) })
-    } else {
-      const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
-      parts.push({ type: 'link', text: linkMatch?.[1] || token, href: linkMatch?.[2] || '#' })
-    }
-    lastIndex = pattern.lastIndex
-  }
-
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', text: text.slice(lastIndex) })
-  }
-  return parts.length ? parts : [{ type: 'text', text }]
-}
 </script>
+
+<style scoped src="./markdown/MarkdownReport.css"></style>
