@@ -133,6 +133,7 @@ function composeAiRankings(blocks) {
       composed.push({
         type: 'ai-ranking',
         tone,
+        id: `ai-ranking-${tone}`,
         text: tone === 'red' ? 'AI红榜' : 'AI黑榜',
         items: content.items
       })

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import MarkdownReport from './MarkdownReport.vue'
 
 describe('Markdown report presentation', () => {
-  it('orders AI highlights around the weekly focus and hides unsafe detail', () => {
+  it('orders AI highlights around the weekly focus and hides unsafe detail', async () => {
     const wrapper = mount(MarkdownReport, {
       props: {
         variant: 'report',
@@ -40,7 +40,19 @@ describe('Markdown report presentation', () => {
     expect(blackRanking.classes()).not.toContain('tone-ai')
     expect(blackRanking.get('.ai-ranking-card').classes()).toContain('ai-ranking-card--black')
     expect(blackRanking.text()).toContain('未说明效果')
-    expect(focus.get('.report-section-content').classes()).toContain('has-ai-ranking-pair')
+    expect(rankings[0]).toBe(redRanking)
+    expect(rankings[1]).toBe(blackRanking)
+    const redToggle = redRanking.get('.ai-ranking-toggle')
+    const blackToggle = blackRanking.get('.ai-ranking-toggle')
+    expect(redToggle.attributes('aria-expanded')).toBe('true')
+    expect(blackToggle.attributes('aria-expanded')).toBe('true')
+    await redToggle.trigger('click')
+    expect(redToggle.attributes('aria-expanded')).toBe('false')
+    expect(redRanking.get('.ai-ranking-card__content').isVisible()).toBe(false)
+    expect(blackToggle.attributes('aria-expanded')).toBe('true')
+    await redRanking.get('.ai-ranking-toggle').trigger('click')
+    expect(redRanking.get('.ai-ranking-toggle').attributes('aria-expanded')).toBe('true')
+    expect(redRanking.get('.ai-ranking-card__content').attributes('style')).toBe('')
     expect(wrapper.text()).not.toContain('fictional-sensitive-token')
     expect(wrapper.text()).not.toContain('确认团队汇总完整性')
 

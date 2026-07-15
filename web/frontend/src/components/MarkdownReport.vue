@@ -41,7 +41,7 @@
         </div>
 
         <div
-          :class="['report-section-content', { 'is-preview': section.collapsible && !isOpen(section.id), 'has-ai-ranking-pair': aiRankingCount(section) > 1 }]"
+          :class="['report-section-content', { 'is-preview': section.collapsible && !isOpen(section.id) }]"
           :aria-label="section.collapsible && !isOpen(section.id) ? `${section.title}内容预览` : undefined"
         >
           <section
@@ -80,15 +80,36 @@
           :class="['ai-ranking-card', `ai-ranking-card--${block.tone}`]"
         >
           <header class="ai-ranking-card__header">
-            <span class="ai-ranking-card__mark" aria-hidden="true">{{ block.tone === 'red' ? '★' : '!' }}</span>
-            <span class="ai-ranking-card__heading">
-              <strong>{{ block.text }}</strong>
-              <small>{{ block.tone === 'red' ? '方法清楚、成效明确、具备复用价值' : '描述空泛、缺少证据或未说明实际效果' }}</small>
-            </span>
-            <span class="ai-ranking-card__count">{{ block.items.length }} 条</span>
+            <button
+              type="button"
+              class="ai-ranking-toggle"
+              :aria-expanded="isRankingOpen(block.id)"
+              :aria-controls="`${block.id}-content`"
+              @click="toggleRanking(block.id)"
+            >
+              <span class="ai-ranking-card__mark" aria-hidden="true">{{ block.tone === 'red' ? '★' : '!' }}</span>
+              <span class="ai-ranking-card__heading">
+                <strong>{{ block.text }}</strong>
+                <small>{{ block.tone === 'red' ? '方法清楚、成效明确、具备复用价值' : '描述空泛、缺少证据或未说明实际效果' }}</small>
+              </span>
+              <span class="ai-ranking-card__count">{{ block.items.length }} 条</span>
+              <span class="ai-ranking-card__action">
+                {{ isRankingOpen(block.id) ? '收起' : '展开' }}
+                <span class="ai-ranking-card__arrow" aria-hidden="true"></span>
+              </span>
+            </button>
           </header>
+          <div
+            v-show="isRankingOpen(block.id)"
+            :id="`${block.id}-content`"
+            class="ai-ranking-card__content"
+          >
           <ol class="ai-ranking-list">
-            <li v-for="(entry, itemIndex) in aiRankingEntries(block)" :key="itemIndex">
+            <li
+              v-for="(entry, itemIndex) in aiRankingEntries(block)"
+              :key="itemIndex"
+              :class="{ 'has-person': entry.name }"
+            >
               <div v-if="entry.name" class="ai-ranking-person">
                 <span class="ai-ranking-index">{{ `${itemIndex + 1}`.padStart(2, '0') }}</span>
                 <strong class="ai-ranking-name"><InlineText :parts="inlineParts(entry.name)" /></strong>
@@ -106,6 +127,7 @@
               </div>
             </li>
           </ol>
+          </div>
         </div>
 
         <div v-else-if="block.type === 'table'" class="report-table-wrap">
@@ -188,9 +210,11 @@ const InlineText = defineComponent({
 const blocks = computed(() => prepareReportBlocks(parseMarkdown(props.content)))
 const sections = computed(() => buildSections(blocks.value, props.variant))
 const openSections = ref(new Set())
+const collapsedRankings = ref(new Set())
 
 watch(() => props.content, () => {
   openSections.value = new Set()
+  collapsedRankings.value = new Set()
 })
 
 function isOpen(sectionId) {
@@ -226,8 +250,15 @@ function headingLabel(level) {
   return 'DETAIL'
 }
 
-function aiRankingCount(section) {
-  return section.blocks.filter(block => block.type === 'ai-ranking').length
+function isRankingOpen(rankingId) {
+  return !collapsedRankings.value.has(rankingId)
+}
+
+function toggleRanking(rankingId) {
+  const next = new Set(collapsedRankings.value)
+  if (next.has(rankingId)) next.delete(rankingId)
+  else next.add(rankingId)
+  collapsedRankings.value = next
 }
 
 function aiRankingEntries(block) {
@@ -326,3 +357,4 @@ function statusTone(value) {
 </script>
 
 <style scoped src="./markdown/MarkdownReport.css"></style>
+<style scoped src="./markdown/AiRanking.css"></style>
