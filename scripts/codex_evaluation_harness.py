@@ -181,7 +181,12 @@ def sanitized_codex_environment(source: Mapping[str, str] | None = None) -> dict
         if upper.startswith(("DINGTALK_", "WEEKLY_DINGTALK_", "WEEKLY_FEEDBACK_", "SPRING_DATASOURCE_")):
             environment.pop(key, None)
             continue
-        if upper in {"MYSQL_ROOT_PASSWORD", "WEEKLY_REPORT_EXEMPT_SUBMITTERS", "OPENAI_API_KEY"}:
+        if upper in {
+            "MYSQL_ROOT_PASSWORD",
+            "WEEKLY_REPORT_EXEMPT_SUBMITTERS",
+            "WEEKLY_REPORT_LEADER_OVERRIDES",
+            "OPENAI_API_KEY",
+        }:
             environment.pop(key, None)
             continue
         if any(marker in upper for marker in ("PASSWORD", "SECRET", "TOKEN", "API_KEY", "APP_KEY", "CREDENTIAL")):

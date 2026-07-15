@@ -187,6 +187,39 @@ class ReportCollectionWindowTests(unittest.TestCase):
             self.assertNotIn("fictional-file-id", analysis)
             self.assertNotIn("fictional-space-id", analysis)
 
+    def test_private_leader_overrides_replace_department_inference_with_userids(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env = self._env(temp_dir)
+            env["WEEKLY_REPORT_LEADER_OVERRIDES"] = (
+                '{"NAME:示例新负责人":{"leader":true,"subordinates":["NAME:示例员工乙"]},'
+                '"NAME:示例旧负责人":{"leader":false}}'
+            )
+            users = [
+                {"userid": "test-leader-001", "name": "示例新负责人", "leader": False, "dept_id_list": [101]},
+                {"userid": "test-user-002", "name": "示例员工乙", "leader": False, "dept_id_list": [202]},
+                {"userid": "test-old-003", "name": "示例旧负责人", "leader": True, "dept_id_list": [101]},
+            ]
+            with (
+                patch.object(sys, "argv", ["run_weekly.py", "--start", "2026-07-06"]),
+                patch.object(run_weekly, "load_env", return_value=env),
+                patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
+                patch.object(run_weekly, "download_contacts", return_value=(users, [])),
+                patch.object(run_weekly, "download_reports", return_value=[]),
+                redirect_stdout(io.StringIO()),
+            ):
+                exit_code = run_weekly.main()
+
+            self.assertEqual(0, exit_code)
+            week_root = Path(temp_dir) / "2026-W28"
+            with (week_root / "exports" / "submission_status.csv").open(encoding="utf-8-sig", newline="") as file:
+                rows = {row["userid"]: row for row in csv.DictReader(file)}
+            self.assertEqual("是", rows["test-leader-001"]["是否负责人候选"])
+            self.assertEqual("否", rows["test-old-003"]["是否负责人候选"])
+            mapping = (week_root / "exports" / "leader_subordinates.csv").read_text(encoding="utf-8-sig")
+            self.assertIn("示例新负责人", mapping)
+            self.assertIn("示例员工乙", mapping)
+            self.assertNotIn("示例旧负责人", mapping)
+
     def _env(self, output_root: str) -> dict[str, str]:
         return {
             "OUTPUT_ROOT": output_root,

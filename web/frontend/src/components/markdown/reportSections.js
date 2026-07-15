@@ -81,7 +81,15 @@ export function buildSections(reportBlocks, variant) {
   const focusText = blocksText(focusBlocks)
 
   if (redEvidence.length && !/红榜|可复用|AI亮点/.test(focusText)) {
-    focusBlocks.unshift(
+    const firstBlackSection = focusSections.findIndex(section => section.focusType === 'black')
+    const firstBlackBlock = firstBlackSection < 0
+      ? focusBlocks.length
+      : focusSections
+        .slice(0, firstBlackSection)
+        .reduce((count, section) => count + section.blocks.length, 0)
+    focusBlocks.splice(
+      firstBlackBlock,
+      0,
       { type: 'heading', level: 3, text: 'AI 红榜' },
       { type: 'list', items: redEvidence }
     )
@@ -163,7 +171,7 @@ function sectionFocusType(title) {
 }
 
 function focusRank(type) {
-  return { red: 0, focus: 1, black: 2 }[type] ?? 3
+  return { focus: 0, red: 1, black: 2 }[type] ?? 3
 }
 
 function orderAiHighlights(sectionBlocks) {

@@ -90,7 +90,7 @@ Every row from `团队负责人履职输入（确定性证据）` must appear in
 
 ### Subordinate mapping evidence
 
-- Prefer a deterministic subordinate userid list when the input provides one.
+- Prefer a deterministic subordinate userid list when the input provides one; a private manual override resolved by the collection layer is authoritative over department inference.
 - When no subordinate userid list exists, use shared DingTalk department membership as a candidate mapping and label it `按所属部门映射，待上级确认`; do not guess cross-department reporting relationships.
 - Exempt people are excluded before counting missing subordinates.
 - A mapped non-exempt subordinate who has not submitted makes the leader compliance conclusion `不合格（下属未提交）`.

@@ -1016,7 +1016,7 @@ async function selectWeek(week) {
 }
 
 async function showMissingReports() {
-  filters.status = '未提交'
+  filters.status = ''
   await setView('status')
 }
 

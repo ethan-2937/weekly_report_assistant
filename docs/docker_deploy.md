@@ -43,6 +43,14 @@ WEEKLY_REPORT_EXEMPT_SUBMITTERS=USERID:test-user-001;NAME:示例员工甲
 
 优先使用稳定 userid；姓名仅作精确兼容匹配。直接在宿主机运行脚本时也可写入 `config/.env`；进程环境优先于文件配置。免交人员及其提交会在 CSV、Markdown 和分析输入统计前统一排除，真实名单不得写入仓库。
 
+负责人及直属关系可在服务器未跟踪的根 `.env` 中用 `WEEKLY_REPORT_LEADER_OVERRIDES` 覆盖钉钉部门推断。值是单行 JSON，键和值使用 `USERID:` selector；只有暂时无法取得 userid 时才使用完整且唯一的 `NAME:`。每条规则显式提供 `leader` 和 `subordinates`，例如：
+
+```text
+WEEKLY_REPORT_LEADER_OVERRIDES={"USERID:test-leader-001":{"leader":true,"subordinates":["USERID:test-user-002"]},"USERID:test-user-003":{"leader":false}}
+```
+
+采集时 selector 会先解析为 userid；姓名重名、人员不存在、自映射或同一直属员工配置给多个负责人都会停止生成，避免猜测关系。真实值不得写入源码、示例、日志或任务记录。
+
 负责人附件通过钉钉 Drive 下载信息接口写入 `output/<周次>/attachments/team_leads/`。该目录已随 `output/` 忽略并挂载持久化；下载失败不会中断整周采集，分析输入会记录安全失败状态。
 
 ## MySQL 与登录

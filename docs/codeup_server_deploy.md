@@ -51,6 +51,8 @@ OUTPUT_ROOT=output
 
 Docker 部署将 `WEEKLY_REPORT_EXEMPT_SUBMITTERS` 写入根目录 `.env`；直接运行 Python 时也可写入 `config/.env`。该项使用英文或中文分号/逗号分隔，优先配置稳定 `USERID:`，无法取得 userid 时才使用完整 `NAME:`。进程环境优先于文件配置，真实名单不得提交到仓库；匹配为规范化后的完整值，不支持手机号或姓名的模糊匹配。
 
+用户人工确认的负责人关系写入同一未跟踪 `.env` 的 `WEEKLY_REPORT_LEADER_OVERRIDES`，格式和失败关闭规则见 `docs/docker_deploy.md`。生产环境优先使用 `USERID:`；如临时使用 `NAME:`，必须确保通讯录中精确唯一匹配。采集成功后再从私有 `leader_subordinates.csv` 核对关系，不要把该文件提交或粘贴到普通日志。
+
 ## 4. 配置服务端口
 
 服务器运维端口按实际环境分配。根目录 `.env` 是 Docker Compose 配置，不同于 `config/.env`，必须包含生产认证凭据。

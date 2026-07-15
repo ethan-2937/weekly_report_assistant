@@ -7,12 +7,13 @@ const report = `# 管理评价
 ## 需要老板拍板/协调事项
 | 优先级 | 人员/团队 | 卡点 | 需要支持 | 建议时限 |
 | --- | --- | --- | --- | --- |
-| P2 | AI使用治理 | AI黑榜/未使用人员较多 | 明确最低填写标准 | 下周周报前 |
+| P2 | AI使用治理 | AI填写质量待提升 | 明确最低填写标准 | 下周周报前 |
 
 ## 员工五维评价
 | 姓名 | 虚实盘（本周成果） | 时间分配健康度 | AI使用红黑榜 | 下周计划合格性 | 综合结论/需跟进 |
 | --- | --- | --- | --- | --- | --- |
 | 测试员工甲 | 完成 | 健康 | 红榜：可复用方案 | 合格 | 关注交付节奏 |
+| 测试员工乙 | 完成 | 健康 | 黑榜：未说明效果 | 合格 | 关注 AI 效果 |
 
 ## 团队负责人履职检查
 | 负责人 | 管理团队 | 履职结论 |
@@ -34,7 +35,17 @@ describe('AI evaluation view', () => {
     expect(wrapper.text()).toContain('综合结论/需跟进')
     const focusText = wrapper.get('[aria-label="本周重点"]').text()
     expect(focusText).toContain('测试员工甲：红榜：可复用方案')
-    expect(focusText.indexOf('红榜')).toBeLessThan(focusText.indexOf('黑榜'))
+    expect(focusText).toContain('测试员工乙：黑榜：未说明效果')
+    expect(focusText.indexOf('明确最低填写标准')).toBeLessThan(focusText.indexOf('AI 红榜'))
+    expect(focusText.indexOf('AI 红榜')).toBeLessThan(focusText.indexOf('AI 黑榜'))
+
+    const aiCells = wrapper.findAll('.report-cell.is-ai')
+    const redCell = aiCells.find(cell => cell.text().includes('红榜：可复用方案'))
+    const blackCell = aiCells.find(cell => cell.text().includes('黑榜：未说明效果'))
+    expect(redCell.classes()).toContain('is-success')
+    expect(redCell.classes()).not.toContain('is-danger')
+    expect(blackCell.classes()).toContain('is-danger')
+    expect(blackCell.classes()).not.toContain('is-success')
     expect(wrapper.text()).toContain('员工四维评价')
     expect(wrapper.text()).toContain('综合结论/需跟进')
   })

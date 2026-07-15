@@ -123,6 +123,7 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
                 "WEEKLY_JWT_SECRET": "fictional-jwt-secret",
                 "MYSQL_ROOT_PASSWORD": "fictional-db-password",
                 "WEEKLY_REPORT_EXEMPT_SUBMITTERS": "USERID:test-user-001",
+                "WEEKLY_REPORT_LEADER_OVERRIDES": '{"USERID:test-user-002":{"leader":false}}',
                 "OPENAI_API_KEY": "fictional-openai-key",
                 "GH_TOKEN": "fictional-github-token",
             }
@@ -134,6 +135,7 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         self.assertNotIn("WEEKLY_JWT_SECRET", environment)
         self.assertNotIn("MYSQL_ROOT_PASSWORD", environment)
         self.assertNotIn("WEEKLY_REPORT_EXEMPT_SUBMITTERS", environment)
+        self.assertNotIn("WEEKLY_REPORT_LEADER_OVERRIDES", environment)
         self.assertNotIn("OPENAI_API_KEY", environment)
         self.assertNotIn("GH_TOKEN", environment)
 

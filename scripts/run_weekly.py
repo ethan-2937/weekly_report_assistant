@@ -16,6 +16,7 @@ from dingtalk_common import (
 )
 from download_contacts import download_contacts
 from download_reports import download_reports
+from leader_overrides import LEADER_OVERRIDES_ENV, apply_leader_overrides
 from submission_roster import (
     EXEMPT_SUBMITTERS_ENV,
     filter_exempt_reports,
@@ -38,7 +39,6 @@ def main() -> int:
         template_name = env.get("DINGTALK_REPORT_TEMPLATE", "").strip()
         out_root = output_root(env)
         access_token = get_access_token(env)
-
         if args.skip_contacts:
             users = json.loads((out_root / "contacts" / "users.json").read_text(encoding="utf-8"))
             departments = json.loads((out_root / "contacts" / "departments.json").read_text(encoding="utf-8"))
@@ -46,7 +46,7 @@ def main() -> int:
             users, departments = download_contacts(access_token, root_dept_id)
             write_json(out_root / "contacts" / "users.json", users)
             write_json(out_root / "contacts" / "departments.json", departments)
-
+        users = apply_leader_overrides(users, env.get(LEADER_OVERRIDES_ENV))
         reports = download_reports(
             access_token=access_token,
             template_name=template_name,

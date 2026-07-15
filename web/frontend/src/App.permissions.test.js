@@ -62,6 +62,7 @@ describe('application role menus and permission guards', () => {
 
     expect(wrapper.get('.page-header h1').text()).toBe('提交状态')
     expect(wrapper.findAll('.decor-nav button').find(item => item.text() === '未交名单').classes()).toContain('active')
+    expect(wrapper.findAll('.status-row').map(item => item.text())).toEqual(['未提交', '已提交'])
   })
 })
 
@@ -71,7 +72,16 @@ async function mountAs(user) {
     realName: '测试用户',
     ...user
   })
-  auth.request.mockResolvedValue([])
+  auth.request.mockImplementation(async path => {
+    if (path === '/api/weeks') return [{ week: '2026-W29' }]
+    if (path.endsWith('/submission-status')) {
+      return [
+        { 姓名: '示例员工甲', 提交状态: '已提交' },
+        { 姓名: '示例员工乙', 提交状态: '未提交' }
+      ]
+    }
+    return []
+  })
 
   const wrapper = mount(App, {
     global: {
@@ -101,7 +111,10 @@ function elementStubs() {
     ElOption: true,
     ElProgress: true,
     ElSelect: true,
-    ElTable: true,
+    ElTable: {
+      props: { data: { type: Array, default: () => [] } },
+      template: '<div class="el-table-stub"><span v-for="(row, index) in data" :key="index" class="status-row">{{ row[\'提交状态\'] }}</span></div>'
+    },
     ElTableColumn: true,
     ElTag: withSlot
   }

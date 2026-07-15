@@ -25,9 +25,23 @@ describe('Markdown report presentation', () => {
       }
     })
 
-    const focusText = wrapper.get('[aria-label="本周重点"]').text()
-    expect(focusText.indexOf('红榜')).toBeLessThan(focusText.indexOf('协调资源'))
-    expect(focusText.indexOf('协调资源')).toBeLessThan(focusText.indexOf('黑榜'))
+    const focus = wrapper.get('[aria-label="本周重点"]')
+    const focusText = focus.text()
+    expect(focusText.indexOf('协调资源')).toBeLessThan(focusText.indexOf('红榜'))
+    expect(focusText.indexOf('红榜')).toBeLessThan(focusText.indexOf('黑榜'))
+
+    const headingBlocks = focus.findAll('.report-block--heading')
+    const listBlocks = focus.findAll('.report-block--list')
+    const redHeading = headingBlocks.find(block => block.text().includes('AI 红榜'))
+    const blackHeading = headingBlocks.find(block => block.text().includes('AI 黑榜'))
+    const redContent = listBlocks.find(block => block.text().includes('红榜：可复用方案'))
+    const blackContent = listBlocks.find(block => block.text().includes('黑榜：未说明效果'))
+    expect(redHeading.classes()).toContain('tone-ai')
+    expect(redContent.classes()).toContain('tone-ai')
+    expect(blackHeading.classes()).toContain('tone-danger')
+    expect(blackContent.classes()).toContain('tone-danger')
+    expect(blackHeading.classes()).not.toContain('tone-ai')
+    expect(blackContent.classes()).not.toContain('tone-ai')
     expect(wrapper.text()).not.toContain('fictional-sensitive-token')
     expect(wrapper.text()).not.toContain('确认团队汇总完整性')
 

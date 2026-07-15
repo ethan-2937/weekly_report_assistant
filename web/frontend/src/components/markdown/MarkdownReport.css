@@ -132,6 +132,12 @@
   color: #1e6a3d;
 }
 
+.report-section-group--focus :deep(.tone-danger .report-heading) {
+  border-left-color: var(--sheet-red-text);
+  background: linear-gradient(90deg, var(--sheet-red), rgba(255, 255, 255, 0.9));
+  color: var(--sheet-red-text);
+}
+
 :deep(.report-cell.is-subordinate-missing) {
   box-shadow: inset 4px 0 0 #b42318;
   font-weight: 900;

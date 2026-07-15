@@ -192,7 +192,8 @@ function blockTone(block) {
   const text = `${block.text || ''} ${(block.items || []).join(' ')}`
   if (/老板|拍板|协调事项|需要支持|需支持|求助|卡点/.test(text)) return 'tone-boss'
   if (/五维|虚实盘|真干活|时间分配|健康度|红黑榜|下周计划合格|综合结论/.test(text)) return 'tone-dimension'
-  if (/AI|可复用|红榜|黑榜/.test(text)) return 'tone-ai'
+  if (/黑榜/.test(text)) return 'tone-danger'
+  if (/AI|可复用|红榜/.test(text)) return 'tone-ai'
   if (/风险|异常|失败|未提交|缺失|阻塞|延期|严重|离职|淘汰/.test(text)) return 'tone-danger'
   if (/下一步|待启动|待确认|需要|建议|关注|观察|复核|人工确认/.test(text)) return 'tone-warning'
   if (/已完成|已提交|成功|达成|通过|正式评价|完成/.test(text)) return 'tone-success'
