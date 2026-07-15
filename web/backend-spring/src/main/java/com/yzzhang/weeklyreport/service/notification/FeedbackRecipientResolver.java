@@ -6,6 +6,7 @@ import com.yzzhang.weeklyreport.config.ProjectPathConfig;
 import com.yzzhang.weeklyreport.config.WeeklyReportProperties;
 import com.yzzhang.weeklyreport.mapper.SysUserMapper;
 import com.yzzhang.weeklyreport.po.SysUserPO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ public class FeedbackRecipientResolver {
     private final ObjectMapper objectMapper;
     private final Function<String, String> environment;
 
+    @Autowired
     public FeedbackRecipientResolver(
         WeeklyReportProperties properties,
         ProjectPathConfig pathConfig,
