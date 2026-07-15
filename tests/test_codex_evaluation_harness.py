@@ -22,10 +22,24 @@ from codex_evaluation_harness import (  # noqa: E402
     validate_manager_report,
 )
 from codex_evaluation_workspace import isolated_evaluation_workspace  # noqa: E402
-from run_codex_evaluation import codex_command, parse_codex_result, render_prompt  # noqa: E402
+from run_codex_evaluation import (  # noqa: E402
+    codex_command,
+    collection_command,
+    parse_codex_result,
+    render_prompt,
+    resolve_week_label,
+)
 
 
 class CodexEvaluationHarnessTests(unittest.TestCase):
+    def test_explicit_week_label_resolves_and_builds_fixed_collection_range(self) -> None:
+        self.assertEqual("2026-W28", resolve_week_label("2026-W28"))
+        command = collection_command("host", "2026-W28")
+        self.assertEqual(["--start", "2026-07-06", "--end", "2026-07-12"], command[-4:])
+
+        with self.assertRaisesRegex(EvaluationHarnessError, "WEEK_LABEL_INVALID"):
+            resolve_week_label("2026-W99")
+
     def test_rendered_prompt_locks_target_week_in_json_and_markdown(self) -> None:
         prompt = render_prompt("2026-W28")
 

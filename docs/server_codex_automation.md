@@ -102,6 +102,15 @@ chmod 700 scripts/run_codex_evaluation.sh
 ./scripts/run_codex_evaluation.sh
 ```
 
+如需重新采集和评价已经结束的历史周次，显式传入 ISO 周次；例如重新生成 W28：
+
+```bash
+./scripts/run_codex_evaluation.sh --week-label 2026-W28 --dry-run
+./scripts/run_codex_evaluation.sh --week-label 2026-W28
+```
+
+不传 `--week-label` 时仍按上一业务周运行，适合 cron。指定周次会将采集参数、输入目录、提示词和正式报告统一锁定到该周，不会自动读取当前的 W29 或其他周次。
+
 正常输出只包含周次、应交/已交/未交人数、附件数量和状态，不包含姓名、userid、正文或模型原始输出。
 
 ## Cron

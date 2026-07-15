@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import re
 import sys
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -41,14 +42,32 @@ def week_label(week: str = "previous") -> str:
     return f"{iso.year}-W{iso.week:02d}"
 
 
-def collection_command(mode: str) -> list[str]:
+def resolve_week_label(value: str | None) -> str:
+    if not value:
+        return week_label("previous")
+    match = re.fullmatch(r"(\d{4})-W(\d{2})", value.strip())
+    if not match:
+        raise EvaluationHarnessError("WEEK_LABEL_INVALID")
+    year, week = (int(part) for part in match.groups())
+    try:
+        start = date.fromisocalendar(year, week, 1)
+    except ValueError as exc:
+        raise EvaluationHarnessError("WEEK_LABEL_INVALID") from exc
+    iso = start.isocalendar()
+    return f"{iso.year}-W{iso.week:02d}"
+
+
+def collection_command(mode: str, label: str) -> list[str]:
+    start = date.fromisocalendar(int(label[:4]), int(label[6:]), 1)
+    end = start + timedelta(days=6)
+    week_args = ["--start", start.isoformat(), "--end", end.isoformat()]
     if mode == "docker":
         return [
             "docker", "compose", "exec", "-T", "weekly-report",
-            "python3", "/app/scripts/run_weekly.py", "--week", "previous",
+            "python3", "/app/scripts/run_weekly.py", *week_args,
         ]
     if mode == "host":
-        return [sys.executable, str(ROOT / "scripts" / "run_weekly.py"), "--week", "previous"]
+        return [sys.executable, str(ROOT / "scripts" / "run_weekly.py"), *week_args]
     raise EvaluationHarnessError("COLLECTION_MODE_INVALID")
 def render_prompt(label: str) -> str:
     try:
@@ -92,23 +111,26 @@ def state_payload(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Refresh the previous-week Codex evaluation only when inputs change.")
+    parser = argparse.ArgumentParser(description="Refresh a weekly Codex evaluation only when inputs change.")
     parser.add_argument("--preflight", action="store_true", help="Check Codex CLI and installed Skill without reading report data.")
     parser.add_argument("--dry-run", action="store_true", help="Collect and fingerprint inputs without invoking Codex.")
     parser.add_argument("--force", action="store_true", help="Ignore the successful input digest and retry limit.")
+    parser.add_argument("--week-label", metavar="YYYY-Www", help="Explicit ISO week to collect and evaluate instead of the previous week.")
     args = parser.parse_args()
 
     configured = load_env()
     codex_environment = sanitized_codex_environment(os.environ)
-    label = week_label("previous")
     out_root = output_root(configured)
-    week_root = out_root / label
+    label = ""
+    week_root = out_root
     state_path = week_root / "automation" / "evaluation_state.json"
     lock_path = out_root / ".automation" / "codex-evaluation.lock"
     digest = ""
     roster = None
     attempt = 0
     try:
+        label = resolve_week_label(args.week_label)
+        week_root = out_root / label
         codex_bin = resolve_codex_bin(configured)
         approval_mode = preflight(codex_bin, codex_environment)
         if args.preflight:
@@ -118,7 +140,7 @@ def main() -> int:
         with EvaluationLock(lock_path):
             mode = configured.get("WEEKLY_CODEX_COLLECTION_MODE", "host").strip().lower() or "host"
             collection_timeout = int(configured.get("WEEKLY_CODEX_COLLECTION_TIMEOUT_SECONDS", "600"))
-            collection = run_checked(collection_command(mode), collection_timeout)
+            collection = run_checked(collection_command(mode, label), collection_timeout)
             if collection.returncode != 0:
                 raise EvaluationHarnessError("COLLECTION_FAILED")
 
