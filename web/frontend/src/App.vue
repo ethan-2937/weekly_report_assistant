@@ -76,11 +76,8 @@
             后端自动拉取钉钉通讯录和周报，Codex skill 生成管理评价，前端展示提交概览、未提交候选、个人工作总结和团队负责人履职情况。
           </p>
           <div class="hero-actions">
-            <el-button v-if="canRunJobs" type="primary" size="large" round :loading="jobBusy" @click="runJob('previous')">
+            <el-button v-if="canRunJobs" type="primary" size="large" round :loading="jobBusy" @click="runJob">
               生成上一周
-            </el-button>
-            <el-button v-if="canRunJobs" size="large" round :loading="jobBusy" @click="runJob('current')">
-              当前周测试
             </el-button>
             <el-button size="large" round @click="refreshAll">刷新页面</el-button>
           </div>
@@ -116,7 +113,7 @@
             <h1>提交状态</h1>
             <p>支持按姓名、部门、提交状态和负责人筛选。</p>
           </div>
-          <el-button round @click="downloadCsv">下载 CSV</el-button>
+          <el-button round @click="downloadCsv">下载 Excel</el-button>
         </div>
 
         <div class="toolbar">
@@ -1038,14 +1035,14 @@ async function loadJob() {
   jobBusy.value = latestJob.value.status === 'RUNNING'
 }
 
-async function runJob(weekMode) {
+async function runJob() {
   if (!canRunJobs.value) {
     ElMessage.error('当前账号没有运行采集任务的权限')
     return
   }
   try {
     jobBusy.value = true
-    latestJob.value = await request(`/api/jobs/run?week=${weekMode}`, { method: 'POST' })
+    latestJob.value = await request('/api/jobs/run?week=previous', { method: 'POST' })
     ElMessage.success('采集任务已启动，稍后自动刷新。')
     pollJob()
   } catch (error) {
@@ -1082,7 +1079,7 @@ async function downloadCsv() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `submission_status_${selectedWeek.value}.csv`
+    link.download = `submission_status_${selectedWeek.value}.xlsx`
     link.click()
     URL.revokeObjectURL(url)
   } catch (error) {

@@ -150,8 +150,8 @@ function count(value) {
 }
 
 .pulse-card--leaders {
-  right: 0;
-  bottom: 0;
+  right: -14px;
+  bottom: -12px;
   z-index: 3;
   width: 146px;
   min-height: 112px;

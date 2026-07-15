@@ -21,7 +21,7 @@
 - 生产模式默认启用，必须显式配置 `WEEKLY_JWT_SECRET` 和 `WEEKLY_BOOTSTRAP_ADMIN_PASSWORD`；缺失、空值或开发默认值会阻止启动，错误只显示变量名。
 - 本地开发只有显式设置 `WEEKLY_AUTH_DEVELOPMENT_MODE=true` 时才能使用开发默认凭据；Docker 部署不得启用该标志。
 - 前端 API 错误只采用受限的 JSON `error` 字段，并清洗当前 token、请求密码及常见 Bearer/JWT 形态；不得拼接完整响应。
-- 前端 Excel 导出只能使用后端已按当前账号范围过滤、并经显示层敏感字串清洗的 Markdown 分区；不得为导出新增绕过服务层的数据请求。单元格统一写为字符串，避免把员工文本当作公式执行。
+- Excel 导出只能使用后端已按当前账号范围过滤的数据；提交状态 XLSX 由 Spring 服务层使用标准 OOXML 库生成，不接受前端提交周报正文，且排除 userid、report_id、token、路径和原始周报正文。单元格统一写为字符串，避免把员工文本当作公式执行。
 - 自动评价 Codex 只接收当前业务周的分析包、提交 CSV、负责人附件和政策快照；子进程移除 DingTalk/MySQL/JWT/免交及通用 secret/token/password 环境变量，仅允许临时 `workspace-write`、无审批且禁用网络。模型输出必须通过章节、人员覆盖和敏感字段校验后才写入正式报告。
 - 自动评价如需代理，只允许通过私有 `WEEKLY_CODEX_BASE_URL` 显式传入 HTTPS 地址；Harness 仅显式配置 `crs`/`responses` provider 并读取私有 `CRS_OAI_KEY` 环境变量，不直接加载完整 Codex 用户配置，避免本地规则、路径或其他凭据进入自动任务。
 - 反馈通知失败时返回最小必要信息，不泄露内部凭据或通讯录。

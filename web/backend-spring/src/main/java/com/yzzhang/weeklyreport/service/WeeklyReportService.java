@@ -14,5 +14,5 @@ public interface WeeklyReportService {
     List<SubmissionStatusVO> listSubmissionStatus(String week);
     SummaryVO getSummary(String week);
     AnalysisVO getAnalysis(String week);
-    Path getSubmissionStatusCsv(String week);
+    Path getSubmissionStatusXlsx(String week);
 }

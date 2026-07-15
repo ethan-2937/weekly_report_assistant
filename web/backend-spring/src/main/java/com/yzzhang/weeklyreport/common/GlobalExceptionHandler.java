@@ -13,12 +13,12 @@ import java.util.Map;
 public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "周次或文件不存在"));
     }
 
     @ExceptionHandler({BizException.class, IllegalArgumentException.class})
     public ResponseEntity<Map<String, String>> handleBadRequest(RuntimeException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "请求参数无效"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

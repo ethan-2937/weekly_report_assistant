@@ -12,6 +12,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -72,18 +75,22 @@ class WeeklyReportServiceImplTest {
     }
 
     @Test
-    void scopedListAndCsvUseTheSameServiceLayerFilter() throws IOException {
+    void scopedListAndXlsxUseTheSameServiceLayerFilter() throws IOException {
         authenticate(List.of("USER"), List.of("USERID:test-user-001"));
 
         assertThat(service.listSubmissionStatus(WEEK))
             .extracting(item -> item.getUserid())
             .containsExactly("test-user-001");
 
-        Path csv = service.getSubmissionStatusCsv(WEEK);
-        String content = Files.readString(csv, StandardCharsets.UTF_8);
+        Path xlsx = service.getSubmissionStatusXlsx(WEEK);
+        String content;
+        try (Workbook workbook = new XSSFWorkbook(Files.newInputStream(xlsx))) {
+            DataFormatter formatter = new DataFormatter();
+            content = formatter.formatCellValue(workbook.getSheetAt(0).getRow(1).getCell(1));
+        }
         assertThat(content)
-            .contains("示例员工甲", "test-user-001")
-            .doesNotContain("示例员工乙", "test-user-002", "受限周报正文");
+            .contains("示例员工甲")
+            .doesNotContain("示例员工乙", "test-user-001", "test-user-002", "受限周报正文");
     }
 
     @Test

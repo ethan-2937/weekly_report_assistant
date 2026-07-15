@@ -15,7 +15,6 @@ import com.yzzhang.weeklyreport.vo.WeekOverviewVO;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -110,17 +109,25 @@ public class WeeklyReportServiceImpl implements WeeklyReportService {
     }
 
     @Override
-    public Path getSubmissionStatusCsv(String week) {
+    public Path getSubmissionStatusXlsx(String week) {
         assertWeek(week);
         ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
         List<SubmissionStatusPO> rows = templateComplianceService.enrich(week, visibleRows(week, permission));
+        Path exported = null;
         try {
-            Path exported = Files.createTempFile("submission_status_" + week + "_", ".csv");
-            Files.writeString(exported, reportContentFilter.toCsv(rows), StandardCharsets.UTF_8);
+            exported = Files.createTempFile("submission_status_" + week + "_", ".xlsx");
+            SubmissionStatusXlsxExporter.write(exported, rows);
             exported.toFile().deleteOnExit();
             return exported;
         } catch (IOException e) {
-            throw new ResourceNotFoundException("failed to create submission_status.csv: " + e.getMessage());
+            if (exported != null) {
+                try {
+                    Files.deleteIfExists(exported);
+                } catch (IOException ignored) {
+                    // The generic error response must not expose the temporary path.
+                }
+            }
+            throw new IllegalStateException("submission status export generation failed");
         }
     }
 

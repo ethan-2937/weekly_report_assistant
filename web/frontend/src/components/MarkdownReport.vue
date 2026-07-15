@@ -22,7 +22,10 @@
               <small>{{ section.kicker }}</small>
               <strong>{{ section.title }}</strong>
             </span>
-            <span class="report-section-toggle__action">{{ isOpen(section.id) ? '收起' : '展开全部' }}</span>
+            <span class="report-section-toggle__action">
+              <span class="report-section-toggle__arrow" aria-hidden="true"></span>
+              {{ isOpen(section.id) ? '收起' : '展开全部' }}
+            </span>
           </button>
           <button
             v-if="canExport(section)"

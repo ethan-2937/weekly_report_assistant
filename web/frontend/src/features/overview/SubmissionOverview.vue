@@ -7,9 +7,12 @@
         type="button"
         :class="{ active: selectedWeek === item.week }"
         :aria-current="selectedWeek === item.week ? 'true' : undefined"
+        :title="weekRangeLabelFor(item.week)"
+        :aria-label="`${item.week}，${weekRangeLabelFor(item.week)}`"
         @click="emit('select-week', item.week)"
       >
-        {{ item.week }}
+        <span class="week-selector__week">{{ item.week }}</span>
+        <span class="week-selector__range">{{ weekRangeLabelFor(item.week) }}</span>
       </button>
       <span v-if="weeks.length === 0" class="empty-weeks">暂无周次数据，请先生成一次。</span>
     </nav>
@@ -166,6 +169,9 @@ const managementRules = [
 ]
 
 const weekRangeLabel = computed(() => formatIsoWeekRange(props.selectedWeek))
+function weekRangeLabelFor(week) {
+  return formatIsoWeekRange(week)
+}
 const formattedGeneratedAt = computed(() => {
   if (!props.overview.generatedAt) return '-'
   const date = new Date(props.overview.generatedAt)

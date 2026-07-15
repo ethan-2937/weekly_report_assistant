@@ -33,13 +33,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 15px 18px;
+  padding: 14px 18px;
   border: 1px solid var(--sheet-line);
   border-radius: 14px;
-  background: linear-gradient(135deg, #17283e, #304760);
-  color: white;
+  background: linear-gradient(135deg, #f4f8fc, #eaf1f7);
+  color: #28435e;
   cursor: pointer;
   text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
 .report-section-toggle > span:first-child {
@@ -48,25 +49,49 @@
 }
 
 .report-section-toggle small {
-  color: rgba(255, 255, 255, 0.64);
+  color: #6b7c8f;
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;
 }
 
 .report-section-toggle strong {
-  color: white;
+  color: #1f3a55;
   font-size: 18px;
   font-weight: 850;
 }
 
 .report-section-toggle__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   flex: 0 0 auto;
   padding: 5px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(40, 67, 94, 0.2);
   border-radius: 999px;
+  color: #45627d;
   font-size: 12px;
   font-weight: 800;
+}
+
+.report-section-toggle__arrow {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease;
+}
+
+.report-section-toggle[aria-expanded="true"] .report-section-toggle__arrow {
+  transform: rotate(225deg) translateY(-1px);
+}
+
+.report-section-toggle:hover,
+.report-section-toggle:focus-visible {
+  border-color: rgba(35, 112, 73, 0.34);
+  background: linear-gradient(135deg, #eef8f2, #e8f1f5);
+  box-shadow: 0 7px 18px rgba(35, 82, 65, 0.08);
 }
 
 .report-section-toggle:focus-visible {
@@ -120,6 +145,17 @@
   mask-image: linear-gradient(to bottom, #000 0%, #000 76%, transparent 100%);
 }
 
+.report-section-content.is-preview::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 58px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.96));
+  content: '';
+  pointer-events: none;
+}
+
 :deep(.report-table th),
 :deep(.report-table td),
 :deep(.report-table td.is-key-field) {
@@ -163,7 +199,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .report-section-content,
-  .report-section-export {
+  .report-section-export,
+  .report-section-toggle,
+  .report-section-toggle__arrow {
     transition: none;
   }
 }
