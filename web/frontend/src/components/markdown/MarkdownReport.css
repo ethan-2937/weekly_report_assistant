@@ -186,12 +186,14 @@
 }
 
 :deep(.report-table td.report-cell.is-ai-red) {
-  background: #f9e8ec !important;
-  color: #b4233d !important;
+  background: #f6c5d0 !important;
+  box-shadow: inset 4px 0 0 #d94b62;
+  color: #9f1239 !important;
 }
 
 :deep(.report-table td.report-cell.is-ai-black) {
-  background: #e5e7eb !important;
+  background: #d1d5db !important;
+  box-shadow: inset 4px 0 0 #4b5563;
   color: #111827 !important;
 }
 
