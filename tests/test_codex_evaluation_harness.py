@@ -207,8 +207,16 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
 
         self.assertEqual(report, parsed)
         self.assertEqual((), warnings)
-        with self.assertRaisesRegex(EvaluationHarnessError, "CODEX_OUTPUT_BLOCKED_OR_WRONG_WEEK"):
+        with self.assertRaisesRegex(EvaluationHarnessError, "CODEX_OUTPUT_WRONG_WEEK"):
             parse_codex_result(stdout.replace("2026-W29", "2026-W28", 1), "2026-W29")
+
+        blocked = '{"status":"blocked","week_label":"2026-W29","manager_report_markdown":"","warnings":[]}'
+        with self.assertRaisesRegex(EvaluationHarnessError, "CODEX_OUTPUT_BLOCKED"):
+            parse_codex_result(blocked, "2026-W29")
+
+        invalid_status = '{"status":"pending","week_label":"2026-W29","manager_report_markdown":"","warnings":[]}'
+        with self.assertRaisesRegex(EvaluationHarnessError, "CODEX_OUTPUT_STATUS_INVALID"):
+            parse_codex_result(invalid_status, "2026-W29")
 
     def test_atomic_write_preserves_complete_new_content_and_lock_rejects_overlap(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

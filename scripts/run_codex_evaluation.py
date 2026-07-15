@@ -179,8 +179,15 @@ def parse_codex_result(stdout: str, label: str) -> tuple[str, tuple[str, ...]]:
         result = json.loads(stdout)
     except json.JSONDecodeError as exc:
         raise EvaluationHarnessError("CODEX_OUTPUT_NOT_JSON") from exc
-    if not isinstance(result, dict) or result.get("status") != "completed" or result.get("week_label") != label:
-        raise EvaluationHarnessError("CODEX_OUTPUT_BLOCKED_OR_WRONG_WEEK")
+    if not isinstance(result, dict):
+        raise EvaluationHarnessError("CODEX_OUTPUT_SCHEMA_INVALID")
+    status = result.get("status")
+    if status == "blocked":
+        raise EvaluationHarnessError("CODEX_OUTPUT_BLOCKED")
+    if status != "completed":
+        raise EvaluationHarnessError("CODEX_OUTPUT_STATUS_INVALID")
+    if result.get("week_label") != label:
+        raise EvaluationHarnessError("CODEX_OUTPUT_WRONG_WEEK")
     markdown = result.get("manager_report_markdown")
     warnings = result.get("warnings")
     if not isinstance(markdown, str) or not isinstance(warnings, list) or any(not isinstance(item, str) for item in warnings):
