@@ -59,4 +59,30 @@ describe('Markdown report presentation', () => {
     expect(wrapper.text()).toContain('负责人共 2 人')
     expect(wrapper.text()).not.toContain('负责人候选')
   })
+
+  it('adds department and title to generated AI highlight evidence', () => {
+    const wrapper = mount(MarkdownReport, {
+      props: {
+        variant: 'report',
+        content: `# 管理评价
+
+## 员工五维评价
+| 姓名 | 部门 | 职位 | AI使用红黑榜 |
+| --- | --- | --- | --- |
+| 测试员工甲 | 虚构研发部 | 工程师 | 红榜：使用工具完成自动化交付 |
+| 测试员工乙 | 虚构市场部 | 产品经理 | 黑榜：未说明效果 |
+
+### 测试员工甲
+- AI应用：使用脚本自动生成日报并减少重复录入。
+
+### 测试员工乙
+- AI效果：未提供可复核的结果数据。
+`
+      }
+    })
+
+    const focusText = wrapper.get('[aria-label="本周重点"]').text()
+    expect(focusText).toContain('测试员工甲（虚构研发部｜工程师）：红榜：使用工具完成自动化交付；具体内容：AI应用：使用脚本自动生成日报并减少重复录入。')
+    expect(focusText).toContain('测试员工乙（虚构市场部｜产品经理）：黑榜：未说明效果；具体内容：AI效果：未提供可复核的结果数据。')
+  })
 })

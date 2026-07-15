@@ -1914,7 +1914,7 @@ textarea {
   background:
     linear-gradient(90deg, rgba(249, 232, 236, 0.94), #ffffff 38%),
     radial-gradient(circle at 96% 15%, rgba(196, 52, 73, 0.08), transparent 28%);
-  color: #7f1d32;
+  color: #111827;
 }
 
 .tone-ai-black .report-paragraph,
@@ -1924,7 +1924,7 @@ textarea {
   background:
     linear-gradient(90deg, rgba(229, 231, 235, 0.94), #ffffff 38%),
     radial-gradient(circle at 96% 15%, rgba(31, 41, 55, 0.08), transparent 28%);
-  color: #1f2937;
+  color: #111827;
 }
 
 .notice-card {

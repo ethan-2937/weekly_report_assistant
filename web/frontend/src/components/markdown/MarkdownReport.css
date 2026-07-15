@@ -188,7 +188,7 @@
 :deep(.report-table td.report-cell.is-ai-red) {
   background: #f6c5d0 !important;
   box-shadow: inset 4px 0 0 #d94b62;
-  color: #9f1239 !important;
+  color: #111827 !important;
 }
 
 :deep(.report-table td.report-cell.is-ai-black) {
