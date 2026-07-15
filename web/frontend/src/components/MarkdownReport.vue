@@ -41,7 +41,7 @@
         </div>
 
         <div
-          :class="['report-section-content', { 'is-preview': section.collapsible && !isOpen(section.id) }]"
+          :class="['report-section-content', { 'is-preview': section.collapsible && !isOpen(section.id), 'has-ai-ranking-pair': aiRankingCount(section) > 1 }]"
           :aria-label="section.collapsible && !isOpen(section.id) ? `${section.title}内容预览` : undefined"
         >
           <section
@@ -74,6 +74,39 @@
             <InlineText :parts="inlineParts(item)" />
           </li>
         </ol>
+
+        <div
+          v-else-if="block.type === 'ai-ranking'"
+          :class="['ai-ranking-card', `ai-ranking-card--${block.tone}`]"
+        >
+          <header class="ai-ranking-card__header">
+            <span class="ai-ranking-card__mark" aria-hidden="true">{{ block.tone === 'red' ? '★' : '!' }}</span>
+            <span class="ai-ranking-card__heading">
+              <strong>{{ block.text }}</strong>
+              <small>{{ block.tone === 'red' ? '方法清楚、成效明确、具备复用价值' : '描述空泛、缺少证据或未说明实际效果' }}</small>
+            </span>
+            <span class="ai-ranking-card__count">{{ block.items.length }} 条</span>
+          </header>
+          <ol class="ai-ranking-list">
+            <li v-for="(entry, itemIndex) in aiRankingEntries(block)" :key="itemIndex">
+              <div v-if="entry.name" class="ai-ranking-person">
+                <span class="ai-ranking-index">{{ `${itemIndex + 1}`.padStart(2, '0') }}</span>
+                <strong class="ai-ranking-name"><InlineText :parts="inlineParts(entry.name)" /></strong>
+                <span v-for="meta in entry.meta" :key="meta" class="ai-ranking-meta">
+                  <InlineText :parts="inlineParts(meta)" />
+                </span>
+              </div>
+              <div class="ai-ranking-row">
+                <span class="ai-ranking-label">{{ block.tone === 'red' ? '入选结论' : '问题结论' }}</span>
+                <span class="ai-ranking-copy"><InlineText :parts="inlineParts(entry.conclusion)" /></span>
+              </div>
+              <div v-if="entry.detail" class="ai-ranking-row ai-ranking-row--detail">
+                <span class="ai-ranking-label">具体内容</span>
+                <span class="ai-ranking-copy"><InlineText :parts="inlineParts(entry.detail)" /></span>
+              </div>
+            </li>
+          </ol>
+        </div>
 
         <div v-else-if="block.type === 'table'" class="report-table-wrap">
           <table class="report-table">
@@ -191,6 +224,36 @@ function headingLabel(level) {
   if (level <= 1) return 'REPORT'
   if (level === 2) return 'SECTION'
   return 'DETAIL'
+}
+
+function aiRankingCount(section) {
+  return section.blocks.filter(block => block.type === 'ai-ranking').length
+}
+
+function aiRankingEntries(block) {
+  return block.items.map(item => parseAiRankingEntry(item, block.tone))
+}
+
+function parseAiRankingEntry(item, tone) {
+  const source = `${item}`.trim()
+  const detailMatch = source.match(/^(.*?)[；;]\s*具体内容\s*[:：]\s*(.+)$/)
+  const summarySource = (detailMatch?.[1] || source).trim()
+  const detail = (detailMatch?.[2] || '').trim()
+  const identityMatch = summarySource.match(/^([^:：]+(?:（[^）]+）)?)\s*[:：]\s*(.+)$/)
+  const identityCandidate = (identityMatch?.[1] || '').trim()
+  const hasIdentity = identityMatch && !/^(?:AI\s*)?(?:红榜|黑榜|亮点)$/.test(identityCandidate)
+  const identity = hasIdentity ? identityCandidate : ''
+  const conclusionSource = hasIdentity ? identityMatch[2] : summarySource
+  const conclusion = conclusionSource
+    .replace(new RegExp(`^(?:AI\\s*)?${tone === 'red' ? '(?:红榜|亮点)' : '黑榜'}\\s*[:：]\\s*`), '')
+    .trim()
+  const profileMatch = identity.match(/^(.*?)(?:（(.+)）)?$/)
+  return {
+    name: (profileMatch?.[1] || identity).trim(),
+    meta: (profileMatch?.[2] || '').split('｜').map(value => value.trim()).filter(Boolean),
+    conclusion: conclusion || summarySource,
+    detail
+  }
 }
 
 function blockTone(block) {

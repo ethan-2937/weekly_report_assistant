@@ -185,6 +185,198 @@
   color: #111827;
 }
 
+.report-section-group--focus .report-section-content.has-ai-ranking-pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.report-section-group--focus .report-section-content.has-ai-ranking-pair > :not(.report-block--ai-ranking) {
+  grid-column: 1 / -1;
+}
+
+.report-block--ai-ranking {
+  min-width: 0;
+}
+
+.ai-ranking-card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid;
+  border-radius: 16px;
+  color: #111827;
+  box-shadow: 0 10px 24px rgba(39, 45, 55, 0.08);
+}
+
+.ai-ranking-card--red {
+  border-color: #e8a7b6;
+  background: #fff1f4;
+}
+
+.ai-ranking-card--black {
+  border-color: #b9bec7;
+  background: #f1f2f4;
+}
+
+.ai-ranking-card__header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border-bottom: 1px solid;
+}
+
+.ai-ranking-card--red .ai-ranking-card__header {
+  border-color: #e8a7b6;
+  background: linear-gradient(135deg, #ffe3e9, #fff4f6);
+}
+
+.ai-ranking-card--black .ai-ranking-card__header {
+  border-color: #b9bec7;
+  background: linear-gradient(135deg, #dfe2e6, #f3f4f6);
+}
+
+.ai-ranking-card__mark {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.ai-ranking-card--red .ai-ranking-card__mark {
+  background: #c92f4b;
+  color: #ffffff;
+}
+
+.ai-ranking-card--black .ai-ranking-card__mark {
+  background: #1f2937;
+  color: #ffffff;
+}
+
+.ai-ranking-card__heading {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.ai-ranking-card__heading strong {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ai-ranking-card--red .ai-ranking-card__heading strong {
+  color: #b4233d;
+}
+
+.ai-ranking-card--black .ai-ranking-card__heading strong,
+.ai-ranking-card__heading small {
+  color: #111827;
+}
+
+.ai-ranking-card__heading small {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.ai-ranking-card__count {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border: 1px solid rgba(17, 24, 39, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #111827;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.ai-ranking-list {
+  display: grid;
+  margin: 0;
+  padding: 0 16px;
+  list-style: none;
+}
+
+.ai-ranking-list > li {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0;
+  color: #111827;
+}
+
+.ai-ranking-list > li + li {
+  border-top: 1px solid rgba(17, 24, 39, 0.16);
+}
+
+.ai-ranking-person,
+.ai-ranking-row {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ai-ranking-person {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ai-ranking-index {
+  color: #111827;
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.ai-ranking-name {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.ai-ranking-meta,
+.ai-ranking-label {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(17, 24, 39, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #111827;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ai-ranking-meta {
+  padding: 3px 8px;
+}
+
+.ai-ranking-label {
+  min-width: 68px;
+  padding: 3px 7px;
+}
+
+.ai-ranking-row--detail {
+  padding-top: 10px;
+  border-top: 1px dashed rgba(17, 24, 39, 0.18);
+}
+
+.ai-ranking-copy {
+  min-width: 0;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.75;
+}
+
 :deep(.report-table td.report-cell.is-ai-red) {
   background: #f6c5d0 !important;
   box-shadow: inset 4px 0 0 #d94b62;
@@ -217,6 +409,37 @@
 
   .report-section-content.is-preview {
     max-height: 190px;
+  }
+
+  .ai-ranking-card__header {
+    align-items: flex-start;
+    padding: 13px;
+  }
+
+  .ai-ranking-card__heading small {
+    display: none;
+  }
+
+  .ai-ranking-list {
+    padding: 0 13px;
+  }
+
+  .ai-ranking-row {
+    display: grid;
+  }
+
+  .ai-ranking-label {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 900px) {
+  .report-section-group--focus .report-section-content.has-ai-ranking-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-section-group--focus .report-section-content.has-ai-ranking-pair > :not(.report-block--ai-ranking) {
+    grid-column: auto;
   }
 }
 

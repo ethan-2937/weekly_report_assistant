@@ -104,6 +104,7 @@ export function buildSections(reportBlocks, variant) {
   replaceAiEvidence(focusBlocks, 'red', redEvidence)
   replaceAiEvidence(focusBlocks, 'black', blackEvidence)
   if (!focusBlocks.length) return grouped
+  const composedFocusBlocks = composeAiRankings(focusBlocks)
 
   const firstFocusIndex = grouped.findIndex(section => section.focus)
   const remaining = grouped.filter(section => !section.focus)
@@ -114,12 +115,40 @@ export function buildSections(reportBlocks, variant) {
     id: 'weekly-focus',
     title: '本周重点',
     kicker: 'FOCUS',
-    blocks: focusBlocks,
+    blocks: composedFocusBlocks,
     collapsible: false,
     focus: true,
     focusType: 'focus'
   })
   return remaining
+}
+
+function composeAiRankings(blocks) {
+  const composed = []
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index]
+    const tone = aiHeadingTone(block)
+    const content = blocks[index + 1]
+    if (tone && (content?.type === 'list' || content?.type === 'ordered-list')) {
+      composed.push({
+        type: 'ai-ranking',
+        tone,
+        text: tone === 'red' ? 'AI红榜' : 'AI黑榜',
+        items: content.items
+      })
+      index += 1
+      continue
+    }
+    composed.push(block)
+  }
+  return composed
+}
+
+function aiHeadingTone(block) {
+  if (block?.type !== 'heading') return ''
+  if (/红榜|AI亮点/.test(block.text || '')) return 'red'
+  if (/黑榜|未使用|无AI/.test(block.text || '')) return 'black'
+  return ''
 }
 
 function createSection(index, title) {
