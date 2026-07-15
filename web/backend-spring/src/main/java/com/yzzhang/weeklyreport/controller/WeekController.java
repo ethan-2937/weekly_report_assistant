@@ -1,10 +1,12 @@
 package com.yzzhang.weeklyreport.controller;
 
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
+import com.yzzhang.weeklyreport.service.WeeklyReportSourceService;
 import com.yzzhang.weeklyreport.vo.AnalysisVO;
 import com.yzzhang.weeklyreport.vo.SubmissionStatusVO;
 import com.yzzhang.weeklyreport.vo.SummaryVO;
 import com.yzzhang.weeklyreport.vo.WeekOverviewVO;
+import com.yzzhang.weeklyreport.vo.WeeklyReportDetailVO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,9 +18,14 @@ import java.util.List;
 @RequestMapping("/api/weeks")
 public class WeekController {
     private final WeeklyReportService weeklyReportService;
+    private final WeeklyReportSourceService weeklyReportSourceService;
 
-    public WeekController(WeeklyReportService weeklyReportService) {
+    public WeekController(
+        WeeklyReportService weeklyReportService,
+        WeeklyReportSourceService weeklyReportSourceService
+    ) {
         this.weeklyReportService = weeklyReportService;
+        this.weeklyReportSourceService = weeklyReportSourceService;
     }
 
     @GetMapping
@@ -44,5 +51,13 @@ public class WeekController {
     @GetMapping("/{week}/analysis")
     public AnalysisVO analysis(@PathVariable String week) {
         return weeklyReportService.getAnalysis(week);
+    }
+
+    @GetMapping("/{week}/reports/{userId}")
+    public WeeklyReportDetailVO report(
+        @PathVariable String week,
+        @PathVariable String userId
+    ) {
+        return weeklyReportSourceService.getReport(week, userId);
     }
 }

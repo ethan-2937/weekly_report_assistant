@@ -28,7 +28,7 @@ Spring Sunday scheduler
 - `run_codex_evaluation.py` 在宿主机编排上一业务周采集、输入指纹和状态；只有输入变化或正式报告无效时才调用非交互 Codex。Codex 运行在只含当前周授权快照的临时目录，模型结果经覆盖/隐私校验后由 Python 原子替换正式报告。
 - Codex Skill 负责从授权输入生成管理评价，不负责身份认证或数据权限。
 - Spring Boot 负责身份、数据范围、文件读取、任务触发、周日定时编排和钉钉工作通知；反馈与周报提醒复用同一通知适配器。
-- Vue 负责展示和交互，不承担权限裁决。
+- Vue 负责展示和交互，不承担权限裁决；AI 评价使用已过滤的提交状态构建姓名索引，点击后只按需读取一个人的原文，不批量预取全员正文。
 - MySQL 保存认证、权限和任务状态；周报正文当前以文件形式保存。
 
 ## Spring 依赖方向
@@ -39,6 +39,8 @@ controller -> service -> service/impl -> mapper/file/database
 ```
 
 Controller 不得绕过服务层读取文件或数据库。权限过滤应尽量靠近业务返回边界，并覆盖列表、详情、Markdown 和 XLSX 下载；下载工作簿由服务层从授权行生成。
+
+单人周报原文使用 `GET /api/weeks/{week}/reports/{userid}`。Controller 只委托 `WeeklyReportSourceService`；服务先对提交状态应用当前账号范围，再按授权行的 `report_id`、稳定 `userid` 读取目标周原始文件。响应只包含单人的展示字段，不包含原始 JSON、附件或内部标识，并对单份预览大小设置上限。
 
 负责人履职链路遵循“确定性证据先于 AI 结论”：Python 先将服务器私有负责人覆盖配置按精确唯一 selector 解析为 userid，再输出全部负责人、附件证据状态和负责人-下属确认映射；没有显式覆盖时才按共享钉钉部门生成待确认候选，并排除免交人员。只下载负责人允许类型/大小的附件并将本地相对路径交给 Skill；Skill 读取本地附件并生成管理结论；Spring 对正式履职表及原始负责人输入逐行过滤，Vue 只渲染授权后的 Markdown。
 

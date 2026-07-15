@@ -1,5 +1,6 @@
 package com.yzzhang.weeklyreport.config;
 
+import com.yzzhang.weeklyreport.common.ResourceNotFoundException;
 import com.yzzhang.weeklyreport.controller.JobController;
 import com.yzzhang.weeklyreport.controller.WeekController;
 import com.yzzhang.weeklyreport.security.AuthUserDetailsService;
@@ -7,6 +8,7 @@ import com.yzzhang.weeklyreport.security.JwtAuthenticationFilter;
 import com.yzzhang.weeklyreport.security.JwtTokenProvider;
 import com.yzzhang.weeklyreport.service.JobService;
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
+import com.yzzhang.weeklyreport.service.WeeklyReportSourceService;
 import com.yzzhang.weeklyreport.vo.JobRecordVO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +45,9 @@ class SecurityConfigWebMvcTest {
     private WeeklyReportService weeklyReportService;
 
     @MockBean
+    private WeeklyReportSourceService weeklyReportSourceService;
+
+    @MockBean
     private JobService jobService;
 
     @MockBean
@@ -56,6 +61,20 @@ class SecurityConfigWebMvcTest {
         mockMvc.perform(get("/api/weeks"))
             .andExpect(status().isUnauthorized())
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.error").value("请先登录"))
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.anyOf(
+                    org.hamcrest.Matchers.containsString("虚构周报正文"),
+                    org.hamcrest.Matchers.containsString("fictional-token"),
+                    org.hamcrest.Matchers.containsString("WEEKLY_JWT_SECRET")
+                )
+            )));
+    }
+
+    @Test
+    void unauthenticatedReportSourceRequestReturnsSanitizedUnauthorizedResponse() throws Exception {
+        mockMvc.perform(get("/api/weeks/2026-W28/reports/test-user-001"))
+            .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error").value("请先登录"))
             .andExpect(content().string(org.hamcrest.Matchers.not(
                 org.hamcrest.Matchers.anyOf(
@@ -100,6 +119,26 @@ class SecurityConfigWebMvcTest {
         mockMvc.perform(get("/api/weeks"))
             .andExpect(status().isOk())
             .andExpect(content().json("[]"));
+    }
+
+    @Test
+    @WithMockUser(username = "test-scope-user", roles = "USER")
+    void outOfScopeReportSourceUsesSanitizedNotFoundResponse() throws Exception {
+        when(weeklyReportSourceService.getReport("2026-W28", "test-user-002"))
+            .thenThrow(new ResourceNotFoundException(
+                "test-user-002 fictional-token 虚构周报正文"
+            ));
+
+        mockMvc.perform(get("/api/weeks/2026-W28/reports/test-user-002"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.error").value("周次或文件不存在"))
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.anyOf(
+                    org.hamcrest.Matchers.containsString("test-user-002"),
+                    org.hamcrest.Matchers.containsString("fictional-token"),
+                    org.hamcrest.Matchers.containsString("虚构周报正文")
+                )
+            )));
     }
 
     @Test

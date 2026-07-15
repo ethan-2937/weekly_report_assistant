@@ -1,5 +1,5 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
 import EvaluationView from './EvaluationView.vue'
 
 const report = `# 管理评价
@@ -90,9 +90,72 @@ describe('AI evaluation view', () => {
     expect(wrapper.text()).toContain('正式评价尚未就绪')
     expect(wrapper.text()).not.toContain('不应展示的虚构预处理正文')
   })
+
+  it('loads one authorized report on demand and renders source text safely', async () => {
+    const loadPersonReport = vi.fn().mockResolvedValue({
+      week: '2026-W28',
+      name: '测试员工甲',
+      department: '虚构研发部',
+      title: '测试工程师',
+      status: '已提交',
+      submittedAt: '2026-07-10 10:00:00',
+      available: true,
+      message: '',
+      fields: [{ label: '本周完成成果', value: '<img src=x onerror=alert(1)>虚构交付' }]
+    })
+    const wrapper = createWrapper({
+      submissionRows: [personRow('测试员工甲', 'test-user-001', '虚构研发部')],
+      loadPersonReport
+    })
+
+    const personLink = wrapper.findAll('.person-report-link__button')
+      .find(link => link.text() === '测试员工甲')
+    expect(personLink).toBeTruthy()
+    expect(wrapper.text()).not.toContain('虚构交付')
+
+    await personLink.trigger('click')
+    await flushPromises()
+
+    expect(loadPersonReport).toHaveBeenCalledOnce()
+    expect(loadPersonReport).toHaveBeenCalledWith('2026-W28', 'test-user-001')
+    expect(wrapper.get('[role="dialog"]').text()).toContain('虚构交付')
+    expect(wrapper.find('[role="dialog"] img').exists()).toBe(false)
+  })
+
+  it('requires explicit selection for duplicate names instead of guessing a userid', async () => {
+    const loadPersonReport = vi.fn().mockResolvedValue({
+      week: '2026-W28',
+      name: '测试员工甲',
+      status: '未提交',
+      available: false,
+      message: '该成员本周未提交，没有可查看的周报原文。',
+      fields: []
+    })
+    const wrapper = createWrapper({
+      submissionRows: [
+        personRow('测试员工甲', 'test-user-001', '虚构研发一部'),
+        personRow('测试员工甲', 'test-user-002', '虚构研发二部')
+      ],
+      loadPersonReport
+    })
+
+    await wrapper.findAll('.person-report-link__button')
+      .find(link => link.text() === '测试员工甲')
+      .trigger('click')
+
+    expect(loadPersonReport).not.toHaveBeenCalled()
+    const choices = wrapper.findAll('.report-source-picker button')
+    expect(choices).toHaveLength(2)
+    expect(wrapper.get('.report-source-picker').text()).toContain('虚构研发一部')
+    expect(wrapper.get('.report-source-picker').text()).toContain('虚构研发二部')
+
+    await choices[1].trigger('click')
+    await flushPromises()
+    expect(loadPersonReport).toHaveBeenCalledWith('2026-W28', 'test-user-002')
+  })
 })
 
-function createWrapper() {
+function createWrapper(extraProps = {}) {
   return mount(EvaluationView, {
     props: {
       selectedWeek: '2026-W28',
@@ -107,7 +170,19 @@ function createWrapper() {
         source: 'manager_report.md',
         content: report,
         isManagerReport: true
-      }
-    }
+      },
+      ...extraProps
+    },
+    global: { stubs: { teleport: true } }
   })
+}
+
+function personRow(name, userId, department) {
+  return {
+    '姓名': name,
+    userid: userId,
+    '部门': department,
+    '职务': '测试工程师',
+    '提交状态': '已提交'
+  }
 }

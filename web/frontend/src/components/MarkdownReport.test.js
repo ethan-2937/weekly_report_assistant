@@ -69,6 +69,41 @@ describe('Markdown report presentation', () => {
 
     expect(wrapper.text()).toContain('负责人共 2 人')
     expect(wrapper.text()).not.toContain('负责人候选')
+    expect(wrapper.find('.person-report-link').exists()).toBe(false)
+  })
+
+  it('links every authorized exact-name occurrence only when people are supplied', async () => {
+    const wrapper = mount(MarkdownReport, {
+      props: {
+        content: `# 示例员工甲评价
+
+示例员工甲完成了虚构交付。
+
+- 示例员工甲下周继续验证。
+
+| 姓名 | 状态 |
+| --- | --- |
+| 示例员工甲 | 已提交 |`,
+        people: [{
+          name: '示例员工甲',
+          userId: 'test-user-001',
+          department: '测试研发部',
+          title: '测试岗位'
+        }]
+      }
+    })
+
+    const links = wrapper.findAll('.person-report-link__button')
+    expect(links).toHaveLength(4)
+    expect(links[0].attributes('title')).toContain('点击鼠标左键跳转')
+    expect(wrapper.findAll('.person-report-link__tooltip').every(
+      tooltip => tooltip.text().includes('点击鼠标左键跳转查看 TA 的周报原文')
+    )).toBe(true)
+
+    await links[0].trigger('click')
+    expect(wrapper.emitted('person-select')?.[0]?.[0]).toEqual([
+      expect.objectContaining({ name: '示例员工甲', userId: 'test-user-001' })
+    ])
   })
 
   it('adds department and title to generated AI highlight evidence', () => {

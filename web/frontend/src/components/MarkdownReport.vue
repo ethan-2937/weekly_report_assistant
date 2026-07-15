@@ -51,27 +51,27 @@
           >
         <component v-if="block.type === 'heading'" :is="headingTag(block.level)" class="report-heading">
           <span class="heading-kicker">{{ headingLabel(block.level) }}</span>
-          <span class="heading-text"><InlineText :parts="inlineParts(block.text)" /></span>
+          <span class="heading-text"><ReportInlineText :parts="inlineParts(block.text)" :people="people" @person-select="selectPerson" /></span>
         </component>
 
         <p v-else-if="block.type === 'paragraph'" class="report-paragraph">
-          <InlineText :parts="inlineParts(block.text)" />
+          <ReportInlineText :parts="inlineParts(block.text)" :people="people" @person-select="selectPerson" />
         </p>
 
         <blockquote v-else-if="block.type === 'quote'" class="report-quote">
-          <InlineText :parts="inlineParts(block.text)" />
+          <ReportInlineText :parts="inlineParts(block.text)" :people="people" @person-select="selectPerson" />
         </blockquote>
 
         <ul v-else-if="block.type === 'list'" class="report-list">
           <li v-for="(item, itemIndex) in block.items" :key="itemIndex">
             <span class="list-dot"></span>
-            <span><InlineText :parts="inlineParts(item)" /></span>
+            <span><ReportInlineText :parts="inlineParts(item)" :people="people" @person-select="selectPerson" /></span>
           </li>
         </ul>
 
         <ol v-else-if="block.type === 'ordered-list'" class="report-ordered-list">
           <li v-for="(item, itemIndex) in block.items" :key="itemIndex">
-            <InlineText :parts="inlineParts(item)" />
+            <ReportInlineText :parts="inlineParts(item)" :people="people" @person-select="selectPerson" />
           </li>
         </ol>
 
@@ -112,18 +112,18 @@
             >
               <div v-if="entry.name" class="ai-ranking-person">
                 <span class="ai-ranking-index">{{ `${itemIndex + 1}`.padStart(2, '0') }}</span>
-                <strong class="ai-ranking-name"><InlineText :parts="inlineParts(entry.name)" /></strong>
+                 <strong class="ai-ranking-name"><ReportInlineText :parts="inlineParts(entry.name)" :people="people" @person-select="selectPerson" /></strong>
                 <span v-for="meta in entry.meta" :key="meta" class="ai-ranking-meta">
-                  <InlineText :parts="inlineParts(meta)" />
+                   <ReportInlineText :parts="inlineParts(meta)" :people="people" @person-select="selectPerson" />
                 </span>
               </div>
               <div class="ai-ranking-row">
                 <span class="ai-ranking-label">{{ block.tone === 'red' ? '入选结论' : '问题结论' }}</span>
-                <span class="ai-ranking-copy"><InlineText :parts="inlineParts(entry.conclusion)" /></span>
+                 <span class="ai-ranking-copy"><ReportInlineText :parts="inlineParts(entry.conclusion)" :people="people" @person-select="selectPerson" /></span>
               </div>
               <div v-if="entry.detail" class="ai-ranking-row ai-ranking-row--detail">
                 <span class="ai-ranking-label">具体内容</span>
-                <span class="ai-ranking-copy"><InlineText :parts="inlineParts(entry.detail)" /></span>
+                 <span class="ai-ranking-copy"><ReportInlineText :parts="inlineParts(entry.detail)" :people="people" @person-select="selectPerson" /></span>
               </div>
             </li>
           </ol>
@@ -135,7 +135,7 @@
             <thead>
               <tr>
                 <th v-for="(header, headerIndex) in block.headers" :key="headerIndex">
-                  <InlineText :parts="inlineParts(header)" />
+                  <ReportInlineText :parts="inlineParts(header)" :people="people" @person-select="selectPerson" />
                 </th>
               </tr>
             </thead>
@@ -146,7 +146,7 @@
                   :key="cellIndex"
                   :class="cellClass(row[cellIndex] || '', cell)"
                 >
-                  <InlineText :parts="inlineParts(row[cellIndex] || '')" />
+                  <ReportInlineText :parts="inlineParts(row[cellIndex] || '')" :people="people" @person-select="selectPerson" />
                 </td>
               </tr>
             </tbody>
@@ -162,8 +162,9 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import BrowserDownloadHint from './BrowserDownloadHint.vue'
+import ReportInlineText from './ReportInlineText.vue'
 import { inlineParts, parseMarkdown } from './markdown/markdownParser.js'
 import { buildSections, prepareReportBlocks } from './markdown/reportSections.js'
 import { downloadXlsx, sectionBlocksToRows } from './markdown/xlsxExport.js'
@@ -184,28 +185,14 @@ const props = defineProps({
   downloadPrefix: {
     type: String,
     default: '周报评价'
+  },
+  people: {
+    type: Array,
+    default: () => []
   }
 })
 
-const InlineText = defineComponent({
-  name: 'InlineText',
-  props: {
-    parts: {
-      type: Array,
-      required: true
-    }
-  },
-  setup(componentProps) {
-    return () => componentProps.parts.map((part, index) => {
-      if (part.type === 'strong') return h('strong', { key: index }, part.text)
-      if (part.type === 'code') return h('code', { key: index }, part.text)
-      if (part.type === 'link') {
-        return h('a', { key: index, href: part.href, target: '_blank', rel: 'noreferrer' }, part.text)
-      }
-      return h('span', { key: index }, part.text)
-    })
-  }
-})
+const emit = defineEmits(['person-select'])
 
 const blocks = computed(() => prepareReportBlocks(parseMarkdown(props.content)))
 const sections = computed(() => buildSections(blocks.value, props.variant))
@@ -238,6 +225,10 @@ function exportSection(section) {
     sheetName: section.title,
     rows: sectionBlocksToRows(section.blocks)
   })
+}
+
+function selectPerson(candidates) {
+  emit('person-select', candidates)
 }
 
 function headingTag(level) {

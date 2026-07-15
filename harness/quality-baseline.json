@@ -15,8 +15,8 @@
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/AuthServiceImpl.java": 360,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/FeedbackServiceImpl.java": 334,
     "web/backend-spring/src/main/java/com/yzzhang/weeklyreport/service/impl/ReportContentFilter.java": 450,
-    "web/frontend/src/App.vue": 1324,
-    "web/frontend/src/components/MarkdownReport.vue": 360,
+    "web/frontend/src/App.vue": 1120,
+    "web/frontend/src/components/MarkdownReport.vue": 351,
     "web/frontend/src/styles.css": 2350
   },
   "protectedFiles": {

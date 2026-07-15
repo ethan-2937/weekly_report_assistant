@@ -22,6 +22,7 @@ describe('submission overview', () => {
     expect(rules.text()).toContain('虚实盘')
     expect(rules.text()).toContain('AI 红黑榜')
     expect(wrapper.find('[data-testid="missing-overview-card"]').exists()).toBe(false)
+    expect(wrapper.find('.person-report-link').exists()).toBe(false)
   })
 
   it('shows the browser compatibility hint for Excel export', () => {

@@ -54,16 +54,32 @@
     <MarkdownReport
       :content="safeReportContent"
       :download-prefix="displayWeek"
+      :people="reportPeople"
       empty-text="暂无 AI 评价内容。"
       variant="report"
+      @person-select="openPersonReport"
+    />
+
+    <EmployeeReportDrawer
+      :open="drawerOpen"
+      :week="displayWeek"
+      :candidates="personCandidates"
+      :selected-person="selectedPerson"
+      :detail="reportDetail"
+      :loading="reportLoading"
+      :error="reportError"
+      @close="closePersonReport"
+      @select="selectPerson"
+      @retry="loadSelectedPerson"
     />
   </section>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { PRIMARY_EVALUATION_DIMENSIONS } from '../../api/weeks.js'
 import MarkdownReport from '../../components/MarkdownReport.vue'
+import EmployeeReportDrawer from './EmployeeReportDrawer.vue'
 
 const props = defineProps({
   selectedWeek: {
@@ -77,6 +93,14 @@ const props = defineProps({
   overview: {
     type: Object,
     default: () => ({})
+  },
+  submissionRows: {
+    type: Array,
+    default: () => []
+  },
+  loadPersonReport: {
+    type: Function,
+    default: null
   }
 })
 
@@ -96,11 +120,81 @@ const displayWeek = computed(() => props.selectedWeek || props.analysis?.week ||
 const reportReady = computed(() => props.analysis?.isManagerReport === true)
 const safeReportContent = computed(() => reportReady.value ? `${props.analysis?.content || ''}` : '')
 const safeSource = computed(() => reportReady.value ? (sourceName.value || '正式评价') : '等待生成')
+const reportPeople = computed(() => props.submissionRows
+  .map(row => ({
+    name: `${row?.['姓名'] || ''}`.trim(),
+    userId: `${row?.userid || ''}`.trim(),
+    department: `${row?.['部门'] || ''}`.trim(),
+    title: `${row?.['职务'] || ''}`.trim(),
+    status: `${row?.['提交状态'] || ''}`.trim()
+  }))
+  .filter(person => person.name && person.userId))
 const submissionRate = computed(() => {
   const expected = Number(props.overview?.expectedCount || 0)
   const submitted = Number(props.overview?.submittedCount || 0)
   return expected ? `${Math.round((submitted / expected) * 100)}%` : '0%'
 })
+
+const drawerOpen = ref(false)
+const personCandidates = ref([])
+const selectedPerson = ref(null)
+const reportDetail = ref(null)
+const reportLoading = ref(false)
+const reportError = ref('')
+let requestSequence = 0
+
+watch(() => props.selectedWeek, closePersonReport)
+
+function openPersonReport(candidates) {
+  const validCandidates = (Array.isArray(candidates) ? candidates : [])
+    .filter(candidate => candidate?.userId)
+  if (!validCandidates.length) return
+  requestSequence += 1
+  drawerOpen.value = true
+  personCandidates.value = validCandidates
+  selectedPerson.value = null
+  reportDetail.value = null
+  reportError.value = ''
+  reportLoading.value = false
+  if (validCandidates.length === 1) selectPerson(validCandidates[0])
+}
+
+function selectPerson(person) {
+  if (!person?.userId) return
+  selectedPerson.value = person
+  loadSelectedPerson()
+}
+
+async function loadSelectedPerson() {
+  if (!selectedPerson.value?.userId || !props.loadPersonReport) {
+    reportError.value = '周报原文加载功能暂不可用，请联系开发人员。'
+    return
+  }
+  const currentRequest = ++requestSequence
+  reportLoading.value = true
+  reportError.value = ''
+  reportDetail.value = null
+  try {
+    const detail = await props.loadPersonReport(props.selectedWeek, selectedPerson.value.userId)
+    if (currentRequest === requestSequence) reportDetail.value = detail
+  } catch (error) {
+    if (currentRequest === requestSequence) {
+      reportError.value = error?.message || '请求失败，请稍后重试。'
+    }
+  } finally {
+    if (currentRequest === requestSequence) reportLoading.value = false
+  }
+}
+
+function closePersonReport() {
+  requestSequence += 1
+  drawerOpen.value = false
+  personCandidates.value = []
+  selectedPerson.value = null
+  reportDetail.value = null
+  reportLoading.value = false
+  reportError.value = ''
+}
 
 function count(value) {
   const parsed = Number(value)

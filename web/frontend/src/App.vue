@@ -151,6 +151,8 @@
         :selected-week="selectedWeek"
         :analysis="analysis"
         :overview="overview"
+        :submission-rows="rows"
+        :load-person-report="loadPersonReport"
       />
 
       <section v-if="currentView === 'users' && isAdmin" class="page-card admin-page">
@@ -471,6 +473,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { changeCurrentPassword } from './api/auth.js'
+import { fetchWeeklyReportDetail, normalizeWeeklyReportDetail } from './api/reports.js'
 import {
   fetchWeekAnalysis,
   fetchWeeks,
@@ -554,6 +557,7 @@ const {
   signOut
 } = useAuth({ onAuthInvalidated: resetWorkspaceState })
 const weekClient = { request }
+const loadPersonReport = async (week, userId) => normalizeWeeklyReportDetail(await fetchWeeklyReportDetail(weekClient, week, userId))
 const latestWeek = computed(() => weeks.value[0] || null)
 const overview = computed(() => weeks.value.find(item => item.week === selectedWeek.value) || {})
 const isAdmin = computed(() => (currentUser.value?.roles || []).includes('ADMIN'))
