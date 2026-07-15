@@ -113,7 +113,9 @@
             <h1>提交状态</h1>
             <p>支持按姓名、部门、提交状态和负责人筛选。</p>
           </div>
-          <el-button round @click="downloadCsv">下载 Excel</el-button>
+          <BrowserDownloadHint>
+            <el-button round @click="downloadCsv">下载 Excel</el-button>
+          </BrowserDownloadHint>
         </div>
 
         <div class="toolbar">
@@ -480,6 +482,7 @@ import {
   normalizeWeekSummary
 } from './api/weeks.js'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
+import BrowserDownloadHint from './components/BrowserDownloadHint.vue'
 import { useAuth } from './composables/useAuth.js'
 import LoginView from './features/auth/LoginView.vue'
 import EvaluationView from './features/evaluation/EvaluationView.vue'

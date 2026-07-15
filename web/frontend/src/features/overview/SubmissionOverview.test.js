@@ -23,6 +23,16 @@ describe('submission overview', () => {
     expect(rules.text()).toContain('AI 红黑榜')
     expect(wrapper.find('[data-testid="missing-overview-card"]').exists()).toBe(false)
   })
+
+  it('shows the browser compatibility hint for Excel export', () => {
+    const wrapper = createWrapper()
+
+    const hint = wrapper.get('.browser-download-hint__tooltip')
+    expect(hint.attributes('role')).toBe('tooltip')
+    expect(hint.text()).toContain('Chrome 111+')
+    expect(hint.text()).toContain('Safari 16.4+')
+    expect(hint.text()).toContain('联系开发人员')
+  })
 })
 
 function createWrapper() {

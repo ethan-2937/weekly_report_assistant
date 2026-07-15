@@ -428,6 +428,10 @@
     width: 100%;
   }
 
+  .download-button-hint {
+    width: 100%;
+  }
+
   .week-help {
     display: none;
   }

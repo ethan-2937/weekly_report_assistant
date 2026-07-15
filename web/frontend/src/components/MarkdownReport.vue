@@ -27,16 +27,17 @@
               {{ isOpen(section.id) ? '收起' : '展开全部' }}
             </span>
           </button>
-          <button
-            v-if="canExport(section)"
-            type="button"
-            class="report-section-export"
-            :aria-label="`导出${section.title}为 Excel`"
-            @click="exportSection(section)"
-          >
-            <span aria-hidden="true">↓</span>
-            导出 Excel
-          </button>
+          <BrowserDownloadHint v-if="canExport(section)">
+            <button
+              type="button"
+              class="report-section-export"
+              :aria-label="`导出${section.title}为 Excel`"
+              @click="exportSection(section)"
+            >
+              <span aria-hidden="true">↓</span>
+              导出 Excel
+            </button>
+          </BrowserDownloadHint>
         </div>
 
         <div
@@ -107,6 +108,7 @@
 
 <script setup>
 import { computed, defineComponent, h, ref, watch } from 'vue'
+import BrowserDownloadHint from './BrowserDownloadHint.vue'
 import { inlineParts, parseMarkdown } from './markdown/markdownParser.js'
 import { buildSections, prepareReportBlocks } from './markdown/reportSections.js'
 import { downloadXlsx, sectionBlocksToRows } from './markdown/xlsxExport.js'

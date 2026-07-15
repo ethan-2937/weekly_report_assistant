@@ -61,6 +61,7 @@ describe('AI evaluation view', () => {
     expect(toggles.every(toggle => toggle.attributes('aria-expanded') === 'false')).toBe(true)
     expect(wrapper.findAll('.report-section-content.is-preview')).toHaveLength(2)
     expect(wrapper.findAll('.report-section-export')).toHaveLength(2)
+    expect(wrapper.findAll('.browser-download-hint__tooltip')).toHaveLength(2)
 
     await toggles[0].trigger('click')
     expect(toggles[0].attributes('aria-expanded')).toBe('true')

@@ -38,9 +38,11 @@
           </p>
           <p class="generated-at">数据生成时间 {{ formattedGeneratedAt }}</p>
         </div>
-        <button class="download-button" type="button" :disabled="!selectedWeek" @click="emit('download')">
-          下载提交表
-        </button>
+        <BrowserDownloadHint class="download-button-hint">
+          <button class="download-button" type="button" :disabled="!selectedWeek" @click="emit('download')">
+            下载提交表
+          </button>
+        </BrowserDownloadHint>
       </header>
 
       <section class="evaluation-rules" aria-labelledby="evaluation-rules-title">
@@ -148,6 +150,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import BrowserDownloadHint from '../../components/BrowserDownloadHint.vue'
 import MarkdownReport from '../../components/MarkdownReport.vue'
 import { formatIsoWeekRange } from './weekRange.js'
 
