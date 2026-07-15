@@ -195,7 +195,7 @@ function blockTone(block) {
   const text = `${block.text || ''} ${(block.items || []).join(' ')}`
   if (/老板|拍板|协调事项|需要支持|需支持|求助|卡点/.test(text)) return 'tone-boss'
   if (/五维|虚实盘|真干活|时间分配|健康度|红黑榜|下周计划合格|综合结论/.test(text)) return 'tone-dimension'
-  if (/黑榜/.test(text)) return 'tone-danger'
+  if (/黑榜/.test(text)) return 'tone-ai-black'
   if (/AI|可复用|红榜/.test(text)) return 'tone-ai'
   if (/风险|异常|失败|未提交|缺失|阻塞|延期|严重|离职|淘汰/.test(text)) return 'tone-danger'
   if (/下一步|待启动|待确认|需要|建议|关注|观察|复核|人工确认/.test(text)) return 'tone-warning'
@@ -222,6 +222,8 @@ function cellClass(value, header) {
     classes.push('is-time-health')
   } else if (/AI|红黑榜/.test(headerText)) {
     classes.push('is-ai')
+    if (/红榜|可复用/.test(text)) classes.push('is-ai-red')
+    if (/黑榜|未使用|无AI/.test(text)) classes.push('is-ai-black')
   } else if (/下周计划|计划合格/.test(headerText)) {
     classes.push('is-plan')
   }

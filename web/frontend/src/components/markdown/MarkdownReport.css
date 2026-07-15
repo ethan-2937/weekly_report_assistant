@@ -174,14 +174,25 @@
 }
 
 .report-section-group--focus :deep(.tone-ai .report-heading) {
-  border-left-color: #24814b;
-  color: #1e6a3d;
+  border-left-color: #d94b62;
+  background: linear-gradient(90deg, #f9e8ec, rgba(255, 255, 255, 0.9));
+  color: #b4233d;
 }
 
-.report-section-group--focus :deep(.tone-danger .report-heading) {
-  border-left-color: var(--sheet-red-text);
-  background: linear-gradient(90deg, var(--sheet-red), rgba(255, 255, 255, 0.9));
-  color: var(--sheet-red-text);
+.report-section-group--focus :deep(.tone-ai-black .report-heading) {
+  border-left-color: #4b5563;
+  background: linear-gradient(90deg, #e5e7eb, rgba(255, 255, 255, 0.9));
+  color: #111827;
+}
+
+:deep(.report-table td.report-cell.is-ai-red) {
+  background: #f9e8ec !important;
+  color: #b4233d !important;
+}
+
+:deep(.report-table td.report-cell.is-ai-black) {
+  background: #e5e7eb !important;
+  color: #111827 !important;
 }
 
 :deep(.report-cell.is-subordinate-missing) {

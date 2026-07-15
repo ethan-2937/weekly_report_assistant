@@ -1569,11 +1569,19 @@ textarea {
 }
 
 .report-block--heading:not(.level-1).tone-ai .report-heading {
-  border-color: rgba(52, 168, 83, 0.22);
+  border-color: rgba(196, 52, 73, 0.32);
   background:
-    linear-gradient(90deg, rgba(234, 245, 238, 0.96), rgba(255, 255, 255, 0.9)),
-    radial-gradient(circle at 94% 20%, rgba(52, 168, 83, 0.15), transparent 28%);
-  color: var(--sheet-green-text);
+    linear-gradient(90deg, rgba(249, 232, 236, 0.98), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at 94% 20%, rgba(196, 52, 73, 0.14), transparent 28%);
+  color: #b4233d;
+}
+
+.report-block--heading:not(.level-1).tone-ai-black .report-heading {
+  border-color: rgba(31, 41, 55, 0.3);
+  background:
+    linear-gradient(90deg, rgba(229, 231, 235, 0.98), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at 94% 20%, rgba(31, 41, 55, 0.12), transparent 28%);
+  color: #111827;
 }
 
 .report-block--heading.level-1 .heading-kicker,
@@ -1902,10 +1910,21 @@ textarea {
 .tone-ai .report-paragraph,
 .tone-ai .report-list,
 .tone-ai .report-ordered-list {
-  border-left-color: var(--sheet-green);
+  border-left-color: #d94b62;
   background:
-    linear-gradient(90deg, rgba(234, 245, 238, 0.9), #ffffff 38%),
-    radial-gradient(circle at 96% 15%, rgba(52, 168, 83, 0.08), transparent 28%);
+    linear-gradient(90deg, rgba(249, 232, 236, 0.94), #ffffff 38%),
+    radial-gradient(circle at 96% 15%, rgba(196, 52, 73, 0.08), transparent 28%);
+  color: #7f1d32;
+}
+
+.tone-ai-black .report-paragraph,
+.tone-ai-black .report-list,
+.tone-ai-black .report-ordered-list {
+  border-left-color: #4b5563;
+  background:
+    linear-gradient(90deg, rgba(229, 231, 235, 0.94), #ffffff 38%),
+    radial-gradient(circle at 96% 15%, rgba(31, 41, 55, 0.08), transparent 28%);
+  color: #1f2937;
 }
 
 .notice-card {
