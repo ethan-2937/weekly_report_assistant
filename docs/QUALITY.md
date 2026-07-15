@@ -5,7 +5,7 @@
 1. `scripts/check-harness.ps1`：仓库地图、隐私路径、架构导入、文件预算和模板哈希。
 2. Python `unittest`：周次、配置、匹配和输出构建等确定性逻辑。
 3. Maven tests：权限、服务和工具类行为。
-4. Vitest：前端 API client、token 生命周期、OAuth 回调和敏感错误处理。
+4. Vitest：前端 API client、token 生命周期、OAuth 回调、敏感错误处理、评价折叠交互和 XLSX 导出结构。
 5. Vite build：前端生产构建。
 6. GitHub Actions：在干净环境重复同一验证入口。
 

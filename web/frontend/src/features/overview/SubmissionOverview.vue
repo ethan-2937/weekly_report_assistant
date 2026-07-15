@@ -40,35 +40,41 @@
         </button>
       </header>
 
-      <div class="overview-focus">
-        <button
-          class="focus-card missing-card"
-          type="button"
-          data-testid="missing-overview-card"
-          aria-label="查看未提交名单"
-          @click="emit('navigate-missing')"
-        >
-          <span class="focus-label">未提交</span>
-          <strong>{{ safeCount(overview.missingCount) }}</strong>
-          <span class="focus-meta">
-            应交 {{ safeCount(overview.expectedCount) }} · 已交 {{ safeCount(overview.submittedCount) }}
-          </span>
-          <span class="focus-action">查看名单 <span aria-hidden="true">→</span></span>
-        </button>
+      <section class="evaluation-rules" aria-labelledby="evaluation-rules-title">
+        <header class="evaluation-rules__header">
+          <div>
+            <span class="eyebrow">EVALUATION GUIDE</span>
+            <h2 id="evaluation-rules-title">评价规则</h2>
+          </div>
+          <span class="rules-separation">模板合规 ≠ 管理评价</span>
+        </header>
 
-        <article class="focus-card leader-card" data-testid="leader-overview-card">
-          <span class="focus-label">负责人</span>
-          <strong>{{ safeCount(overview.leaderCandidateCount) }}</strong>
-          <span class="focus-meta">负责人识别结果</span>
-          <span class="focus-note">履职评价在 AI 评价页单独呈现</span>
-        </article>
-      </div>
+        <div class="evaluation-rules__grid">
+          <article class="rule-track rule-track--template">
+            <span class="rule-track__index">A</span>
+            <div>
+              <strong>模板合规</strong>
+              <p>仅检查钉钉线上四项字段是否完整，不替代管理结论。</p>
+              <div class="rule-chip-list" aria-label="模板合规字段">
+                <span>本周成果</span><span>工时投入</span><span>AI 应用</span><span>下周计划</span>
+              </div>
+            </div>
+          </article>
 
-      <aside class="rule-note" aria-label="规则说明">
-        <p><strong>模板合规</strong><span>按钉钉线上四项模板检查填写完整性。</span></p>
-        <span class="rule-divider" aria-hidden="true"></span>
-        <p><strong>管理评价</strong><span>使用独立筛选标准，不以模板合规结果替代。</span></p>
-      </aside>
+          <article class="rule-track rule-track--management">
+            <span class="rule-track__index">B</span>
+            <div>
+              <strong>管理评价 · 四个主维度</strong>
+              <p>综合结论与需跟进仍保留在详情，不作为独立主维度。</p>
+              <ol class="management-dimensions">
+                <li v-for="rule in managementRules" :key="rule.title">
+                  <b>{{ rule.title }}</b><span>{{ rule.detail }}</span>
+                </li>
+              </ol>
+            </div>
+          </article>
+        </div>
+      </section>
 
       <div class="overview-content">
         <section class="content-panel compliance-panel" aria-labelledby="compliance-title">
@@ -150,7 +156,14 @@ const props = defineProps({
   selectedWeek: { type: String, default: '' }
 })
 
-const emit = defineEmits(['select-week', 'navigate-missing', 'download'])
+const emit = defineEmits(['select-week', 'download'])
+
+const managementRules = [
+  { title: '虚实盘', detail: '是否有可验证交付' },
+  { title: '时间健康度', detail: '投入是否匹配岗位' },
+  { title: 'AI 红黑榜', detail: '工具、场景与效果' },
+  { title: '下周计划', detail: '日期与产出是否明确' }
+]
 
 const weekRangeLabel = computed(() => formatIsoWeekRange(props.selectedWeek))
 const formattedGeneratedAt = computed(() => {
@@ -167,11 +180,6 @@ const formattedGeneratedAt = computed(() => {
     hour12: false
   }).format(date)
 })
-
-function safeCount(value) {
-  const count = Number(value)
-  return Number.isFinite(count) && count >= 0 ? count : 0
-}
 
 function normalizedRate(row) {
   const value = row?.['模板填写正确率']

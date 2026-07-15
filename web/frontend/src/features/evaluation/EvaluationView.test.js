@@ -5,15 +5,19 @@ import EvaluationView from './EvaluationView.vue'
 const report = `# 管理评价
 
 ## 需要老板拍板/协调事项
-- 虚构协调事项
+| 优先级 | 人员/团队 | 卡点 | 需要支持 | 建议时限 |
+| --- | --- | --- | --- | --- |
+| P2 | AI使用治理 | AI黑榜/未使用人员较多 | 明确最低填写标准 | 下周周报前 |
 
 ## 员工五维评价
 | 姓名 | 虚实盘（本周成果） | 时间分配健康度 | AI使用红黑榜 | 下周计划合格性 | 综合结论/需跟进 |
 | --- | --- | --- | --- | --- | --- |
-| 测试员工甲 | 完成 | 健康 | 红榜 | 合格 | 关注交付节奏 |
+| 测试员工甲 | 完成 | 健康 | 红榜：可复用方案 | 合格 | 关注交付节奏 |
 
 ## 团队负责人履职检查
-- 测试负责人甲：已完成团队汇总
+| 负责人 | 管理团队 | 履职结论 |
+| --- | --- | --- |
+| 测试负责人甲 | 虚构研发部 | 完成 |
 `
 
 describe('AI evaluation view', () => {
@@ -28,7 +32,11 @@ describe('AI evaluation view', () => {
     expect(grid.text()).toContain('下周计划合格性')
     expect(grid.text()).not.toContain('综合结论/需跟进')
     expect(wrapper.text()).toContain('综合结论/需跟进')
-    expect(wrapper.get('[aria-label="本周重点"]').text()).toContain('虚构协调事项')
+    const focusText = wrapper.get('[aria-label="本周重点"]').text()
+    expect(focusText).toContain('测试员工甲：红榜：可复用方案')
+    expect(focusText.indexOf('红榜')).toBeLessThan(focusText.indexOf('黑榜'))
+    expect(wrapper.text()).toContain('员工四维评价')
+    expect(wrapper.text()).toContain('综合结论/需跟进')
   })
 
   it('keeps employee and leader sections collapsed until explicitly expanded', async () => {
@@ -36,10 +44,12 @@ describe('AI evaluation view', () => {
     const toggles = wrapper.findAll('.report-section-toggle')
 
     expect(toggles.map(toggle => toggle.get('strong').text())).toEqual([
-      '员工五维评价',
+      '员工四维评价',
       '团队负责人履职检查'
     ])
     expect(toggles.every(toggle => toggle.attributes('aria-expanded') === 'false')).toBe(true)
+    expect(wrapper.findAll('.report-section-content.is-preview')).toHaveLength(2)
+    expect(wrapper.findAll('.report-section-export')).toHaveLength(2)
 
     await toggles[0].trigger('click')
     expect(toggles[0].attributes('aria-expanded')).toBe('true')

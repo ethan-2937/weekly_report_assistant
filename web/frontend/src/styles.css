@@ -1020,6 +1020,7 @@ textarea {
 .hero-copy {
   position: relative;
   z-index: 1;
+  min-width: 0;
 }
 
 .hero-copy h1 {
@@ -1028,6 +1029,7 @@ textarea {
   font-size: clamp(30px, 4vw, 46px);
   line-height: 1.08;
   letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
 }
 
 .hero-copy p {
@@ -1055,62 +1057,6 @@ textarea {
   font-size: 13px;
   font-weight: 800;
   background: rgba(232, 240, 254, 0.72);
-}
-
-.hero-showcase {
-  position: relative;
-  min-height: 230px;
-}
-
-.floating-card {
-  position: absolute;
-  display: flex;
-  width: 170px;
-  height: 190px;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 22px;
-  border-radius: 22px;
-  color: white;
-  box-shadow: 0 22px 50px rgba(60, 64, 67, 0.18);
-}
-
-.floating-card span {
-  font-size: 46px;
-  font-weight: 900;
-  letter-spacing: -0.06em;
-}
-
-.floating-card strong {
-  font-size: 18px;
-}
-
-.floating-card.blue {
-  top: 12px;
-  right: 210px;
-  width: 170px;
-  height: 190px;
-  background: linear-gradient(160deg, var(--blue), #7baaf7);
-  animation: book-float 5.2s ease-in-out infinite;
-}
-
-.floating-card.green {
-  top: 72px;
-  right: 126px;
-  width: 150px;
-  height: 166px;
-  background: linear-gradient(160deg, var(--green), #70d68a);
-  animation: book-float 6.3s ease-in-out 0.8s infinite;
-}
-
-.floating-card.yellow {
-  top: 32px;
-  right: 34px;
-  width: 170px;
-  height: 190px;
-  background: linear-gradient(160deg, var(--yellow), #ffda63);
-  color: #3c4043;
-  animation: book-float 5.8s ease-in-out 0.4s infinite;
 }
 
 .category-strip {
@@ -2164,16 +2110,6 @@ textarea {
   }
 }
 
-@keyframes book-float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-2deg);
-  }
-  50% {
-    transform: translateY(-12px) rotate(1deg);
-  }
-}
-
 @keyframes float-soft {
   0%,
   100% {
@@ -2212,10 +2148,6 @@ textarea {
   .login-poster,
   .login-card--official {
     min-height: auto;
-  }
-
-  .hero-showcase {
-    display: none;
   }
 
   .stat-grid {

@@ -14,14 +14,14 @@ describe('submission overview', () => {
     expect(wrapper.find('.mobile-week-rule').text()).toContain('周四 00:00 至下一周周四 00:00 前')
   })
 
-  it('navigates from the missing card and labels leaders without candidate wording', async () => {
+  it('uses the former statistic area for separated evaluation rules', () => {
     const wrapper = createWrapper()
 
-    await wrapper.get('[data-testid="missing-overview-card"]').trigger('click')
-
-    expect(wrapper.emitted('navigate-missing')).toHaveLength(1)
-    expect(wrapper.get('[data-testid="leader-overview-card"]').text()).toContain('负责人')
-    expect(wrapper.get('[data-testid="leader-overview-card"]').text()).not.toContain('负责人候选')
+    const rules = wrapper.get('.evaluation-rules')
+    expect(rules.text()).toContain('模板合规 ≠ 管理评价')
+    expect(rules.text()).toContain('虚实盘')
+    expect(rules.text()).toContain('AI 红黑榜')
+    expect(wrapper.find('[data-testid="missing-overview-card"]').exists()).toBe(false)
   })
 })
 

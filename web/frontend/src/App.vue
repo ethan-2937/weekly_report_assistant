@@ -89,20 +89,7 @@
           </div>
         </div>
 
-        <div class="hero-showcase" aria-hidden="true">
-          <div class="floating-card blue">
-            <span>{{ overview.expectedCount }}</span>
-            <strong>应交候选</strong>
-          </div>
-          <div class="floating-card green">
-            <span>{{ overview.submittedCount }}</span>
-            <strong>已提交</strong>
-          </div>
-          <div class="floating-card yellow">
-            <span>{{ overview.missingCount }}</span>
-            <strong>未提交</strong>
-          </div>
-        </div>
+        <SubmissionPulse :overview="overview" @navigate-missing="showMissingReports" />
       </section>
 
       <section v-if="canViewReports && currentView !== 'dashboard'" class="category-strip">
@@ -120,7 +107,6 @@
         :weeks="weeks"
         :selected-week="selectedWeek"
         @select-week="selectWeek"
-        @navigate-missing="showMissingReports"
         @download="downloadCsv"
       />
 
@@ -501,6 +487,7 @@ import { useAuth } from './composables/useAuth.js'
 import LoginView from './features/auth/LoginView.vue'
 import EvaluationView from './features/evaluation/EvaluationView.vue'
 import SubmissionOverview from './features/overview/SubmissionOverview.vue'
+import SubmissionPulse from './features/overview/SubmissionPulse.vue'
 const adminUsers = ref([])
 const adminRoles = ref([])
 const adminLoading = ref(false)

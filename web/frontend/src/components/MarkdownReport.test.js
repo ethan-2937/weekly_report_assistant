@@ -33,6 +33,7 @@ describe('Markdown report presentation', () => {
 
     const leaderToggle = wrapper.get('.report-section-toggle')
     expect(leaderToggle.attributes('aria-expanded')).toBe('false')
+    expect(wrapper.get('.report-section-group.is-collapsed .report-section-content').classes()).toContain('is-preview')
     expect(wrapper.html()).toContain('不合格（下属未提交）')
   })
 

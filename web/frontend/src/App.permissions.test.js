@@ -53,6 +53,16 @@ describe('application role menus and permission guards', () => {
     expect(wrapper.find('.home-hero').exists()).toBe(true)
     expect(wrapper.find('.admin-page').exists()).toBe(false)
   })
+
+  it('routes the top missing statistic through the existing report guard', async () => {
+    const wrapper = await mountAs({ roles: ['REPORT_ALL'], deptScopes: [] })
+
+    await wrapper.get('[data-testid="pulse-missing-card"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('.page-header h1').text()).toBe('提交状态')
+    expect(wrapper.findAll('.decor-nav button').find(item => item.text() === '未交名单').classes()).toContain('active')
+  })
 })
 
 async function mountAs(user) {

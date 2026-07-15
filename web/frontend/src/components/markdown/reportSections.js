@@ -22,6 +22,9 @@ function normalizeReportBlock(block) {
   if (/确认团队汇总完整性/.test(block.text || '')) return null
   const text = sanitizeDisplayText(block.text || '')
   if (!text) return null
+  if (block.type === 'heading' && /员工五维评价/.test(text)) {
+    return { ...block, text: text.replace(/员工五维评价/g, '员工四维评价') }
+  }
   if (block.type === 'heading' && /(?:需|需要)老板拍板|协调事项/.test(text)) {
     return { ...block, text: '本周重点' }
   }
@@ -72,16 +75,35 @@ export function buildSections(reportBlocks, variant) {
   const focusSections = grouped
     .filter(section => section.focus)
     .sort((left, right) => focusRank(left.focusType) - focusRank(right.focusType))
-  if (!focusSections.length) return grouped
+  const focusBlocks = focusSections.flatMap(section => section.blocks)
+  const redEvidence = collectAiEvidence(grouped, 'red')
+  const blackEvidence = collectAiEvidence(grouped, 'black')
+  const focusText = blocksText(focusBlocks)
+
+  if (redEvidence.length && !/红榜|可复用|AI亮点/.test(focusText)) {
+    focusBlocks.unshift(
+      { type: 'heading', level: 3, text: 'AI 红榜' },
+      { type: 'list', items: redEvidence }
+    )
+  }
+  if (blackEvidence.length && !/黑榜|未使用|无AI/.test(blocksText(focusBlocks))) {
+    focusBlocks.push(
+      { type: 'heading', level: 3, text: 'AI 黑榜' },
+      { type: 'list', items: blackEvidence }
+    )
+  }
+  if (!focusBlocks.length) return grouped
 
   const firstFocusIndex = grouped.findIndex(section => section.focus)
   const remaining = grouped.filter(section => !section.focus)
-  const insertionIndex = grouped.slice(0, firstFocusIndex).filter(section => !section.focus).length
+  const insertionIndex = firstFocusIndex >= 0
+    ? grouped.slice(0, firstFocusIndex).filter(section => !section.focus).length
+    : Math.min(1, remaining.length)
   remaining.splice(insertionIndex, 0, {
     id: 'weekly-focus',
     title: '本周重点',
     kicker: 'FOCUS',
-    blocks: focusSections.flatMap(section => section.blocks),
+    blocks: focusBlocks,
     collapsible: false,
     focus: true,
     focusType: 'focus'
@@ -102,7 +124,34 @@ function createSection(index, title) {
 }
 
 function isCollapsibleTitle(title) {
-  return /员工(?:五维)?评价|员工评价总表|团队负责人(?:履职)?(?:检查|评价)/.test(title)
+  return /员工(?:[四五]维)?评价|员工评价总表|团队负责人(?:履职)?(?:检查|评价)/.test(title)
+}
+
+function collectAiEvidence(sections, tone) {
+  const evidence = []
+  const matchesTone = tone === 'red'
+    ? text => /红榜|可复用|AI亮点/.test(text)
+    : text => /黑榜|未使用|无AI/.test(text)
+
+  for (const section of sections.filter(item => !item.focus)) {
+    for (const block of section.blocks) {
+      if (block.type !== 'table') continue
+      const aiColumn = block.headers.findIndex(header => /AI.*(?:红黑榜|使用|应用)/i.test(header))
+      if (aiColumn < 0) continue
+      const personColumn = block.headers.findIndex(header => /姓名|人员|员工|负责人/.test(header))
+      for (const row of block.rows) {
+        const conclusion = row[aiColumn] || ''
+        if (!matchesTone(conclusion)) continue
+        const person = personColumn >= 0 ? row[personColumn] : ''
+        evidence.push(person ? `${person}：${conclusion}` : conclusion)
+      }
+    }
+  }
+  return [...new Set(evidence)].slice(0, 12)
+}
+
+function blocksText(blocks) {
+  return blocks.map(block => `${block.text || ''} ${(block.items || []).join(' ')} ${(block.rows || []).flat().join(' ')}`).join(' ')
 }
 
 function sectionFocusType(title) {

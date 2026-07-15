@@ -53,6 +53,7 @@
 
     <MarkdownReport
       :content="safeReportContent"
+      :download-prefix="displayWeek"
       empty-text="暂无 AI 评价内容。"
       variant="report"
     />
@@ -109,8 +110,37 @@ function count(value) {
 
 <style scoped>
 .evaluation-view {
+  --evaluation-ink: #17263a;
+  --evaluation-muted: #627084;
   overflow: hidden;
   padding: 0;
+  color: var(--evaluation-ink);
+  font-family: "MiSans", "HarmonyOS Sans SC", "PingFang SC", sans-serif;
+}
+
+.report-hero-card {
+  padding-block: 38px;
+  background:
+    radial-gradient(circle at 86% 14%, rgba(232, 174, 45, 0.24), transparent 25%),
+    radial-gradient(circle at 58% 0%, rgba(52, 168, 133, 0.2), transparent 28%),
+    linear-gradient(128deg, #14283f 0%, #294760 54%, #355f61 100%);
+}
+
+.report-hero-main h1 {
+  font-size: clamp(36px, 4.4vw, 60px);
+  font-weight: 850;
+  letter-spacing: -0.055em;
+}
+
+.report-hero-main p {
+  max-width: 760px;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 650;
+}
+
+.report-status-card {
+  border-color: rgba(255, 255, 255, 0.58);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(231, 241, 245, 0.92));
 }
 
 .dimension-grid {
@@ -128,8 +158,9 @@ function count(value) {
   padding: 16px;
   border: 1px solid var(--sheet-line);
   border-top: 4px solid var(--sheet-blue-text);
-  border-radius: 14px;
-  background: linear-gradient(145deg, rgba(238, 244, 251, 0.9), #fff 64%);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(238, 244, 251, 0.82), #fff 66%);
+  box-shadow: 0 10px 28px rgba(35, 57, 82, 0.06);
 }
 
 .dimension-grid article > span {
@@ -151,18 +182,30 @@ function count(value) {
 }
 
 .dimension-grid strong {
-  color: #172033;
-  font-size: 16px;
+  color: var(--evaluation-ink);
+  font-size: 15px;
+  font-weight: 850;
 }
 
 .dimension-grid small {
-  color: var(--muted);
+  color: var(--evaluation-muted);
+  font-size: 12px;
   line-height: 1.55;
 }
 
 .dimension-grid .dimension-2 { border-top-color: var(--sheet-yellow-text); }
 .dimension-grid .dimension-3 { border-top-color: var(--sheet-green-text); }
 .dimension-grid .dimension-4 { border-top-color: var(--sheet-purple-text); }
+
+.report-kpi-strip article {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(35, 57, 82, 0.045);
+}
+
+.report-kpi-strip strong {
+  color: var(--evaluation-ink);
+  font-weight: 850;
+}
 
 .evaluation-notice {
   display: flex;

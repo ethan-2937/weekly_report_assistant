@@ -11,21 +11,35 @@
         :class="['report-section-group', { 'report-section-group--focus': section.focus, 'is-collapsed': section.collapsible && !isOpen(section.id) }]"
         :aria-label="section.focus ? '本周重点' : undefined"
       >
-        <button
-          v-if="section.collapsible"
-          type="button"
-          class="report-section-toggle"
-          :aria-expanded="isOpen(section.id)"
-          @click="toggleSection(section.id)"
-        >
-          <span>
-            <small>{{ section.kicker }}</small>
-            <strong>{{ section.title }}</strong>
-          </span>
-          <span class="report-section-toggle__action">{{ isOpen(section.id) ? '收起' : '展开' }}</span>
-        </button>
+        <div v-if="section.collapsible" class="report-section-toolbar">
+          <button
+            type="button"
+            class="report-section-toggle"
+            :aria-expanded="isOpen(section.id)"
+            @click="toggleSection(section.id)"
+          >
+            <span>
+              <small>{{ section.kicker }}</small>
+              <strong>{{ section.title }}</strong>
+            </span>
+            <span class="report-section-toggle__action">{{ isOpen(section.id) ? '收起' : '展开全部' }}</span>
+          </button>
+          <button
+            v-if="canExport(section)"
+            type="button"
+            class="report-section-export"
+            :aria-label="`导出${section.title}为 Excel`"
+            @click="exportSection(section)"
+          >
+            <span aria-hidden="true">↓</span>
+            导出 Excel
+          </button>
+        </div>
 
-        <div v-show="!section.collapsible || isOpen(section.id)" class="report-section-content">
+        <div
+          :class="['report-section-content', { 'is-preview': section.collapsible && !isOpen(section.id) }]"
+          :aria-label="section.collapsible && !isOpen(section.id) ? `${section.title}内容预览` : undefined"
+        >
           <section
             v-for="(block, index) in section.blocks"
             :key="`${section.id}-${block.type}-${index}`"
@@ -92,6 +106,7 @@
 import { computed, defineComponent, h, ref, watch } from 'vue'
 import { inlineParts, parseMarkdown } from './markdown/markdownParser.js'
 import { buildSections, prepareReportBlocks } from './markdown/reportSections.js'
+import { downloadXlsx, sectionBlocksToRows } from './markdown/xlsxExport.js'
 
 const props = defineProps({
   content: {
@@ -105,6 +120,10 @@ const props = defineProps({
   variant: {
     type: String,
     default: 'default'
+  },
+  downloadPrefix: {
+    type: String,
+    default: '周报评价'
   }
 })
 
@@ -145,6 +164,18 @@ function toggleSection(sectionId) {
   if (next.has(sectionId)) next.delete(sectionId)
   else next.add(sectionId)
   openSections.value = next
+}
+
+function canExport(section) {
+  return section.blocks.some(block => ['table', 'list', 'ordered-list', 'paragraph', 'quote'].includes(block.type))
+}
+
+function exportSection(section) {
+  downloadXlsx({
+    filename: `${props.downloadPrefix}-${section.title}`,
+    sheetName: section.title,
+    rows: sectionBlocksToRows(section.blocks)
+  })
 }
 
 function headingTag(level) {
