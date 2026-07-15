@@ -22,10 +22,17 @@ from codex_evaluation_harness import (  # noqa: E402
     validate_manager_report,
 )
 from codex_evaluation_workspace import isolated_evaluation_workspace  # noqa: E402
-from run_codex_evaluation import codex_command, parse_codex_result  # noqa: E402
+from run_codex_evaluation import codex_command, parse_codex_result, render_prompt  # noqa: E402
 
 
 class CodexEvaluationHarnessTests(unittest.TestCase):
+    def test_rendered_prompt_locks_target_week_in_json_and_markdown(self) -> None:
+        prompt = render_prompt("2026-W28")
+
+        self.assertNotIn("{{WEEK_LABEL}}", prompt)
+        self.assertGreaterEqual(prompt.count("2026-W28"), 3)
+        self.assertIn('top-level JSON `week_label` to exactly `2026-W28`', prompt)
+
     def test_input_digest_changes_for_new_reports_attachments_and_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             project, week, prompt, schema = self._input_tree(Path(temp_dir))

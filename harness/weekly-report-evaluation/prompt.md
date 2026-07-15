@@ -1,5 +1,7 @@
 Use `$weekly-report-assistant` to generate the complete formal manager evaluation for `{{WEEK_LABEL}}`.
 
+Target week lock: treat `{{WEEK_LABEL}}` as immutable. Set the top-level JSON `week_label` to exactly `{{WEEK_LABEL}}`; do not infer it from the current date, the current ISO week, or relative words such as “本周”/“上周”.
+
 This is an unattended, read-only evaluation run. The collection step has already completed. Do not modify files, run DingTalk collection, use network access, read `.env`, `config/.env`, `logs/`, another week, `raw/reports.json`, an existing `manager_report.md`, or Git history.
 
 Read only the policy files loaded by the repository/Skill and these authorized inputs:
@@ -33,4 +35,4 @@ The Markdown must contain `{{WEEK_LABEL}}` and these exact level-two headings, i
 
 The employee evaluation must directly use `虚实盘（本周成果）`, `时间分配健康度`, `AI使用红黑榜`, `下周计划合格性`, and `综合结论/需跟进`, with stable status labels from the Skill.
 
-Return only the JSON object required by the output schema. Set `status` to `completed` only when the complete Markdown is ready. Put the full report in `manager_report_markdown`. If authoritative inputs are missing or contradictory, set `status` to `blocked`, leave `manager_report_markdown` empty, and add only safe reason codes or short reasons to `warnings`; never include employee content or identifiers in warnings.
+Return only the JSON object required by the output schema. Set `status` to `completed` only when the complete Markdown is ready. Put the full report in `manager_report_markdown`. The top-level `week_label` must remain exactly `{{WEEK_LABEL}}`. If authoritative inputs are missing or contradictory, set `status` to `blocked`, leave `manager_report_markdown` empty, and add only safe reason codes or short reasons to `warnings`; never include employee content or identifiers in warnings.

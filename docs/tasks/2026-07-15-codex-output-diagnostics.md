@@ -6,7 +6,7 @@
 
 ## 范围
 
-- 包含：为结构化 Codex 输出增加安全、确定性的错误分类；补充 Python 回归测试；同步 Harness 文档。
+- 包含：为结构化 Codex 输出增加安全、确定性的错误分类；锁定提示词中的目标周次；补充 Python 回归测试；同步 Harness 文档。
 - 不包含：前端未提交改动、周报正文、模型提示词评价口径、真实配置、重试上限和自动化调度。
 
 ## 验收标准
@@ -14,6 +14,7 @@
 - [ ] `status=blocked` 返回 `CODEX_OUTPUT_BLOCKED`。
 - [ ] `status=completed` 但周次不匹配返回 `CODEX_OUTPUT_WRONG_WEEK`。
 - [ ] 其他状态返回安全的状态错误，不输出模型正文或警告原文。
+- [ ] 提示词明确要求顶层 JSON 和 Markdown 使用同一个不可推导的目标周次。
 - [ ] 原有成功 JSON、Schema 校验和敏感信息过滤行为保持不变。
 
 ## 约束
