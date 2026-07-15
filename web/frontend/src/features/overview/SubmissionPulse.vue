@@ -51,7 +51,7 @@ function count(value) {
 <style scoped>
 .submission-pulse {
   position: relative;
-  width: min(100%, 470px);
+  width: min(100%, 510px);
   min-height: 286px;
   margin-inline: auto;
   font-family: "MiSans", "HarmonyOS Sans SC", "PingFang SC", sans-serif;
@@ -150,7 +150,7 @@ function count(value) {
 }
 
 .pulse-card--leaders {
-  right: -14px;
+  right: -30px;
   bottom: -12px;
   z-index: 3;
   width: 146px;
@@ -182,6 +182,7 @@ function count(value) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+    width: 100%;
     min-height: 0;
   }
 
