@@ -95,11 +95,10 @@ describe('Markdown report presentation', () => {
 
     const links = wrapper.findAll('.person-report-link__button')
     expect(links).toHaveLength(4)
-    expect(links[0].attributes('title')).toContain('点击鼠标左键跳转')
-    expect(wrapper.findAll('.person-report-link__tooltip').every(
-      tooltip => tooltip.text().includes('点击鼠标左键跳转查看 TA 的周报原文')
-    )).toBe(true)
 
+    await links[0].trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent)
+      .toContain('点击鼠标左键跳转查看 TA 的周报原文')
     await links[0].trigger('click')
     expect(wrapper.emitted('person-select')?.[0]?.[0]).toEqual([
       expect.objectContaining({ name: '示例员工甲', userId: 'test-user-001' })
