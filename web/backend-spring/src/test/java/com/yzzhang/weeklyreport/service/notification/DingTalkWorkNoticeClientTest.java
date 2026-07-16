@@ -13,7 +13,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
@@ -71,6 +73,28 @@ class DingTalkWorkNoticeClientTest {
             List.of("test-user-001", "test-user-002", "test-user-001")
         );
 
+        server.verify();
+    }
+
+    @Test
+    void personalBatchReusesOneAccessTokenAndReportsProgressPerRecipient() {
+        server.expect(once(), requestTo(TOKEN_URL))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{\"accessToken\":\"" + ACCESS_TOKEN + "\"}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo(SEND_URL + "?access_token=" + ACCESS_TOKEN))
+            .andExpect(content().json("{\"userid_list\":\"test-user-001\"}", false))
+            .andRespond(withSuccess("{\"errcode\":0}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo(SEND_URL + "?access_token=" + ACCESS_TOKEN))
+            .andExpect(content().json("{\"userid_list\":\"test-user-002\"}", false))
+            .andRespond(withSuccess("{\"errcode\":0}", MediaType.APPLICATION_JSON));
+        AtomicInteger delivered = new AtomicInteger();
+
+        client.sendPersonalMarkdown(List.of(
+            new DingTalkWorkNoticeClient.PersonalNotice("虚构评价", "虚构正文甲", "test-user-001"),
+            new DingTalkWorkNoticeClient.PersonalNotice("虚构评价", "虚构正文乙", "test-user-002")
+        ), delivered::set);
+
+        assertThat(delivered.get()).isEqualTo(2);
         server.verify();
     }
 

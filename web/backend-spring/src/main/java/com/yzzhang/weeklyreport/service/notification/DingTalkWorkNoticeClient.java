@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 
 @Component
 public class DingTalkWorkNoticeClient {
@@ -81,6 +82,33 @@ public class DingTalkWorkNoticeClient {
             for (int start = 0; start < recipients.size(); start += MAX_RECIPIENTS_PER_REQUEST) {
                 int end = Math.min(start + MAX_RECIPIENTS_PER_REQUEST, recipients.size());
                 sendChunk(credentials, accessToken, title, markdown, recipients.subList(start, end));
+            }
+        } catch (WorkNoticeException ex) {
+            throw ex;
+        } catch (RestClientResponseException ex) {
+            throw new WorkNoticeException("钉钉接口返回 HTTP " + ex.getStatusCode().value());
+        } catch (RuntimeException ex) {
+            throw new WorkNoticeException("钉钉工作通知请求失败");
+        }
+    }
+
+    public void sendPersonalMarkdown(List<PersonalNotice> notices, IntConsumer afterDelivery) {
+        List<PersonalNotice> safeNotices = notices == null ? List.of() : List.copyOf(notices);
+        if (safeNotices.isEmpty() || safeNotices.size() > 300 || afterDelivery == null) {
+            throw new WorkNoticeException("个性化钉钉通知批次无效");
+        }
+        if (safeNotices.stream().anyMatch(notice -> notice == null || !hasText(notice.userId()))) {
+            throw new WorkNoticeException("个性化钉钉通知接收人无效");
+        }
+
+        Credentials credentials = credentials();
+        try {
+            String accessToken = fetchAccessToken(credentials);
+            int delivered = 0;
+            for (PersonalNotice notice : safeNotices) {
+                sendChunk(credentials, accessToken, notice.title(), notice.markdown(), List.of(notice.userId()));
+                delivered += 1;
+                afterDelivery.accept(delivered);
             }
         } catch (WorkNoticeException ex) {
             throw ex;
@@ -262,4 +290,6 @@ public class DingTalkWorkNoticeClient {
         String accessTokenUrl,
         String asyncSendUrl
     ) {}
+
+    public record PersonalNotice(String title, String markdown, String userId) {}
 }

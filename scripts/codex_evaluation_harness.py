@@ -49,6 +49,7 @@ class RosterEvidence:
     missing_count: int
     leader_names: tuple[str, ...]
     userids: tuple[str, ...]
+    submitted_userids: tuple[str, ...]
 
     @property
     def expected_count(self) -> int:
@@ -67,6 +68,7 @@ def load_roster_evidence(csv_path: Path) -> RosterEvidence:
     names: list[str] = []
     leaders: list[str] = []
     userids: list[str] = []
+    submitted_userids: list[str] = []
     submitted = 0
     missing = 0
     for row in rows:
@@ -79,6 +81,8 @@ def load_roster_evidence(csv_path: Path) -> RosterEvidence:
         userids.append(userid)
         submitted += status == "已提交"
         missing += status == "未提交"
+        if status == "已提交":
+            submitted_userids.append(userid)
         if str(row.get("是否负责人候选") or "").strip() == "是":
             leaders.append(name)
 
@@ -88,6 +92,7 @@ def load_roster_evidence(csv_path: Path) -> RosterEvidence:
         missing_count=missing,
         leader_names=tuple(leaders),
         userids=tuple(userids),
+        submitted_userids=tuple(submitted_userids),
     )
 
 
@@ -178,7 +183,13 @@ def sanitized_codex_environment(source: Mapping[str, str] | None = None) -> dict
         upper = key.upper()
         if upper == "CODEX_API_KEY":
             continue
-        if upper.startswith(("DINGTALK_", "WEEKLY_DINGTALK_", "WEEKLY_FEEDBACK_", "SPRING_DATASOURCE_")):
+        if upper.startswith((
+            "DINGTALK_",
+            "WEEKLY_DINGTALK_",
+            "WEEKLY_FEEDBACK_",
+            "WEEKLY_EVALUATION_FEEDBACK_",
+            "SPRING_DATASOURCE_",
+        )):
             environment.pop(key, None)
             continue
         if upper in {
@@ -199,7 +210,13 @@ def atomic_write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            newline="\n",
+            dir=path.parent,
+            delete=False,
+        ) as handle:
             temporary = Path(handle.name)
             handle.write(content)
             if not content.endswith("\n"):

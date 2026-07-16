@@ -109,6 +109,35 @@ docker compose up -d --build --force-recreate weekly-report
 
 防重复状态写入 `output/<YYYY-Www>/reminders/sunday-1800.json`，只包含任务阶段、汇总人数和时间。若员工通知的远程结果不确定，系统不会自动重发，管理员结果通知会要求人工检查。
 
+## 周一个人评价通知
+
+个人评价通知默认关闭。它不在周一再次调用 Codex，而是读取最近一次自动评价同时生成并通过 Harness 校验的 `output/<YYYY-Www>/automation/employee_feedback.json`。启用前必须确认：
+
+1. 宿主机 Codex Skill 已同步到当前仓库版本，并且周一 12:00 前的自动评价 cron 能成功完成上一业务周评价。
+2. `evaluation_state.json` 状态为 `SUCCESS`，正式报告和私有反馈文件均已生成；首次升级后需重新运行一次目标周评价，旧报告没有反馈清单。
+3. 钉钉应用可见范围覆盖全部已提交人员，现有 `WEEKLY_FEEDBACK_DINGTALK_*` 工作通知凭据有效。
+4. HR 联系人只写入服务器未跟踪的根 `.env`，不要写回源码或 `.env.example`。
+
+服务器根 `.env` 配置：
+
+```text
+WEEKLY_EVALUATION_FEEDBACK_ENABLED=true
+WEEKLY_EVALUATION_FEEDBACK_CRON=0 0 12 * * MON
+WEEKLY_EVALUATION_FEEDBACK_ZONE=Asia/Shanghai
+WEEKLY_EVALUATION_FEEDBACK_HR_CONTACT=<实际HR联系人>
+```
+
+然后重新复制 Skill、手动生成一次上一周评价并重建应用容器：
+
+```bash
+rm -rf "$HOME/.codex/skills/weekly-report-assistant"
+cp -a codex-skills/weekly-report-assistant "$HOME/.codex/skills/weekly-report-assistant"
+./scripts/run_codex_evaluation.sh --force
+docker compose up -d --build --force-recreate weekly-report
+```
+
+每位已提交员工只收到本人的私人消息，先展示做得好的地方，再重点展示改进建议，并附配置的 HR 联系方式。管理员收到的成功或失败结果只含周次和人数。防重复状态写入 `output/<YYYY-Www>/notifications/monday-evaluation-feedback.json`；远程结果不确定时不会自动重发。
+
 ## 周四截止自动化
 
 周一可以用服务器 Codex 或 Web 按钮生成暂定结果；周四补交截止后应再次触发并生成最终结果。自动化可采用两种方式：

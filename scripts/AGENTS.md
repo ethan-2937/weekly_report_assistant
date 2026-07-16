@@ -8,6 +8,7 @@
 - `submission_reminder.py`：实时生成当前业务周截至检测时刻的未交 userid 快照；默认命令只输出汇总，`--json` 仅供受控 Spring 子进程使用。
 - `run_codex_evaluation.py`：服务器自动评价入口；采集上一业务周、比较输入指纹、隔离运行非交互 Codex、机械验证并原子更新正式报告。
 - `codex_evaluation_harness.py` / `codex_evaluation_workspace.py`：评价指纹、覆盖/隐私校验、状态锁和仅含授权输入的临时工作区。
+- `codex_employee_feedback.py`：校验已提交 userid 的私有个人反馈覆盖、长度和隐私，并验证周一通知输入摘要。
 - `report_content.py`：将钉钉报告内容规范化为分析输入文本。
 - `leader_compliance.py`：从负责人身份、正文和附件元数据生成确定性履职证据，不负责猜测附件正文。
 - `leader_subordinates.py`：优先读取负责人下属 userid；缺失时按共享钉钉部门生成待上级确认候选，并标记未交下属风险。

@@ -129,7 +129,7 @@ def run_checked(
         raise EvaluationHarnessError("PROCESS_START_FAILED") from exc
 
 
-def parse_codex_result(stdout: str, label: str) -> tuple[str, tuple[str, ...]]:
+def parse_codex_result(stdout: str, label: str) -> tuple[str, tuple[dict[str, str], ...], tuple[str, ...]]:
     try:
         result = json.loads(stdout)
     except json.JSONDecodeError as exc:
@@ -144,9 +144,12 @@ def parse_codex_result(stdout: str, label: str) -> tuple[str, tuple[str, ...]]:
     if result.get("week_label") != label:
         raise EvaluationHarnessError("CODEX_OUTPUT_WRONG_WEEK")
     markdown = result.get("manager_report_markdown")
+    feedback = result.get("employee_feedback")
     warnings = result.get("warnings")
-    if not isinstance(markdown, str) or not isinstance(warnings, list):
+    if not isinstance(markdown, str) or not isinstance(feedback, list) or not isinstance(warnings, list):
+        raise EvaluationHarnessError("CODEX_OUTPUT_SCHEMA_INVALID")
+    if any(not isinstance(item, dict) for item in feedback):
         raise EvaluationHarnessError("CODEX_OUTPUT_SCHEMA_INVALID")
     if any(not isinstance(item, str) for item in warnings):
         raise EvaluationHarnessError("CODEX_OUTPUT_SCHEMA_INVALID")
-    return markdown, tuple(warnings)
+    return markdown, tuple(feedback), tuple(warnings)

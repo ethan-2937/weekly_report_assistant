@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import sys
 import tempfile
 import unittest
@@ -21,11 +22,16 @@ from codex_evaluation_harness import (  # noqa: E402
     should_run_codex,
     validate_manager_report,
 )
+from codex_employee_feedback import (  # noqa: E402
+    validate_employee_feedback,
+    validate_employee_feedback_artifact,
+)
 from codex_evaluation_workspace import isolated_evaluation_workspace  # noqa: E402
 from run_codex_evaluation import (  # noqa: E402
     codex_command,
     collection_command,
     parse_codex_result,
+    persisted_text_digest,
     render_prompt,
     resolve_week_label,
 )
@@ -76,6 +82,82 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         self.assertEqual(2, roster.expected_count)
         self.assertEqual(1, roster.submitted_count)
         self.assertEqual(1, roster.missing_count)
+        self.assertEqual(("test-user-001",), roster.submitted_userids)
+
+    def test_employee_feedback_covers_only_submitted_userids_and_rejects_private_data(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            roster_path = Path(temp_dir) / "submission_status.csv"
+            self._write_roster(roster_path)
+            roster = load_roster_evidence(roster_path)
+            valid = [
+                {
+                    "userid": "test-user-001",
+                    "praise": "本周形成了明确的虚构交付物，成果证据较完整。",
+                    "improvement": "建议补充量化效果，并为下周计划写明日期和产出。",
+                }
+            ]
+
+            self.assertEqual((), validate_employee_feedback(valid, roster))
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_COVERAGE_INVALID",
+                validate_employee_feedback([], roster),
+            )
+            exposed = [dict(valid[0], praise="示例员工甲完成较好")]
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_NAME_EXPOSED",
+                validate_employee_feedback(exposed, roster),
+            )
+            secret = [dict(valid[0], improvement="建议清理 access_token=fictional-sensitive-token")]
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_SECRET_EXPOSED",
+                validate_employee_feedback(secret, roster),
+            )
+            link = [dict(valid[0], improvement="建议访问 https://example.invalid/internal 查看详情")]
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_FORBIDDEN_CONTENT",
+                validate_employee_feedback(link, roster),
+            )
+
+    def test_employee_feedback_artifact_must_match_week_and_report_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            roster_path = root / "submission_status.csv"
+            artifact = root / "employee_feedback.json"
+            self._write_roster(roster_path)
+            roster = load_roster_evidence(roster_path)
+            payload = {
+                "version": 1,
+                "weekLabel": "2026-W29",
+                "inputDigest": "input-digest",
+                "reportDigest": "report-digest",
+                "feedback": [{
+                    "userid": "test-user-001",
+                    "praise": "形成了明确的虚构交付物。",
+                    "improvement": "建议补充量化效果和明确日期。",
+                }],
+            }
+            artifact.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+            self.assertEqual(
+                (),
+                validate_employee_feedback_artifact(
+                    artifact,
+                    "2026-W29",
+                    roster,
+                    "input-digest",
+                    "report-digest",
+                ),
+            )
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_ARTIFACT_MISMATCH",
+                validate_employee_feedback_artifact(
+                    artifact,
+                    "2026-W28",
+                    roster,
+                    "input-digest",
+                    "report-digest",
+                ),
+            )
 
     def test_validation_rejects_missing_people_and_stable_userids(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -138,6 +220,7 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
                 "MYSQL_ROOT_PASSWORD": "fictional-db-password",
                 "WEEKLY_REPORT_EXEMPT_SUBMITTERS": "USERID:test-user-001",
                 "WEEKLY_REPORT_LEADER_OVERRIDES": '{"USERID:test-user-002":{"leader":false}}',
+                "WEEKLY_EVALUATION_FEEDBACK_HR_CONTACT": "示例HR联系人",
                 "OPENAI_API_KEY": "fictional-openai-key",
                 "GH_TOKEN": "fictional-github-token",
             }
@@ -150,6 +233,7 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         self.assertNotIn("MYSQL_ROOT_PASSWORD", environment)
         self.assertNotIn("WEEKLY_REPORT_EXEMPT_SUBMITTERS", environment)
         self.assertNotIn("WEEKLY_REPORT_LEADER_OVERRIDES", environment)
+        self.assertNotIn("WEEKLY_EVALUATION_FEEDBACK_HR_CONTACT", environment)
         self.assertNotIn("OPENAI_API_KEY", environment)
         self.assertNotIn("GH_TOKEN", environment)
 
@@ -223,21 +307,25 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         report = self._valid_report()
         stdout = (
             '{"status":"completed","week_label":"2026-W29",'
-            f'"manager_report_markdown":{__import__("json").dumps(report, ensure_ascii=False)},"warnings":[]}}'
+            f'"manager_report_markdown":{json.dumps(report, ensure_ascii=False)},'
+            '"employee_feedback":[{"userid":"test-user-001",'
+            '"praise":"形成了明确的虚构交付物。",'
+            '"improvement":"建议补充量化效果和明确日期。"}],"warnings":[]}'
         )
 
-        parsed, warnings = parse_codex_result(stdout, "2026-W29")
+        parsed, feedback, warnings = parse_codex_result(stdout, "2026-W29")
 
         self.assertEqual(report, parsed)
+        self.assertEqual("test-user-001", feedback[0]["userid"])
         self.assertEqual((), warnings)
         with self.assertRaisesRegex(EvaluationHarnessError, "CODEX_OUTPUT_WRONG_WEEK"):
             parse_codex_result(stdout.replace("2026-W29", "2026-W28", 1), "2026-W29")
 
-        blocked = '{"status":"blocked","week_label":"2026-W29","manager_report_markdown":"","warnings":[]}'
+        blocked = '{"status":"blocked","week_label":"2026-W29","manager_report_markdown":"","employee_feedback":[],"warnings":[]}'
         with self.assertRaisesRegex(EvaluationHarnessError, "CODEX_OUTPUT_BLOCKED"):
             parse_codex_result(blocked, "2026-W29")
 
-        invalid_status = '{"status":"pending","week_label":"2026-W29","manager_report_markdown":"","warnings":[]}'
+        invalid_status = '{"status":"pending","week_label":"2026-W29","manager_report_markdown":"","employee_feedback":[],"warnings":[]}'
         with self.assertRaisesRegex(EvaluationHarnessError, "CODEX_OUTPUT_STATUS_INVALID"):
             parse_codex_result(invalid_status, "2026-W29")
 
@@ -247,6 +335,10 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
             report = root / "manager_report.md"
             atomic_write_text(report, "完整虚构评价")
             self.assertEqual("完整虚构评价\n", report.read_text(encoding="utf-8"))
+            self.assertEqual(
+                persisted_text_digest("完整虚构评价"),
+                __import__("hashlib").sha256(report.read_bytes()).hexdigest(),
+            )
 
             lock_path = root / "evaluation.lock"
             with EvaluationLock(lock_path):

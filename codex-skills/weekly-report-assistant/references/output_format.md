@@ -137,3 +137,5 @@ Every row from `团队负责人履职输入（确定性证据）` must appear in
 ## Web Display Contract
 
 For the weekly-report web interface, save the final formal evaluation as `output/<YYYY-Www>/summary/manager_report.md`. Do not overwrite `analysis_input.md`; it is the raw analysis pack.
+
+When the automated Harness requests private employee feedback, return one concise `praise` and one actionable `improvement` for each submitted stable `userid`. Keep these fields out of the manager Markdown and omit names, identifiers, colleagues, raw paragraphs, secrets, paths, and attachment metadata from their prose.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import sys
@@ -22,6 +23,7 @@ from codex_evaluation_harness import (
     validate_manager_report,
     write_state,
 )
+from codex_employee_feedback import validate_employee_feedback, validate_employee_feedback_artifact
 from codex_evaluation_workspace import isolated_evaluation_workspace
 from codex_evaluation_runtime import (
     codex_command,
@@ -85,6 +87,11 @@ def render_prompt(label: str) -> str:
     if "{{" in template or "}}" in template:
         raise EvaluationHarnessError("PROMPT_PLACEHOLDER_UNRESOLVED")
     return template
+
+
+def persisted_text_digest(content: str) -> str:
+    persisted = content if content.endswith("\n") else content + "\n"
+    return hashlib.sha256(persisted.encode("utf-8")).hexdigest()
 
 def state_payload(
     label: str,
@@ -150,6 +157,15 @@ def main() -> int:
             report_path = week_root / "summary" / "manager_report.md"
             current_report = report_path.read_text(encoding="utf-8") if report_path.is_file() else ""
             current_errors = validate_manager_report(current_report, label, roster) if current_report else ("REPORT_MISSING",)
+            current_report_digest = hashlib.sha256(current_report.encode("utf-8")).hexdigest() if current_report else ""
+            feedback_path = week_root / "automation" / "employee_feedback.json"
+            current_errors += validate_employee_feedback_artifact(
+                feedback_path,
+                label,
+                roster,
+                digest,
+                current_report_digest,
+            )
             max_attempts = int(configured.get("WEEKLY_CODEX_MAX_ATTEMPTS_PER_INPUT", "3"))
             should_run, reason = should_run_codex(state, digest, current_errors, max_attempts)
             if not args.force and not should_run:
@@ -171,13 +187,25 @@ def main() -> int:
                 )
             if codex.returncode != 0:
                 raise EvaluationHarnessError("CODEX_EXEC_FAILED")
-            markdown, _warnings = parse_codex_result(codex.stdout, label)
+            markdown, employee_feedback, _warnings = parse_codex_result(codex.stdout, label)
             validation_errors = validate_manager_report(markdown, label, roster)
+            validation_errors += validate_employee_feedback(employee_feedback, roster)
             if validation_errors:
                 raise EvaluationHarnessError(validation_errors[0])
 
+            report_digest = persisted_text_digest(markdown)
+            feedback_payload = {
+                "version": 1,
+                "weekLabel": label,
+                "inputDigest": digest,
+                "reportDigest": report_digest,
+                "feedback": list(employee_feedback),
+            }
+            atomic_write_text(
+                feedback_path,
+                json.dumps(feedback_payload, ensure_ascii=False, indent=2, sort_keys=True),
+            )
             atomic_write_text(report_path, markdown)
-            report_digest = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
             write_state(state_path, state_payload(label, digest, "SUCCESS", attempt, roster, report_digest=report_digest))
             print(
                 f"OK: week={label} status=generated expected={roster.expected_count} "

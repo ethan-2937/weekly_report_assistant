@@ -69,6 +69,12 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Include data-quality notes: missing roster, ambiguous names, API permission gaps, unreadable attachments.
    - Do not expose secrets, access tokens, or raw sensitive data unnecessarily.
 
+8. Produce private employee feedback only when the invoking Harness explicitly requests it.
+   - Generate one item for every and only submitted roster `userid`; never infer or copy feedback for missing or exempt employees.
+   - Keep `praise` concise and evidence-based. Make `improvement` the emphasis, with specific actions derived from weak or incomplete evaluation dimensions.
+   - Do not include names, userid values, colleagues, raw report paragraphs, secrets, paths, or attachment identifiers inside the feedback prose. The delivery layer adds the greeting and configured HR contact footer.
+   - This private structured output is not part of `manager_report.md`, is not a second model call, and must pass Harness coverage/privacy validation before notification code can consume it.
+
 ## DingTalk Auto-Pull Workflow
 
 When the workspace contains project scripts such as `scripts/run_weekly.py`, prefer the deterministic script before manual analysis:

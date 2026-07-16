@@ -13,6 +13,32 @@
     "manager_report_markdown": {
       "type": "string"
     },
+    "employee_feedback": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "userid": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "praise": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 400
+          },
+          "improvement": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 700
+          }
+        },
+        "required": ["userid", "praise", "improvement"],
+        "additionalProperties": false
+      },
+      "maxItems": 300
+    },
     "warnings": {
       "type": "array",
       "items": {
@@ -26,6 +52,7 @@
     "status",
     "week_label",
     "manager_report_markdown",
+    "employee_feedback",
     "warnings"
   ],
   "additionalProperties": false

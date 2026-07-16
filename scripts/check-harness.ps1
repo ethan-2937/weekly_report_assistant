@@ -40,6 +40,7 @@ $required = @(
     "tests/test_submission_reminder.py",
     "tests/test_codex_evaluation_harness.py",
     "scripts/codex_evaluation_harness.py",
+    "scripts/codex_employee_feedback.py",
     "scripts/codex_evaluation_workspace.py",
     "scripts/leader_subordinates.py",
     "scripts/run_codex_evaluation.py",
@@ -50,6 +51,8 @@ $required = @(
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/ReportPermissionServiceImplTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/WeeklyReportServiceImplTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/SubmissionReminderServiceTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/impl/EvaluationFeedbackServiceTest.java",
+    "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/feedback/EvaluationFeedbackCandidateProviderTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/notification/DingTalkWorkNoticeClientTest.java",
     "web/backend-spring/src/test/java/com/yzzhang/weeklyreport/service/notification/FeedbackRecipientResolverTest.java",
     "web/frontend/src/api/client.test.js",
@@ -172,6 +175,9 @@ if ($composeConfig -notmatch 'WEEKLY_REPORT_EXEMPT_SUBMITTERS:') {
 if ($composeConfig -notmatch 'WEEKLY_SUBMISSION_REMINDER_ENABLED:') {
     Add-Failure "docker-compose.yml must pass WEEKLY_SUBMISSION_REMINDER_ENABLED into the application container."
 }
+if ($composeConfig -notmatch 'WEEKLY_EVALUATION_FEEDBACK_ENABLED:' -or $composeConfig -notmatch 'WEEKLY_EVALUATION_FEEDBACK_HR_CONTACT:') {
+    Add-Failure "docker-compose.yml must pass evaluation feedback enablement and HR contact into the application container."
+}
 
 $composeEnvExample = Get-Content -Raw -LiteralPath (Join-Path $root ".env.example") -Encoding UTF8
 if ($composeEnvExample -notmatch 'WEEKLY_REPORT_EXEMPT_SUBMITTERS=') {
@@ -179,6 +185,9 @@ if ($composeEnvExample -notmatch 'WEEKLY_REPORT_EXEMPT_SUBMITTERS=') {
 }
 if ($composeEnvExample -notmatch 'WEEKLY_SUBMISSION_REMINDER_ENABLED=') {
     Add-Failure ".env.example must document WEEKLY_SUBMISSION_REMINDER_ENABLED for Docker deployments."
+}
+if ($composeEnvExample -notmatch 'WEEKLY_EVALUATION_FEEDBACK_ENABLED=' -or $composeEnvExample -notmatch 'WEEKLY_EVALUATION_FEEDBACK_HR_CONTACT=') {
+    Add-Failure ".env.example must document evaluation feedback enablement and HR contact for Docker deployments."
 }
 
 if ($failures.Count -gt 0) {

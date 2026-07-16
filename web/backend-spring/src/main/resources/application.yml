@@ -48,3 +48,8 @@ weekly:
     cron: ${WEEKLY_SUBMISSION_REMINDER_CRON:0 0 18 * * SUN}
     zone: ${WEEKLY_SUBMISSION_REMINDER_ZONE:Asia/Shanghai}
     process-timeout-seconds: ${WEEKLY_SUBMISSION_REMINDER_PROCESS_TIMEOUT_SECONDS:180}
+  evaluation-feedback:
+    enabled: ${WEEKLY_EVALUATION_FEEDBACK_ENABLED:false}
+    cron: ${WEEKLY_EVALUATION_FEEDBACK_CRON:0 0 12 * * MON}
+    zone: ${WEEKLY_EVALUATION_FEEDBACK_ZONE:Asia/Shanghai}
+    hr-contact-name: ${WEEKLY_EVALUATION_FEEDBACK_HR_CONTACT:}

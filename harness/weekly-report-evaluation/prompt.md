@@ -23,6 +23,15 @@ Evaluation requirements:
 5. Keep conclusions concise and evidence-based. Do not invent metrics, duties, dates, role baselines, attachment content, risks, or AI usage.
 6. Do not expose userid, unionId, fileId, spaceId, local paths, tokens, credentials, raw API data, or full report bodies.
 
+Private employee feedback requirements:
+
+1. Populate `employee_feedback` for every and only roster row whose `提交状态` is `已提交`.
+2. Copy that row's exact `userid` into the private `employee_feedback` item. Never place userid in `manager_report_markdown`, `praise`, or `improvement`.
+3. `praise` should concisely recognize evidence-backed strengths from that employee's five-dimension evaluation.
+4. `improvement` is the emphasis: give specific, actionable improvements grounded in weak or incomplete dimensions. Do not invent work, metrics, dates, or role expectations.
+5. Do not include any employee name, another employee's information, raw weekly-report paragraph, secret, token, internal path, or attachment identifier in either feedback field. The delivery layer adds the recipient greeting and HR contact footer.
+6. This private list is generated in the same model call; do not make another model request or create messages for missing/exempt employees.
+
 The Markdown must contain `{{WEEK_LABEL}}` and these exact level-two headings, in this order:
 
 1. `## 本周提交概览`
@@ -35,4 +44,4 @@ The Markdown must contain `{{WEEK_LABEL}}` and these exact level-two headings, i
 
 The employee evaluation must directly use `虚实盘（本周成果）`, `时间分配健康度`, `AI使用红黑榜`, `下周计划合格性`, and `综合结论/需跟进`, with stable status labels from the Skill.
 
-Return only the JSON object required by the output schema. Set `status` to `completed` only when the complete Markdown is ready. Put the full report in `manager_report_markdown`. The top-level `week_label` must remain exactly `{{WEEK_LABEL}}`. If authoritative inputs are missing or contradictory, set `status` to `blocked`, leave `manager_report_markdown` empty, and add only safe reason codes or short reasons to `warnings`; never include employee content or identifiers in warnings.
+Return only the JSON object required by the output schema. Set `status` to `completed` only when the complete Markdown and complete private employee feedback list are ready. Put the full report in `manager_report_markdown`. The top-level `week_label` must remain exactly `{{WEEK_LABEL}}`. If authoritative inputs are missing or contradictory, set `status` to `blocked`, leave `manager_report_markdown` empty, use an empty `employee_feedback` array, and add only safe reason codes or short reasons to `warnings`; never include employee content or identifiers in warnings.
