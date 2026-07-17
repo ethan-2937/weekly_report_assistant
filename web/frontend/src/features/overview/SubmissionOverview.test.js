@@ -19,8 +19,11 @@ describe('submission overview', () => {
 
     const rules = wrapper.get('.evaluation-rules')
     expect(rules.text()).toContain('模板合规 ≠ 管理评价')
+    expect(rules.text()).toContain('销售 9 项')
+    expect(rules.text()).toContain('技术/产品 11 项')
     expect(rules.text()).toContain('虚实盘')
     expect(rules.text()).toContain('AI 红黑榜')
+    expect(wrapper.get('.hint-cell').text()).toContain('11项必填字段')
     expect(wrapper.find('[data-testid="missing-overview-card"]').exists()).toBe(false)
     expect(wrapper.find('.person-report-link').exists()).toBe(false)
   })
@@ -56,7 +59,8 @@ function createWrapper() {
           '部门': '虚构研发部',
           '提交状态': '已提交',
           '模板填写正确率': 100,
-          '模板合规状态': '符合模板'
+          '模板合规状态': '符合模板',
+          '模板检查说明': '按技术/产品岗位核对11项必填字段。 均已填写。'
         }
       ],
       summary: { submissionSummary: '虚构提交摘要' }

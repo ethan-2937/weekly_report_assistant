@@ -23,7 +23,14 @@ Each employee report should be checked against the actual DingTalk template fiel
 - 下周计划（含交付时间）: must contain both a date/deadline and a planned output. Plans containing vague `继续` wording are unqualified unless rewritten with concrete date + output; prefer treating any `继续` as a warning.
 - 风险与求助: management extraction dimension. If the actual report/template has this field, evaluate it directly; otherwise extract blockers/support needs from any section and do not count absence as template non-compliance.
 
-The new product-detail fields are conditional by role. Keep them outside the universal four-field compliance rate when role applicability cannot be determined safely. Collection produces one public row per applicable submitted report with these columns, preserving multiple-value text without invented splitting:
+The new product-detail fields use a role-aware template-compliance denominator when the roster title is explicit:
+
+- Other roles: four universal required fields.
+- Sales: four universal fields plus product line, customer, project, travel expense, and hospitality expense (nine total).
+- Technical/product: the sales set plus total workdays and workday distribution (eleven total).
+- Numeric `0` is a valid filled expense value. If title applicability is ambiguous, keep the universal four-field denominator rather than guessing.
+
+Collection separately produces one public project-detail row per applicable submitted report with these columns, preserving multiple-value text without invented splitting:
 
 - 序号
 - 产品线

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yzzhang.weeklyreport.mapper.WeekFileMapper;
 import com.yzzhang.weeklyreport.po.SubmissionStatusPO;
 import com.yzzhang.weeklyreport.service.TemplateComplianceService;
+import com.yzzhang.weeklyreport.service.impl.TemplateCompliancePolicy.RequiredField;
+import com.yzzhang.weeklyreport.service.impl.TemplateCompliancePolicy.RequirementSet;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,12 +23,6 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
     private static final String STATUS_SUBMITTED = "已提交";
     private static final String STATUS_MISSING = "未提交";
     private static final String UNKNOWN = "无法判断";
-    private static final List<RequiredField> REQUIRED_FIELDS = List.of(
-        new RequiredField("本周完成成果", List.of("本周完成成果", "本周成果")),
-        new RequiredField("工时投入分析", List.of("工时投入分析", "工时占比", "时间投入分析", "时间分配")),
-        new RequiredField("AI应用及效果", List.of("AI应用及效果", "AI应用", "AI使用")),
-        new RequiredField("下周计划（含交付时间）", List.of("下周计划含交付时间", "下周计划"))
-    );
     private static final List<String> OLD_TEMPLATE_MARKERS = List.of(
         "主要工作内容",
         "遇到的挑战与解决方案",
@@ -68,10 +64,11 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
             row.setTemplateComplianceDetail("提交状态不明确，无法进行模板检查。");
             return;
         }
+        RequirementSet requirements = TemplateCompliancePolicy.forTitle(row.getTitle());
         if (report == null) {
             row.setTemplateComplianceRate(null);
             row.setTemplateComplianceStatus(UNKNOWN);
-            row.setTemplateComplianceMissingFields(REQUIRED_FIELDS.stream().map(RequiredField::label).toList());
+            row.setTemplateComplianceMissingFields(requirements.fields().stream().map(RequiredField::label).toList());
             row.setTemplateCompliancePresentFields(List.of());
             row.setTemplateComplianceDetail("未匹配到钉钉原始周报内容，请检查 raw/reports.json 或 report_id。");
             return;
@@ -79,7 +76,7 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
 
         List<String> present = new ArrayList<>();
         List<String> missing = new ArrayList<>();
-        for (RequiredField field : REQUIRED_FIELDS) {
+        for (RequiredField field : requirements.fields()) {
             FieldValue value = report.find(field);
             if (value != null && hasUsefulText(value.value())) {
                 present.add(field.label());
@@ -88,12 +85,12 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
             }
         }
 
-        int rate = Math.round((present.size() * 100f) / REQUIRED_FIELDS.size());
+        int rate = Math.round((present.size() * 100f) / requirements.fields().size());
         row.setTemplateComplianceRate(rate);
         row.setTemplateCompliancePresentFields(present);
         row.setTemplateComplianceMissingFields(missing);
         row.setTemplateComplianceStatus(status(rate, report.usesOldTemplate()));
-        row.setTemplateComplianceDetail(detail(rate, missing, report.usesOldTemplate()));
+        row.setTemplateComplianceDetail(detail(rate, missing, report.usesOldTemplate(), requirements));
     }
 
     private ReportIndex readReports(String week) {
@@ -130,12 +127,14 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
         return usesOldTemplate ? "疑似旧模板" : "不合规";
     }
 
-    private String detail(int rate, List<String> missing, boolean usesOldTemplate) {
+    private String detail(int rate, List<String> missing, boolean usesOldTemplate, RequirementSet requirements) {
+        String scope = "按" + requirements.label() + "核对" + requirements.fields().size() + "项必填字段。";
         if (rate == 100) {
-            return "四项必填模板字段均已填写。";
+            return scope + " 均已填写。";
         }
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder(scope);
         if (usesOldTemplate) {
+            builder.append(' ');
             builder.append("检测到旧版周报字段，请提醒按当前钉钉模板填写。");
         }
         if (!missing.isEmpty()) {
@@ -188,9 +187,6 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
         }
         return value.replaceAll("[\\s　（）()【】\\[\\]，,。；;：:、/\\\\\\-]", "")
             .toLowerCase(Locale.ROOT);
-    }
-
-    private record RequiredField(String label, List<String> aliases) {
     }
 
     private record FieldValue(String key, String value) {

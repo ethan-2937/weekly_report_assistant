@@ -59,9 +59,9 @@
             <span class="rule-track__index">A</span>
             <div>
               <strong>模板合规</strong>
-              <p>仅检查钉钉线上四项字段是否完整，不替代管理结论。</p>
+              <p>按岗位检查钉钉线上必填字段，不替代管理结论。</p>
               <div class="rule-chip-list" aria-label="模板合规字段">
-                <span>本周成果</span><span>工时投入</span><span>AI 应用</span><span>下周计划</span>
+                <span>通用 4 项</span><span>销售 9 项</span><span>技术/产品 11 项</span>
               </div>
             </div>
           </article>
@@ -86,7 +86,7 @@
           <div class="panel-title">
             <div>
               <h2 id="compliance-title">已提交名单 · 模板填写正确率</h2>
-              <p>按本周完成成果、工时投入分析、AI应用及效果、下周计划四项核对。</p>
+              <p>其他岗位按 4 项、销售按 9 项、技术/产品按 11 项必填字段核对。</p>
             </div>
             <span :class="['average-rate', rateClass(averageRate)]">
               平均 {{ averageRate === null ? '-' : `${averageRate}%` }}
@@ -235,8 +235,8 @@ function complianceStatus(row) {
 
 function complianceHint(row) {
   const missing = missingFields(row)
-  if (missing.length) return `缺失：${missing.join('、')}`
   if (row?.['模板检查说明']) return row['模板检查说明']
+  if (missing.length) return `缺失：${missing.join('、')}`
   if (normalizedRate(row) === 100) return '模板字段填写完整'
   return '暂无检查说明'
 }
