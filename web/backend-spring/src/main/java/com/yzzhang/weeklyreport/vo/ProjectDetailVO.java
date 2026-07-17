@@ -2,6 +2,7 @@ package com.yzzhang.weeklyreport.vo;
 
 public class ProjectDetailVO {
     private int sequence;
+    private String name;
     private String productLine;
     private String customerName;
     private String projectName;
@@ -11,6 +12,8 @@ public class ProjectDetailVO {
 
     public int getSequence() { return sequence; }
     public void setSequence(int sequence) { this.sequence = sequence; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
     public String getProductLine() { return productLine; }
     public void setProductLine(String productLine) { this.productLine = productLine; }
     public String getCustomerName() { return customerName; }

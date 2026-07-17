@@ -37,7 +37,7 @@
     </div>
 
     <div class="project-details-toolbar">
-      <el-input v-model="keyword" clearable placeholder="搜索产品线、客户或项目" />
+      <el-input v-model="keyword" clearable placeholder="搜索姓名、产品线、客户或项目" />
       <el-select v-model="productLine" clearable placeholder="全部产品线">
         <el-option v-for="item in productLineOptions" :key="item" :label="item" :value="item" />
       </el-select>
@@ -47,6 +47,7 @@
     <el-empty v-else-if="!filteredRows.length" description="该周暂无可展示的项目明细" />
     <el-table v-else :data="filteredRows" class="project-details-table" row-key="sequence">
       <el-table-column prop="sequence" label="序号" width="72" align="center" />
+      <el-table-column prop="name" label="姓名" min-width="120" show-overflow-tooltip />
       <el-table-column prop="productLine" label="产品线" min-width="150" show-overflow-tooltip />
       <el-table-column prop="customerName" label="客户名称" min-width="180" show-overflow-tooltip />
       <el-table-column prop="projectName" label="项目名称" min-width="220" show-overflow-tooltip />
@@ -77,7 +78,7 @@ const productLine = ref('')
 const filteredRows = computed(() => {
   const query = keyword.value.trim().toLowerCase()
   return props.rows.filter(row => {
-    const content = `${row.productLine} ${row.customerName} ${row.projectName}`.toLowerCase()
+    const content = `${row.name || ''} ${row.productLine} ${row.customerName} ${row.projectName}`.toLowerCase()
     return (!query || content.includes(query))
       && (!productLine.value || row.productLine === productLine.value)
   })

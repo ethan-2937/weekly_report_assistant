@@ -10,9 +10,10 @@ describe('project detail API contract', () => {
     expect(client.request).toHaveBeenCalledWith('/api/weeks/2026-W29/project-details')
   })
 
-  it('normalizes only the public seven-column data contract', () => {
+  it('normalizes the authorized public eight-column data contract', () => {
     const rows = normalizeProjectDetails([{
       sequence: 3,
+      name: '测试员工甲',
       productLine: '虚构产品线',
       customerName: '虚构客户',
       projectName: '虚构项目',
@@ -25,6 +26,7 @@ describe('project detail API contract', () => {
 
     expect(rows).toEqual([{
       sequence: 3,
+      name: '测试员工甲',
       productLine: '虚构产品线',
       customerName: '虚构客户',
       projectName: '虚构项目',

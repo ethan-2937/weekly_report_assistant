@@ -91,7 +91,7 @@ After the script runs, analyze:
 - `output/<YYYY-Www>/analysis/analysis_input.md` for report content and missing candidates.
 - The `团队负责人履职输入（确定性证据）` table inside `analysis_input.md` for the complete leader roster, attachment state, and body-evidence hints.
 - `output/<YYYY-Www>/exports/submission_status.csv` for the machine-readable submission table.
-- `output/<YYYY-Www>/exports/project_details.csv` for permission-filtered project-detail APIs and XLSX export. Hidden identity columns exist only for service-layer filtering; do not copy them into the public seven-column workbook.
+- `output/<YYYY-Www>/exports/project_details.csv` for permission-filtered project-detail APIs and XLSX export. Copy the reporter name only after service-layer filtering into the public eight-column workbook; keep userid and department hidden.
 - `output/<YYYY-Www>/summary/submission_check.md` for the submission overview.
 
 When producing the formal HR-facing evaluation, write it to `output/<YYYY-Www>/summary/manager_report.md`. The Java + Vue web interface reads that exact file and displays it as the AI evaluation page. Include the standard sections: 本周提交概览, 需老板拍板/协调事项, 未提交/异常提交名单, 员工五维评价, 团队负责人履职检查, 共性风险与下周关注点, 数据质量与需要人工确认事项.

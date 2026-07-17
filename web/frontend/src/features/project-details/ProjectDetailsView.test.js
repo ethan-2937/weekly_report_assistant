@@ -5,6 +5,7 @@ import ProjectDetailsView from './ProjectDetailsView.vue'
 const rows = [
   {
     sequence: 1,
+    name: '测试员工甲',
     productLine: '虚构产品线甲',
     customerName: '虚构客户甲',
     projectName: '虚构项目甲',
@@ -14,6 +15,7 @@ const rows = [
   },
   {
     sequence: 2,
+    name: '测试员工乙',
     productLine: '虚构产品线乙',
     customerName: '虚构客户乙',
     projectName: '虚构项目乙',
@@ -24,7 +26,7 @@ const rows = [
 ]
 
 describe('project details view', () => {
-  it('shows seven-column data summaries and emits download', async () => {
+  it('shows eight-column data summaries and emits download', async () => {
     const wrapper = mount(ProjectDetailsView, {
       props: { selectedWeek: '2026-W29', rows },
       global: { stubs: elementStubs() }
@@ -33,6 +35,7 @@ describe('project details view', () => {
     expect(wrapper.text()).toContain('项目明细')
     expect(wrapper.text()).toContain('5.5')
     expect(wrapper.text()).toContain('¥200')
+    expect(wrapper.text()).toContain('测试员工甲')
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('download')).toHaveLength(1)
   })
@@ -66,7 +69,7 @@ function elementStubs() {
     ElInput: true,
     ElOption: true,
     ElSelect: true,
-    ElTable: { template: '<div><slot /></div>' },
+    ElTable: { props: ['data'], template: '<div><span v-for="row in data" :key="row.sequence">{{ row.name }}</span><slot /></div>' },
     ElTableColumn: true
   }
 }

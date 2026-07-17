@@ -23,7 +23,7 @@
 - 本地开发只有显式设置 `WEEKLY_AUTH_DEVELOPMENT_MODE=true` 时才能使用开发默认凭据；Docker 部署不得启用该标志。
 - 前端 API 错误只采用受限的 JSON `error` 字段，并清洗当前 token、请求密码及常见 Bearer/JWT 形态；不得拼接完整响应。
 - Excel 导出只能使用后端已按当前账号范围过滤的数据；提交状态 XLSX 由 Spring 服务层使用标准 OOXML 库生成，不接受前端提交周报正文，且排除 userid、report_id、token、路径和原始周报正文。单元格统一写为字符串，避免把员工文本当作公式执行。
-- 项目明细 CSV 的姓名、userid、部门仅用于服务层复用现有权限过滤；公开 JSON 与 XLSX 只包含参考模板七列。工时和费用仅在严格匹配普通数字时写入数值单元格，其他内容按字符串写入，禁止公式执行。
+- 项目明细 CSV 的 userid、部门只用于服务层复用现有权限过滤；姓名仅在过滤完成后随授权项目记录进入公开八列 JSON 与 XLSX。工时和费用仅在严格匹配普通数字时写入数值单元格，其他内容按字符串写入，禁止公式执行。
 - 自动评价 Codex 只接收当前业务周的分析包、提交 CSV、负责人附件和政策快照；子进程移除 DingTalk/MySQL/JWT/免交及通用 secret/token/password 环境变量，仅允许临时 `workspace-write`、无审批且禁用网络。模型输出必须通过章节、人员覆盖和敏感字段校验后才写入正式报告。
 - 自动评价的私有员工反馈只允许覆盖已提交稳定 userid；反馈正文不得含姓名、其他 userid、同事信息、原始周报段落、URL、secret、路径或附件标识，并受字段长度和总文件大小限制。该文件只保存在忽略的目标周自动化目录，不进入 Web API 或 Git。
 - 自动评价如需代理，只允许通过私有 `WEEKLY_CODEX_BASE_URL` 显式传入 HTTPS 地址；Harness 仅显式配置 `crs`/`responses` provider 并读取私有 `CRS_OAI_KEY` 环境变量，不直接加载完整 Codex 用户配置，避免本地规则、路径或其他凭据进入自动任务。

@@ -7,9 +7,11 @@ import com.yzzhang.weeklyreport.po.SubmissionStatusPO;
 import com.yzzhang.weeklyreport.service.ReportPermissionService;
 import com.yzzhang.weeklyreport.vo.ProjectDetailVO;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -34,6 +36,7 @@ class ProjectDetailServiceImplTest {
 
         assertThat(rows).hasSize(1);
         assertThat(rows.getFirst().getSequence()).isEqualTo(1);
+        assertThat(rows.getFirst().getName()).isEqualTo("测试员工乙");
         assertThat(rows.getFirst().getProjectName()).isEqualTo("虚构项目乙");
     }
 
@@ -47,11 +50,22 @@ class ProjectDetailServiceImplTest {
             var sheet = workbook.getSheet("项目明细表");
             DataFormatter formatter = new DataFormatter();
             assertThat(formatter.formatCellValue(sheet.getRow(0).getCell(0))).isEqualTo("项目明细表");
-            assertThat(sheet.getRow(1).getPhysicalNumberOfCells()).isEqualTo(7);
-            assertThat(formatter.formatCellValue(sheet.getRow(1).getCell(3))).isEqualTo("项目名称");
-            assertThat(sheet.getRow(2).getCell(4).getCellType()).isEqualTo(CellType.NUMERIC);
-            assertThat(sheet.getRow(2).getCell(5).getCellType()).isEqualTo(CellType.STRING);
-            assertThat(formatter.formatCellValue(sheet.getRow(2).getCell(5))).isEqualTo("=1+1");
+            assertThat(sheet.getMergedRegion(0).formatAsString()).isEqualTo("A1:H1");
+            assertThat(sheet.getRow(1).getPhysicalNumberOfCells()).isEqualTo(8);
+            assertThat(formatter.formatCellValue(sheet.getRow(1).getCell(1))).isEqualTo("姓名");
+            assertThat(formatter.formatCellValue(sheet.getRow(1).getCell(4))).isEqualTo("项目名称");
+            assertThat(formatter.formatCellValue(sheet.getRow(2).getCell(1))).isEqualTo("测试员工乙");
+            assertThat(sheet.getRow(2).getCell(5).getCellType()).isEqualTo(CellType.NUMERIC);
+            assertThat(sheet.getRow(2).getCell(6).getCellType()).isEqualTo(CellType.STRING);
+            assertThat(formatter.formatCellValue(sheet.getRow(2).getCell(6))).isEqualTo("=1+1");
+            var titleFont = workbook.getFontAt(sheet.getRow(0).getCell(0).getCellStyle().getFontIndex());
+            var headerFont = workbook.getFontAt(sheet.getRow(1).getCell(0).getCellStyle().getFontIndex());
+            var headerStyle = (XSSFCellStyle) sheet.getRow(1).getCell(0).getCellStyle();
+            assertThat(titleFont.getFontName()).isEqualTo("宋体");
+            assertThat(titleFont.getFontHeightInPoints()).isEqualTo((short) 12);
+            assertThat(headerFont.getFontName()).isEqualTo("等线");
+            assertThat(headerStyle.getFillForegroundColorColor().getARGBHex()).isEqualTo("FF84B7FE");
+            assertThat(headerStyle.getBorderBottom()).isEqualTo(BorderStyle.THIN);
         }
     }
 
@@ -93,6 +107,7 @@ class ProjectDetailServiceImplTest {
     private ProjectDetailPO detail(String userid, String project, String days, String travel) {
         ProjectDetailPO po = new ProjectDetailPO();
         po.setUserid(userid);
+        po.setName(userid.endsWith("002") ? "测试员工乙" : "测试员工甲");
         po.setProductLine("虚构产品线");
         po.setCustomerName("虚构客户");
         po.setProjectName(project);

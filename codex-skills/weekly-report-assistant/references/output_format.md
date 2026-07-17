@@ -33,6 +33,7 @@ The new product-detail fields use a role-aware template-compliance denominator w
 Collection separately produces one public project-detail row per applicable submitted report with these columns, preserving multiple-value text without invented splitting:
 
 - 序号
+- 姓名（仅在服务层权限过滤后公开）
 - 产品线
 - 客户名称
 - 项目名称

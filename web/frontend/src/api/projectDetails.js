@@ -15,6 +15,7 @@ export function normalizeProjectDetails(value) {
     const sequence = Number(row.sequence)
     return {
       sequence: Number.isInteger(sequence) && sequence > 0 ? sequence : index + 1,
+      name: text(row.name),
       productLine: text(row.productLine),
       customerName: text(row.customerName),
       projectName: text(row.projectName),

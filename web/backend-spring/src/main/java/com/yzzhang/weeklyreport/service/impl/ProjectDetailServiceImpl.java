@@ -79,6 +79,7 @@ public class ProjectDetailServiceImpl implements ProjectDetailService {
     private ProjectDetailVO toVO(ProjectDetailPO po, int sequence) {
         ProjectDetailVO vo = new ProjectDetailVO();
         vo.setSequence(sequence);
+        vo.setName(po.getName());
         vo.setProductLine(po.getProductLine());
         vo.setCustomerName(po.getCustomerName());
         vo.setProjectName(po.getProjectName());
