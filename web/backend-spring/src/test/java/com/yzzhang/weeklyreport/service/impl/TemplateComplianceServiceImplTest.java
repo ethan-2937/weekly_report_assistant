@@ -69,6 +69,18 @@ class TemplateComplianceServiceImplTest {
     }
 
     @Test
+    void keepsLegacyReportsOnFourFieldsEvenForProductTitles() throws Exception {
+        Path reports = writeReports(Map.of("report-legacy-product", universalFields()));
+        SubmissionStatusPO product = row("report-legacy-product", "产品经理");
+
+        service(reports).enrich(WEEK, List.of(product));
+
+        assertThat(product.getTemplateComplianceRate()).isEqualTo(100);
+        assertThat(product.getTemplateCompliancePresentFields()).hasSize(4);
+        assertThat(product.getTemplateComplianceDetail()).contains("通用岗位").contains("4项");
+    }
+
+    @Test
     void reportsBlankConditionalFieldInSalesPercentage() throws Exception {
         Map<String, String> fields = projectFields(false);
         fields.put("技术/产品/销售同学必填。您本周服务的客户名称是？", "  ");

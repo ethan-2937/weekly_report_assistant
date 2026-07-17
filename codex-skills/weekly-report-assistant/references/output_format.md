@@ -28,7 +28,7 @@ The new product-detail fields use a role-aware template-compliance denominator w
 - Other roles: four universal required fields.
 - Sales: four universal fields plus product line, customer, project, travel expense, and hospitality expense (nine total).
 - Technical/product: the sales set plus total workdays and workday distribution (eleven total).
-- Numeric `0` is a valid filled expense value. If title applicability is ambiguous, keep the universal four-field denominator rather than guessing.
+- Numeric `0` is a valid filled expense value. Activate 9/11-field checks only when the report contains the new conditional field labels; historical templates and ambiguous titles keep the universal four-field denominator rather than being guessed or retroactively penalized.
 
 Collection separately produces one public project-detail row per applicable submitted report with these columns, preserving multiple-value text without invented splitting:
 

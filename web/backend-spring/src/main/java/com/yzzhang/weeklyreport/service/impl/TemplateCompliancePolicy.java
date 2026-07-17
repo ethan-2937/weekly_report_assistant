@@ -35,7 +35,10 @@ final class TemplateCompliancePolicy {
     private TemplateCompliancePolicy() {
     }
 
-    static RequirementSet forTitle(String title) {
+    static RequirementSet forTitle(String title, boolean roleAwareTemplate) {
+        if (!roleAwareTemplate) {
+            return universalRequirements();
+        }
         String normalizedTitle = normalize(title);
         if (containsAny(normalizedTitle, TECH_PRODUCT_TITLE_KEYWORDS)) {
             return requirements("技术/产品岗位", true);
@@ -43,6 +46,18 @@ final class TemplateCompliancePolicy {
         if (containsAny(normalizedTitle, SALES_TITLE_KEYWORDS)) {
             return requirements("销售岗位", false);
         }
+        return universalRequirements();
+    }
+
+    static boolean isRoleAwareTemplateField(String key) {
+        String normalizedKey = normalize(key);
+        return append(PROJECT_AND_EXPENSE, WORKDAY_DETAILS).stream()
+            .flatMap(field -> field.aliases().stream())
+            .map(TemplateCompliancePolicy::normalize)
+            .anyMatch(normalizedKey::contains);
+    }
+
+    private static RequirementSet universalRequirements() {
         return new RequirementSet("通用岗位", append(COMMON_PREFIX, List.of(NEXT_PLAN)));
     }
 

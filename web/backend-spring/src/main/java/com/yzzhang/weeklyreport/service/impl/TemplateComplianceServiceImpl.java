@@ -64,8 +64,8 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
             row.setTemplateComplianceDetail("提交状态不明确，无法进行模板检查。");
             return;
         }
-        RequirementSet requirements = TemplateCompliancePolicy.forTitle(row.getTitle());
         if (report == null) {
+            RequirementSet requirements = TemplateCompliancePolicy.forTitle(row.getTitle(), false);
             row.setTemplateComplianceRate(null);
             row.setTemplateComplianceStatus(UNKNOWN);
             row.setTemplateComplianceMissingFields(requirements.fields().stream().map(RequiredField::label).toList());
@@ -73,6 +73,9 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
             row.setTemplateComplianceDetail("未匹配到钉钉原始周报内容，请检查 raw/reports.json 或 report_id。");
             return;
         }
+        RequirementSet requirements = TemplateCompliancePolicy.forTitle(
+            row.getTitle(), report.usesRoleAwareTemplate()
+        );
 
         List<String> present = new ArrayList<>();
         List<String> missing = new ArrayList<>();
@@ -238,6 +241,10 @@ public class TemplateComplianceServiceImpl implements TemplateComplianceService 
 
         boolean usesOldTemplate() {
             return fields.stream().anyMatch(field -> isOldTemplateField(field.key()));
+        }
+
+        boolean usesRoleAwareTemplate() {
+            return fields.stream().anyMatch(field -> TemplateCompliancePolicy.isRoleAwareTemplateField(field.key()));
         }
 
         private static boolean isOldTemplateField(String key) {
