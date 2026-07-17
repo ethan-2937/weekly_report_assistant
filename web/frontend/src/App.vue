@@ -13,7 +13,7 @@
     @dingtalk-login="loginWithDingTalk"
   />
 
-  <div v-else :class="['app-shell', { 'app-shell--report': currentView === 'report' }]">
+  <div v-else :class="['app-shell', { 'app-shell--report': ['report', 'projects'].includes(currentView) }]">
     <div class="header-reveal-zone" aria-hidden="true" @mouseenter="revealHeader"></div>
 
     <header
@@ -36,6 +36,7 @@
       <nav class="decor-nav" aria-label="周报导航">
         <button v-if="canViewReports" :class="{ active: currentView === 'dashboard' }" @click="setView('dashboard')">提交概览</button>
         <button v-if="canViewReports" :class="{ active: currentView === 'status' }" @click="setView('status')">未交名单</button>
+        <button v-if="canViewReports" :class="{ active: currentView === 'projects' }" @click="setView('projects')">项目明细</button>
         <button v-if="canViewReports" :class="{ active: currentView === 'report' }" @click="setView('report')">AI 评价</button>
         <button v-if="canRunJobs" :class="{ active: currentView === 'jobs' }" @click="setView('jobs')">运行状态</button>
         <button v-if="isAdmin" :class="{ active: currentView === 'users' }" @click="setView('users')">用户管理</button>
@@ -107,44 +108,19 @@
         @download="downloadCsv"
       />
 
-      <section v-if="currentView === 'status' && canViewReports" class="page-card">
-        <div class="page-header">
-          <div>
-            <h1>提交状态</h1>
-            <p>支持按姓名、部门、提交状态和负责人筛选。</p>
-          </div>
-          <BrowserDownloadHint>
-            <el-button round @click="downloadCsv">下载 Excel</el-button>
-          </BrowserDownloadHint>
-        </div>
+      <SubmissionStatusView
+        v-if="currentView === 'status' && canViewReports"
+        :rows="rows"
+        @download="downloadCsv"
+      />
 
-        <div class="toolbar">
-          <el-input v-model="filters.keyword" clearable placeholder="搜索姓名、部门、职务" />
-          <el-select v-model="filters.status" clearable placeholder="提交状态">
-            <el-option label="已提交" value="已提交" />
-            <el-option label="未提交" value="未提交" />
-          </el-select>
-          <el-select v-model="filters.leader" clearable placeholder="负责人">
-            <el-option label="是" value="是" />
-            <el-option label="否" value="否" />
-          </el-select>
-        </div>
-
-        <el-table :data="filteredRows" class="soft-table" height="560" row-key="userid">
-          <el-table-column prop="提交状态" label="状态" width="110">
-            <template #default="{ row }">
-              <el-tag :type="row['提交状态'] === '已提交' ? 'success' : 'danger'" effect="light">
-                {{ row['提交状态'] }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="姓名" label="姓名" width="130" />
-          <el-table-column prop="部门" label="部门" min-width="190" show-overflow-tooltip />
-          <el-table-column prop="职务" label="职务" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="是否负责人候选" label="负责人" width="100" />
-          <el-table-column prop="提交时间" label="提交时间" min-width="170" />
-        </el-table>
-      </section>
+      <ProjectDetailsView
+        v-if="currentView === 'projects' && canViewReports"
+        :selected-week="selectedWeek"
+        :rows="projectDetails"
+        :error="projectDetailsError"
+        @download="downloadProjectDetails"
+      />
 
       <EvaluationView
         v-if="currentView === 'report' && canViewReports"
@@ -484,6 +460,7 @@ import {
   normalizeWeekOverview,
   normalizeWeekSummary
 } from './api/weeks.js'
+import { fetchProjectDetails, normalizeProjectDetails } from './api/projectDetails.js'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
 import BrowserDownloadHint from './components/BrowserDownloadHint.vue'
 import { useAuth } from './composables/useAuth.js'
@@ -491,6 +468,8 @@ import LoginView from './features/auth/LoginView.vue'
 import EvaluationView from './features/evaluation/EvaluationView.vue'
 import SubmissionOverview from './features/overview/SubmissionOverview.vue'
 import SubmissionPulse from './features/overview/SubmissionPulse.vue'
+import ProjectDetailsView from './features/project-details/ProjectDetailsView.vue'
+import SubmissionStatusView from './features/status/SubmissionStatusView.vue'
 const adminUsers = ref([])
 const adminRoles = ref([])
 const adminLoading = ref(false)
@@ -537,12 +516,13 @@ const currentView = ref('dashboard')
 const summary = ref({})
 const analysis = ref({})
 const rows = ref([])
+const projectDetails = ref([])
+const projectDetailsError = ref('')
 const latestJob = ref({})
 const jobBusy = ref(false)
 const headerHidden = ref(false)
 const headerHovered = ref(false)
-const filters = reactive({ keyword: '', status: '', leader: '' })
-const reportViews = new Set(['dashboard', 'status', 'report'])
+const reportViews = new Set(['dashboard', 'status', 'projects', 'report'])
 let lastScrollY = 0
 const {
   authLoading,
@@ -582,6 +562,7 @@ const roleLabel = computed(() => {
 const currentViewLabel = computed(() => ({
   dashboard: '提交概览',
   status: '未交名单',
+  projects: '项目明细',
   report: 'AI 评价',
   jobs: '运行状态',
   users: '用户管理',
@@ -591,25 +572,6 @@ const userInitial = computed(() => {
   const name = currentUser.value?.realName || currentUser.value?.username || 'U'
   return String(name).slice(0, 2).toUpperCase()
 })
-const filteredRows = computed(() => {
-  const keyword = filters.keyword.trim().toLowerCase()
-  return rows.value
-    .map((row, index) => ({ row, index }))
-    .filter(item => {
-      const text = `${item.row['姓名'] || ''} ${item.row['部门'] || ''} ${item.row['职务'] || ''}`.toLowerCase()
-      return (!keyword || text.includes(keyword))
-        && (!filters.status || item.row['提交状态'] === filters.status)
-        && (!filters.leader || item.row['是否负责人候选'] === filters.leader)
-    })
-    .sort((left, right) => {
-      const leftMissing = left.row['提交状态'] === '未提交'
-      const rightMissing = right.row['提交状态'] === '未提交'
-      if (leftMissing !== rightMissing) return leftMissing ? -1 : 1
-      return left.index - right.index
-    })
-    .map(item => item.row)
-})
-
 async function setView(view) {
   if (view === 'jobs' && !canRunJobs.value) {
     currentView.value = defaultView.value
@@ -978,6 +940,8 @@ function resetWorkspaceState() {
   summary.value = {}
   analysis.value = {}
   rows.value = []
+  projectDetails.value = []
+  projectDetailsError.value = ''
   latestJob.value = {}
   adminUsers.value = []
   adminRoles.value = []
@@ -1020,20 +984,25 @@ async function selectWeek(week) {
 }
 
 async function showMissingReports() {
-  filters.status = ''
   await setView('status')
 }
 
 async function loadWeek(week) {
   if (!week || !canViewReports.value) return
-  const [summaryData, analysisData, statusRows] = await Promise.all([
+  const projectRequest = fetchProjectDetails(weekClient, week)
+    .then(projectRows => ({ projectRows, error: '' }))
+    .catch(error => ({ projectRows: [], error: error.message || '项目明细暂时不可用' }))
+  const [summaryData, analysisData, statusRows, projectResult] = await Promise.all([
     fetchWeekSummary(weekClient, week),
     fetchWeekAnalysis(weekClient, week),
-    fetchWeekSubmissionStatus(weekClient, week)
+    fetchWeekSubmissionStatus(weekClient, week),
+    projectRequest
   ])
   summary.value = normalizeWeekSummary(summaryData)
   analysis.value = normalizeWeekAnalysis(analysisData)
   rows.value = normalizeSubmissionStatus(statusRows)
+  projectDetails.value = normalizeProjectDetails(projectResult.projectRows)
+  projectDetailsError.value = projectResult.error
 }
 
 async function loadJob() {
@@ -1080,18 +1049,35 @@ async function downloadCsv() {
   }
   if (!selectedWeek.value) return
   try {
-    const blob = await request(`/api/files/${selectedWeek.value}/submission-status/download`, {
-      responseType: 'blob'
-    })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `submission_status_${selectedWeek.value}.xlsx`
-    link.click()
-    URL.revokeObjectURL(url)
+    await downloadWorkbook(
+      `/api/files/${selectedWeek.value}/submission-status/download`,
+      `submission_status_${selectedWeek.value}.xlsx`
+    )
   } catch (error) {
     ElMessage.error(error.message)
   }
+}
+
+async function downloadProjectDetails() {
+  if (!canViewReports.value || !selectedWeek.value) return
+  try {
+    await downloadWorkbook(
+      `/api/files/${selectedWeek.value}/project-details/download`,
+      `项目明细表_${selectedWeek.value}.xlsx`
+    )
+  } catch (error) {
+    ElMessage.error(error.message)
+  }
+}
+
+async function downloadWorkbook(path, filename) {
+  const blob = await request(path, { responseType: 'blob' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 function formatDate(value) {

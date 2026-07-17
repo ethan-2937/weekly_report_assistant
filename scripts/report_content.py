@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from dingtalk_common import CN_TZ
@@ -47,7 +48,8 @@ def _flatten_content(value: Any) -> str:
             if isinstance(item, dict):
                 title = _first_value(item, ["key", "title", "name", "label"])
                 body = _first_value(item, ["value", "content", "text", "content_value"])
-                if str(title).strip() == "附件":
+                normalized_title = re.sub(r"[\s　（）()【】\[\]：:]", "", str(title))
+                if "附件" in normalized_title or "图片" in normalized_title:
                     body = _attachment_names(body)
                 parts.append(f"{title}: {_flatten_content(body)}".strip(": "))
             else:

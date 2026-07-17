@@ -19,8 +19,21 @@ Each employee report should be checked against the actual DingTalk template fiel
 - 本周完成成果: must contain concrete deliverable/output nouns, such as merged code, PRD, test report, signed contract, released document, resolved issue, dashboard, page, interface, script, list, or other verifiable output. Action-only wording such as `推进/跟进/参与/沟通/处理/学习` is not enough.
 - 工时投入分析: should provide percentages or clear proportions by activity. Compare with the employee's title/role from the roster when possible; if no baseline exists, state that role baseline is missing rather than inventing one.
 - AI应用及效果: should include tool/scenario + effect. If not used, state `未使用`. Items marked `【可复用】` are AI highlights and should be promoted to the AI红榜/亮点 section.
+- 个人分享: optional. Reusable AI tools, models, scenarios, or methods marked `【可复用】` may supplement the AI红榜 evidence.
 - 下周计划（含交付时间）: must contain both a date/deadline and a planned output. Plans containing vague `继续` wording are unqualified unless rewritten with concrete date + output; prefer treating any `继续` as a warning.
 - 风险与求助: management extraction dimension. If the actual report/template has this field, evaluate it directly; otherwise extract blockers/support needs from any section and do not count absence as template non-compliance.
+
+The new product-detail fields are conditional by role. Keep them outside the universal four-field compliance rate when role applicability cannot be determined safely. Collection produces one public row per applicable submitted report with these columns, preserving multiple-value text without invented splitting:
+
+- 序号
+- 产品线
+- 客户名称
+- 项目名称
+- 本周投入工时（天）
+- 本周差旅费用
+- 本周招待费用
+
+Do not infer per-project workdays or expense allocation from comma-separated customer/project fields.
 
 ## Leadership Evaluation Dimensions
 

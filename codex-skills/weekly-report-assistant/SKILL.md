@@ -35,10 +35,11 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Apply the latest weekly-report screening standard:
      - 谁在真干活（虚实盘）: read the actual template field `本周完成成果`/`本周成果`; it must contain concrete output/deliverable nouns such as 文档、代码、报告、方案、清单、页面、接口、脚本、合同、测试结果、上线内容. Do not treat action-only wording such as 推进、跟进、参与、沟通、处理、学习 as a valid output by itself.
      - 谁时间分配畸形（健康度）: read `工时投入分析`/`工时占比`, and combine it with the roster/title as `岗位角色`; the report should use percentages or clear proportions. Compare against the employee's role/title when available; if no role baseline exists, flag only obvious imbalance and state that the baseline is unavailable.
-     - AI用得怎样（红黑榜）: read the actual template field `AI应用及效果`/`AI使用`; it must include tool/scenario + effect. Any item explicitly marked `【可复用】` should be promoted into the AI亮点/红榜 section.
+     - AI用得怎样（红黑榜）: read the actual template field `AI应用及效果`/`AI使用`; it must include tool/scenario + effect. Also inspect the optional `个人分享` field for reusable AI methods. Any item explicitly marked `【可复用】` should be promoted into the AI亮点/红榜 section.
      - 下周计划合不合格: read `下周计划（含交付时间）`/`下周计划`; it must include both date/deadline and planned output. If it contains `继续` without a concrete date and output, mark it as unqualified; the preferred rule is to avoid `继续` entirely.
      - 哪里需要老板拍板: read `风险与求助` only if the report/template provides that field, otherwise extract from risk/blocker/support wording in any section. Put found items near the top of the manager-facing report, but do not mark absence as template non-compliance unless the real DingTalk template contains that field.
-   - Check completeness against the real DingTalk template fields first: 本周完成成果、工时投入分析、AI应用及效果、下周计划（含交付时间）. Treat 风险与求助 as a management extraction dimension unless it exists in the actual template.
+   - Check universal completeness against the real DingTalk template fields first: 本周完成成果、工时投入分析、AI应用及效果、下周计划（含交付时间）. The product line, customer, project, workday and expense fields are conditional by role; do not guess role applicability or lower universal compliance when applicability is uncertain. Treat 风险与求助 as a management extraction dimension unless it exists in the actual template.
+   - Project-detail fields are deterministic collection data, not an extra AI score. Preserve multiple customers/projects as written and never invent per-project workday or expense allocations.
    - Prefer factual, evidence-based wording; distinguish completed deliverables from “推进/跟进/参与”等过程描述.
    - Quantify when the report contains data; do not invent metrics.
 
@@ -90,6 +91,7 @@ After the script runs, analyze:
 - `output/<YYYY-Www>/analysis/analysis_input.md` for report content and missing candidates.
 - The `团队负责人履职输入（确定性证据）` table inside `analysis_input.md` for the complete leader roster, attachment state, and body-evidence hints.
 - `output/<YYYY-Www>/exports/submission_status.csv` for the machine-readable submission table.
+- `output/<YYYY-Www>/exports/project_details.csv` for permission-filtered project-detail APIs and XLSX export. Hidden identity columns exist only for service-layer filtering; do not copy them into the public seven-column workbook.
 - `output/<YYYY-Www>/summary/submission_check.md` for the submission overview.
 
 When producing the formal HR-facing evaluation, write it to `output/<YYYY-Www>/summary/manager_report.md`. The Java + Vue web interface reads that exact file and displays it as the AI evaluation page. Include the standard sections: 本周提交概览, 需老板拍板/协调事项, 未提交/异常提交名单, 员工五维评价, 团队负责人履职检查, 共性风险与下周关注点, 数据质量与需要人工确认事项.

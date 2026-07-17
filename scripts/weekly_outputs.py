@@ -6,6 +6,7 @@ from typing import Any
 
 from attachment_download import DownloadedAttachment
 from leader_compliance import build_team_lead_evidence, render_team_lead_input
+from project_details import write_project_details
 from report_content import format_dt_ms, report_text
 
 
@@ -74,6 +75,13 @@ def write_submission_outputs(
         writer = csv.DictWriter(file, fieldnames=CSV_FIELDS)
         writer.writeheader()
         writer.writerows(rows)
+
+    write_project_details(
+        exports_dir / "project_details.csv",
+        users,
+        reports,
+        dept_by_id,
+    )
 
     submitted = [row for row in rows if row["提交状态"] == "已提交"]
     missing = [row for row in rows if row["提交状态"] == "未提交"]

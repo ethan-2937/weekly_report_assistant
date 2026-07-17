@@ -2,11 +2,13 @@ package com.yzzhang.weeklyreport.config;
 
 import com.yzzhang.weeklyreport.common.ResourceNotFoundException;
 import com.yzzhang.weeklyreport.controller.JobController;
+import com.yzzhang.weeklyreport.controller.ProjectDetailController;
 import com.yzzhang.weeklyreport.controller.WeekController;
 import com.yzzhang.weeklyreport.security.AuthUserDetailsService;
 import com.yzzhang.weeklyreport.security.JwtAuthenticationFilter;
 import com.yzzhang.weeklyreport.security.JwtTokenProvider;
 import com.yzzhang.weeklyreport.service.JobService;
+import com.yzzhang.weeklyreport.service.ProjectDetailService;
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
 import com.yzzhang.weeklyreport.service.WeeklyReportSourceService;
 import com.yzzhang.weeklyreport.vo.JobRecordVO;
@@ -32,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
-    controllers = {WeekController.class, JobController.class},
+    controllers = {WeekController.class, ProjectDetailController.class, JobController.class},
     excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class,
     excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = WebConfig.class)
 )
@@ -46,6 +48,9 @@ class SecurityConfigWebMvcTest {
 
     @MockBean
     private WeeklyReportSourceService weeklyReportSourceService;
+
+    @MockBean
+    private ProjectDetailService projectDetailService;
 
     @MockBean
     private JobService jobService;
@@ -81,6 +86,20 @@ class SecurityConfigWebMvcTest {
                     org.hamcrest.Matchers.containsString("虚构周报正文"),
                     org.hamcrest.Matchers.containsString("fictional-token"),
                     org.hamcrest.Matchers.containsString("WEEKLY_JWT_SECRET")
+                )
+            )));
+    }
+
+    @Test
+    void unauthenticatedProjectDetailRequestReturnsSanitizedUnauthorizedResponse() throws Exception {
+        mockMvc.perform(get("/api/weeks/2026-W29/project-details"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error").value("请先登录"))
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.anyOf(
+                    org.hamcrest.Matchers.containsString("test-user-001"),
+                    org.hamcrest.Matchers.containsString("fictional-token"),
+                    org.hamcrest.Matchers.containsString("虚构周报正文")
                 )
             )));
     }

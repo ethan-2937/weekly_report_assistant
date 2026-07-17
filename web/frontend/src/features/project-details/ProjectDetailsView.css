@@ -1,0 +1,113 @@
+.project-details-view {
+  display: grid;
+  gap: 22px;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 247, 252, 0.96)),
+    radial-gradient(circle at 92% 5%, rgba(26, 109, 145, 0.12), transparent 28%);
+}
+
+.project-details-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(37, 62, 84, 0.12);
+}
+
+.project-details-hero h1,
+.project-details-hero p {
+  margin: 0;
+}
+
+.project-details-hero h1 {
+  margin-top: 5px;
+  color: #17324a;
+  font-family: "MiSans", "HarmonyOS Sans SC", "PingFang SC", sans-serif;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.04em;
+}
+
+.project-details-hero p {
+  max-width: 760px;
+  margin-top: 9px;
+  color: #5d6d7c;
+  line-height: 1.7;
+}
+
+.project-details-eyebrow {
+  color: #16708e;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.project-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-metrics article {
+  display: grid;
+  min-height: 112px;
+  align-content: center;
+  gap: 3px;
+  padding: 18px;
+  border: 1px solid rgba(37, 62, 84, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 24px rgba(41, 70, 92, 0.06);
+}
+
+.project-metrics small,
+.project-metrics span {
+  color: #6d7b87;
+}
+
+.project-metrics strong {
+  overflow-wrap: anywhere;
+  color: #183b54;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.15;
+}
+
+.project-metrics span {
+  font-size: 12px;
+}
+
+.project-details-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(180px, 280px);
+  gap: 12px;
+}
+
+.project-details-table {
+  width: 100%;
+  --el-table-header-bg-color: #dcebf5;
+  --el-table-header-text-color: #17324a;
+  --el-table-row-hover-bg-color: #eef7f8;
+}
+
+@media (max-width: 900px) {
+  .project-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .project-details-hero,
+  .project-details-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project-metrics article {
+    min-height: 92px;
+  }
+}
