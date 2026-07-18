@@ -138,6 +138,12 @@ docker compose up -d --build --force-recreate weekly-report
 
 每位已提交员工只收到本人的私人消息，先展示做得好的地方，再重点展示改进建议，并附配置的 HR 联系方式。管理员收到的成功或失败结果只含周次和人数。防重复状态写入 `output/<YYYY-Www>/notifications/monday-evaluation-feedback.json`；远程结果不确定时不会自动重发。
 
+### 上线前向单一接收人试发
+
+如需在正式调度前验证两种钉钉发送链路，先确认根 `.env` 中 `WEEKLY_FEEDBACK_RECIPIENT_NAME=张艺政`，且 `WEEKLY_FEEDBACK_DINGTALK_USER_IDS` 只配置张艺政一个稳定 userid。不要打印或提交该值。重建容器后用 ADMIN 登录 Web，进入“运行状态 → 自动通知试发”，依次点击“测试周日提醒”和“测试周一评价”并确认。
+
+两条消息都会醒目标注“测试”：前者复用周日批量 Markdown 发送接口，后者复用周一逐人 Markdown 发送接口。试发不读取提交状态、周报正文或评价文件，不会创建或修改 `sunday-1800.json`、`monday-evaluation-feedback.json`，因此不影响随后正式任务。REPORT_ALL 或普通范围账号不能试发。
+
 ## 周四截止自动化
 
 周一可以用服务器 Codex 或 Web 按钮生成暂定结果；周四补交截止后应再次触发并生成最终结果。自动化可采用两种方式：

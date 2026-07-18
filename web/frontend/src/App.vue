@@ -278,24 +278,12 @@
         </el-dialog>
       </section>
 
-      <section v-if="currentView === 'jobs' && canRunJobs" class="page-card">
-        <div class="page-header">
-          <div>
-            <h1>运行状态</h1>
-            <p>查看最近一次 Web 触发的采集任务。</p>
-          </div>
-          <div class="header-actions">
-            <el-button round :loading="jobBusy" @click="runJob('previous')">补跑上一周</el-button>
-            <el-button round @click="loadJob">刷新状态</el-button>
-          </div>
-        </div>
-        <div class="job-card">
-          <el-tag :type="jobStatusType(latestJob.status)" effect="light">{{ latestJob.status || 'NO JOB' }}</el-tag>
-          <h2>{{ latestJob.weekLabel || latestJob.weekMode || '暂无任务' }}</h2>
-          <p>开始：{{ formatDate(latestJob.startedAt) }} · 结束：{{ formatDate(latestJob.finishedAt) }}</p>
-          <pre>{{ latestJob.errorMessage || latestJob.stdout || '暂无日志。' }}</pre>
-        </div>
-      </section>
+      <JobStatusView
+        v-if="currentView === 'jobs' && canRunJobs"
+        :latest-job="latestJob" :job-busy="jobBusy" :is-admin="isAdmin" :notification-test-busy="notificationTestBusy"
+        @run-job="runJob" @refresh-job="loadJob"
+        @test-notification="testNotification"
+      />
 
       <section v-if="currentView === 'denied'" class="page-card no-access-card">
         <span class="login-eyebrow">ACCESS LIMITED</span>
@@ -447,7 +435,7 @@
 </template>
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { changeCurrentPassword } from './api/auth.js'
 import { fetchWeeklyReportDetail, normalizeWeeklyReportDetail } from './api/reports.js'
 import {
@@ -461,11 +449,13 @@ import {
   normalizeWeekSummary
 } from './api/weeks.js'
 import { fetchProjectDetails, normalizeProjectDetails } from './api/projectDetails.js'
+import { sendNotificationTest } from './api/notificationTests.js'
 import youzhiLogo from './assets/youzhi-logo-transparent.png'
 import BrowserDownloadHint from './components/BrowserDownloadHint.vue'
 import { useAuth } from './composables/useAuth.js'
 import LoginView from './features/auth/LoginView.vue'
 import EvaluationView from './features/evaluation/EvaluationView.vue'
+import JobStatusView from './features/jobs/JobStatusView.vue'
 import SubmissionOverview from './features/overview/SubmissionOverview.vue'
 import SubmissionPulse from './features/overview/SubmissionPulse.vue'
 import ProjectDetailsView from './features/project-details/ProjectDetailsView.vue'
@@ -520,6 +510,7 @@ const projectDetails = ref([])
 const projectDetailsError = ref('')
 const latestJob = ref({})
 const jobBusy = ref(false)
+const notificationTestBusy = ref('')
 const headerHidden = ref(false)
 const headerHovered = ref(false)
 const reportViews = new Set(['dashboard', 'status', 'projects', 'report'])
@@ -1055,6 +1046,27 @@ async function downloadCsv() {
     )
   } catch (error) {
     ElMessage.error(error.message)
+  }
+}
+
+async function testNotification(type) {
+  if (!isAdmin.value || notificationTestBusy.value) return
+  const label = type === 'SUNDAY_REMINDER' ? '周日未交提醒' : '周一个人评价'
+  notificationTestBusy.value = type
+  try {
+    await ElMessageBox.confirm(
+      `将只向服务器配置的单一接收人张艺政发送一条“${label}（测试）”，不会读取真实周报或影响正式任务状态。`,
+      '确认试发自动通知',
+      { confirmButtonText: '确认发送', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch { notificationTestBusy.value = ''; return }
+  try {
+    const result = await sendNotificationTest(weekClient, type, '张艺政')
+    ElMessage.success(`${result.targetName || '接收人'}的${label}测试消息已提交到钉钉。`)
+  } catch (error) {
+    ElMessage.error(error.message || '通知试发失败，请检查接收人和钉钉应用配置。')
+  } finally {
+    notificationTestBusy.value = ''
   }
 }
 

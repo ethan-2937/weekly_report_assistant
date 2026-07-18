@@ -107,6 +107,8 @@ docker compose exec weekly-report python3 /app/scripts/submission_reminder.py
 
 周一个人评价通知同样默认关闭。它依赖当前版本 Skill 在同一次自动评价中生成的私有反馈清单，不会为每名员工单独调用 Codex。首次启用时，在根 `.env` 设置 `WEEKLY_EVALUATION_FEEDBACK_ENABLED=true`、周一 12:00 cron、上海时区和私有 HR 联系人；随后重新复制 Skill、执行一次 `./scripts/run_codex_evaluation.sh --force`，确认成功后再重建应用容器。完整配置和幂等说明见 `docs/docker_deploy.md`。
 
+需要立即验证钉钉链路时，确保反馈接收人名称为张艺政且只配置一个对应 userid，使用 ADMIN 登录后进入“运行状态 → 自动通知试发”，分别发送周日提醒样例和周一评价样例。试发不读取真实周报、不写正式幂等状态；普通用户和 REPORT_ALL 账号无权操作。
+
 访问地址：
 
 ```text

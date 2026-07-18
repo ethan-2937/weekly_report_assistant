@@ -2,16 +2,19 @@ package com.yzzhang.weeklyreport.config;
 
 import com.yzzhang.weeklyreport.common.ResourceNotFoundException;
 import com.yzzhang.weeklyreport.controller.JobController;
+import com.yzzhang.weeklyreport.controller.NotificationTestController;
 import com.yzzhang.weeklyreport.controller.ProjectDetailController;
 import com.yzzhang.weeklyreport.controller.WeekController;
 import com.yzzhang.weeklyreport.security.AuthUserDetailsService;
 import com.yzzhang.weeklyreport.security.JwtAuthenticationFilter;
 import com.yzzhang.weeklyreport.security.JwtTokenProvider;
 import com.yzzhang.weeklyreport.service.JobService;
+import com.yzzhang.weeklyreport.service.NotificationTestService;
 import com.yzzhang.weeklyreport.service.ProjectDetailService;
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
 import com.yzzhang.weeklyreport.service.WeeklyReportSourceService;
 import com.yzzhang.weeklyreport.vo.JobRecordVO;
+import com.yzzhang.weeklyreport.vo.NotificationTestResultVO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,12 +32,18 @@ import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
-    controllers = {WeekController.class, ProjectDetailController.class, JobController.class},
+    controllers = {
+        WeekController.class,
+        ProjectDetailController.class,
+        JobController.class,
+        NotificationTestController.class
+    },
     excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class,
     excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = WebConfig.class)
 )
@@ -54,6 +63,9 @@ class SecurityConfigWebMvcTest {
 
     @MockBean
     private JobService jobService;
+
+    @MockBean
+    private NotificationTestService notificationTestService;
 
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
@@ -101,6 +113,42 @@ class SecurityConfigWebMvcTest {
                     org.hamcrest.Matchers.containsString("fictional-token"),
                     org.hamcrest.Matchers.containsString("虚构周报正文")
                 )
+            )));
+    }
+
+    @Test
+    void unauthenticatedNotificationTestReturnsUnauthorized() throws Exception {
+        mockMvc.perform(notificationTestRequest())
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error").value("请先登录"));
+    }
+
+    @Test
+    @WithMockUser(username = "test-scope-user", roles = "USER")
+    void nonAdminCannotSendNotificationTests() throws Exception {
+        mockMvc.perform(notificationTestRequest())
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.error").value("没有访问权限"));
+    }
+
+    @Test
+    @WithMockUser(username = "test-admin", roles = "ADMIN")
+    void adminCanSendNotificationTestWithoutRecipientIdentifiersInResponse() throws Exception {
+        when(notificationTestService.send(org.mockito.ArgumentMatchers.any())).thenReturn(
+            new NotificationTestResultVO(
+                "SUNDAY_REMINDER",
+                true,
+                "测试接收人",
+                "测试通知已提交到钉钉"
+            )
+        );
+
+        mockMvc.perform(notificationTestRequest())
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.delivered").value(true))
+            .andExpect(jsonPath("$.targetName").value("测试接收人"))
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.containsString("test-user-001")
             )));
     }
 
@@ -196,5 +244,16 @@ class SecurityConfigWebMvcTest {
                     org.hamcrest.Matchers.containsString("WEEKLY_JWT_SECRET")
                 )
             )));
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder notificationTestRequest() {
+        return post("/api/admin/notification-tests")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                  "type": "SUNDAY_REMINDER",
+                  "confirmRecipientName": "测试接收人"
+                }
+                """);
     }
 }

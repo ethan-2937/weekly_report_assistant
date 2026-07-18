@@ -25,7 +25,8 @@ vi.mock('./composables/useAuth.js', () => ({
 }))
 
 vi.mock('element-plus', () => ({
-  ElMessage: { error: vi.fn(), success: vi.fn(), warning: vi.fn() }
+  ElMessage: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
+  ElMessageBox: { confirm: vi.fn().mockResolvedValue(true) }
 }))
 
 describe('application role menus and permission guards', () => {
@@ -43,6 +44,18 @@ describe('application role menus and permission guards', () => {
     expect(menuLabels(wrapper)).toEqual(['运行状态', '用户管理'])
     expect(wrapper.find('.home-hero').exists()).toBe(false)
     expect(wrapper.find('.admin-page').exists()).toBe(true)
+  })
+
+  it('shows notification tests in job status only to administrators', async () => {
+    const admin = await mountAs({ roles: ['ADMIN'], deptScopes: [] })
+    await admin.findAll('.decor-nav button').find(item => item.text() === '运行状态').trigger('click')
+    await flushPromises()
+    expect(admin.find('.notification-test-panel').exists()).toBe(true)
+
+    const reportAll = await mountAs({ roles: ['REPORT_ALL'], deptScopes: [] })
+    await reportAll.findAll('.decor-nav button').find(item => item.text() === '运行状态').trigger('click')
+    await flushPromises()
+    expect(reportAll.find('.notification-test-panel').exists()).toBe(false)
   })
 
   it('allows scoped report viewing without job or admin controls', async () => {
