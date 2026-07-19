@@ -190,6 +190,16 @@ if ($composeEnvExample -notmatch 'WEEKLY_EVALUATION_FEEDBACK_ENABLED=' -or $comp
     Add-Failure ".env.example must document evaluation feedback enablement and HR contact for Docker deployments."
 }
 
+$evaluationHarness = Get-Content -Raw -LiteralPath (Join-Path $root "scripts/run_codex_evaluation.py") -Encoding UTF8
+if ($evaluationHarness -notmatch 'scheduled-window' -or $evaluationHarness -notmatch 'scheduled_week_label') {
+    Add-Failure "Codex evaluation Harness must keep the tested Sunday-through-Tuesday scheduled window."
+}
+
+$automationGuide = Get-Content -Raw -LiteralPath (Join-Path $root "docs/server_codex_automation.md") -Encoding UTF8
+if ($automationGuide -notmatch '10 18-22/2 \* \* 0' -or $automationGuide -notmatch '10 \*/2 \* \* 1-2') {
+    Add-Failure "Server automation guide must keep the Sunday evening and Monday/Tuesday two-hour cron entries."
+}
+
 if ($failures.Count -gt 0) {
     Write-Host "Harness checks failed ($($failures.Count)):" -ForegroundColor Red
     $failures | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }

@@ -146,14 +146,13 @@ docker compose up -d --build --force-recreate weekly-report
 
 两条消息都会醒目标注“测试”：前者复用周日批量 Markdown 发送接口，后者复用周一逐人 Markdown 发送接口。试发不读取提交状态、周报正文或评价文件，不会创建或修改 `sunday-1800.json`、`monday-evaluation-feedback.json`，因此不影响随后正式任务。REPORT_ALL 或普通范围账号不能试发。
 
-## 周四截止自动化
+## 自动采集与评价
 
-周一可以用服务器 Codex 或 Web 按钮生成暂定结果；周四补交截止后应再次触发并生成最终结果。自动化可采用两种方式：
+正式 AI 自动评价使用宿主机 Codex Harness：从周日 18:10 起处理当前 ISO 周，周一和周二每两小时继续刷新同一目标周，周二 22:10 后停止。完整 cron 和 `--scheduled-window` 配置见 `docs/server_codex_automation.md`。
 
-1. Spring Scheduler：Java 服务内部每周四自动执行 `scripts/run_weekly.py`。
-2. Linux cron：每周四执行 `docker exec weekly-report python3 scripts/run_weekly.py`，或者给 Web 后端扩展专用任务 Token 后再调用接口。
+Spring Scheduler 的周日提醒和周一个人反馈只负责通知，不会触发采集或 Codex。Harness 每次先通过容器或宿主机采集，再按输入指纹决定是否调用模型。
 
-cron 直接调脚本示例：
+如只需要采集而不生成 AI 评价，仍可单独调用：
 
 ```bash
 0 9 * * 4 docker exec weekly-report python3 /app/scripts/run_weekly.py --week previous

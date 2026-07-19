@@ -2,9 +2,9 @@
 
 ## 目标
 
-服务器不再依赖人工粘贴长提示词。Linux cron 定期调用 `scripts/run_codex_evaluation.sh`：每次先刷新上一业务周数据，再比较分析包、提交 CSV、负责人附件、Skill 和提示词的 SHA-256 指纹。只有输入变化、正式报告缺失或报告校验失败时才调用 Codex。
+服务器不再依赖人工粘贴长提示词。Linux cron 定期调用 `scripts/run_codex_evaluation.sh --scheduled-window`：周日刷新当前 ISO 周，周一和周二继续刷新同一目标周，再比较分析包、提交 CSV、负责人附件、Skill 和提示词的 SHA-256 指纹。只有输入变化、正式报告缺失或报告校验失败时才调用 Codex。
 
-周一至周三的补交会改变指纹并触发完整重评；周四 00:00 补交窗口关闭后再运行一次形成最终评价。完整重建比给旧 Markdown 打局部补丁更可靠，可以同步修正提交统计、员工评价、负责人履职和管理摘要。
+自动窗口从周日 18:10 开始，到周二 22:10 最后一次运行；期间的新提交会改变指纹并触发完整重评。周三 00:00 起计划模式安全跳过。完整重建比给旧 Markdown 打局部补丁更可靠，可以同步修正提交统计、员工评价、负责人履职和管理摘要。自动评价截止不改变周四至下一周周四前的提交归属规则；周二最后一次运行后出现的数据需使用显式周次人工重跑。
 
 官方 Codex CLI 使用 `codex exec` 执行非交互任务，支持临时会话、显式沙箱和结构化输出。CLI 本身不提供 Scheduled 管理界面，因此服务器使用 cron 触发仓库内 Harness：
 
@@ -109,7 +109,13 @@ chmod 700 scripts/run_codex_evaluation.sh
 ./scripts/run_codex_evaluation.sh --week-label 2026-W28
 ```
 
-不传 `--week-label` 时仍按上一业务周运行，适合 cron。指定周次会将采集参数、输入目录、提示词和正式报告统一锁定到该周，不会自动读取当前的 W29 或其他周次。
+不传周次选择参数时仍按上一业务周运行，适合人工执行。cron 必须传 `--scheduled-window`：周日 18:10 后选择当前 ISO 周，周一和周二选择上一 ISO 周，两者实际指向同一个业务周；其他时段返回 `SKIPPED: reason=OUTSIDE_SCHEDULED_WINDOW`。指定 `--week-label` 会将采集参数、输入目录、提示词和正式报告统一锁定到该周；它与 `--scheduled-window` 不能同时使用。
+
+可先在计划窗口内验证周次选择和采集，但不调用模型：
+
+```bash
+./scripts/run_codex_evaluation.sh --scheduled-window --dry-run
+```
 
 正常输出只包含周次、应交/已交/未交人数、附件数量和状态，不包含姓名、userid、正文或模型原始输出。
 
@@ -120,15 +126,16 @@ chmod 700 scripts/run_codex_evaluation.sh
 ```cron
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
+CRON_TZ=Asia/Shanghai
 
-# 周一至周三 08:17-22:17 每两小时刷新；没有变化时只采集并跳过 Codex。
-17 8-22/2 * * 1-3 cd /data2/person_path/yzzhang/weekly-report && ./scripts/run_codex_evaluation.sh >> logs/codex-evaluation.log 2>&1
+# 周日 18:10、20:10、22:10 刷新当前 ISO 周。
+10 18-22/2 * * 0 cd /data2/person_path/yzzhang/weekly-report && ./scripts/run_codex_evaluation.sh --scheduled-window >> logs/codex-evaluation.log 2>&1
 
-# 周四补交窗口关闭后生成最终评价。
-17 9 * * 4 cd /data2/person_path/yzzhang/weekly-report && ./scripts/run_codex_evaluation.sh >> logs/codex-evaluation.log 2>&1
+# 周一和周二从 00:10 到 22:10 每两小时刷新同一目标周；周三不再运行。
+10 */2 * * 1-2 cd /data2/person_path/yzzhang/weekly-report && ./scripts/run_codex_evaluation.sh --scheduled-window >> logs/codex-evaluation.log 2>&1
 ```
 
-先观察至少一个完整周，再根据提交习惯降低频率。脚本自带原子锁；并发 cron 会返回 `RUN_ALREADY_ACTIVE`，不会同时运行两个 Codex。
+安装前用 `timedatectl` 确认服务器或 cron 支持的任务时区为 `Asia/Shanghai`。先观察至少一个完整周，再根据提交习惯降低频率。脚本自带原子锁；并发 cron 会返回 `RUN_ALREADY_ACTIVE`，不会同时运行两个 Codex。
 
 ## 状态与校验
 

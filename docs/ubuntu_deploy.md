@@ -74,7 +74,7 @@ docker compose up -d --build
 
 ## 上一业务周运行
 
-不加参数，默认分析上一业务周；周一结果为暂定，周四补交截止后应重新运行形成最终结果：
+不加参数，默认分析上一业务周；如需纳入自动窗口结束后的新数据，应显式指定周次重新运行：
 
 ```bash
 cd /data2/person_path/yzzhang/weekly-report
@@ -83,7 +83,7 @@ python3 scripts/run_weekly.py
 
 ## Codex 提示词
 
-日常评价推荐使用自动 Harness，见 `docs/server_codex_automation.md`。它会在周一至周三检测补交变化，仅在输入变化时重新生成完整评价，并在周四形成最终版本。以下提示词仅作人工回退。
+日常评价推荐使用自动 Harness，见 `docs/server_codex_automation.md`。它从周日 18:10 起采集当前 ISO 周，并在周一、周二每两小时刷新同一目标周，仅在输入变化时重新生成完整评价。以下提示词仅作人工回退。
 
 ```text
 Use $weekly-report-assistant in /data2/person_path/yzzhang/weekly-report.
@@ -95,7 +95,7 @@ Use $weekly-report-assistant in /data2/person_path/yzzhang/weekly-report.
 
 ## Cron 示例
 
-每周四 09:00 在补交截止后自动拉取上一业务周最终数据：
+如果不启用 Codex 自动评价，可用独立 cron 定期拉取数据；以下周四示例只采集，不会生成 AI 评价：
 
 ```bash
 0 9 * * 4 cd /data2/person_path/yzzhang/weekly-report && python3 scripts/run_weekly.py >> logs/weekly.log 2>&1

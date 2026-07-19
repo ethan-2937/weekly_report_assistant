@@ -5,6 +5,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 
@@ -27,6 +28,7 @@ from codex_employee_feedback import (  # noqa: E402
     validate_employee_feedback_artifact,
 )
 from codex_evaluation_workspace import isolated_evaluation_workspace  # noqa: E402
+from dingtalk_common import CN_TZ  # noqa: E402
 from run_codex_evaluation import (  # noqa: E402
     codex_command,
     collection_command,
@@ -34,10 +36,22 @@ from run_codex_evaluation import (  # noqa: E402
     persisted_text_digest,
     render_prompt,
     resolve_week_label,
+    scheduled_week_label,
 )
 
 
 class CodexEvaluationHarnessTests(unittest.TestCase):
+    def test_scheduled_window_targets_one_week_from_sunday_evening_through_tuesday(self) -> None:
+        self.assertIsNone(scheduled_week_label(datetime(2026, 7, 19, 18, 9, tzinfo=CN_TZ)))
+        self.assertEqual("2026-W29", scheduled_week_label(datetime(2026, 7, 19, 18, 10, tzinfo=CN_TZ)))
+        self.assertEqual("2026-W29", scheduled_week_label(datetime(2026, 7, 20, 0, 10, tzinfo=CN_TZ)))
+        self.assertEqual("2026-W29", scheduled_week_label(datetime(2026, 7, 21, 22, 10, tzinfo=CN_TZ)))
+        self.assertIsNone(scheduled_week_label(datetime(2026, 7, 22, 0, 0, tzinfo=CN_TZ)))
+
+    def test_scheduled_window_handles_iso_year_boundary(self) -> None:
+        self.assertEqual("2026-W53", scheduled_week_label(datetime(2027, 1, 3, 18, 10, tzinfo=CN_TZ)))
+        self.assertEqual("2026-W53", scheduled_week_label(datetime(2027, 1, 4, 0, 10, tzinfo=CN_TZ)))
+
     def test_explicit_week_label_resolves_and_builds_fixed_collection_range(self) -> None:
         self.assertEqual("2026-W28", resolve_week_label("2026-W28"))
         command = collection_command("host", "2026-W28")

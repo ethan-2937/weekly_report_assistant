@@ -44,6 +44,25 @@ def week_label(week: str = "previous") -> str:
     return f"{iso.year}-W{iso.week:02d}"
 
 
+def scheduled_week_label(now: datetime | None = None) -> str | None:
+    """Resolve the report week for the Sunday-through-Tuesday automation window."""
+    current = now or datetime.now(CN_TZ)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=CN_TZ)
+    current = current.astimezone(CN_TZ)
+    weekday = current.isoweekday()
+    if weekday == 7:
+        if (current.hour, current.minute) < (18, 10):
+            return None
+        start, _ = week_range("current", current)
+    elif weekday in (1, 2):
+        start, _ = week_range("previous", current)
+    else:
+        return None
+    iso = start.isocalendar()
+    return f"{iso.year}-W{iso.week:02d}"
+
+
 def resolve_week_label(value: str | None) -> str:
     if not value:
         return week_label("previous")
@@ -122,7 +141,13 @@ def main() -> int:
     parser.add_argument("--preflight", action="store_true", help="Check Codex CLI and installed Skill without reading report data.")
     parser.add_argument("--dry-run", action="store_true", help="Collect and fingerprint inputs without invoking Codex.")
     parser.add_argument("--force", action="store_true", help="Ignore the successful input digest and retry limit.")
-    parser.add_argument("--week-label", metavar="YYYY-Www", help="Explicit ISO week to collect and evaluate instead of the previous week.")
+    week_selection = parser.add_mutually_exclusive_group()
+    week_selection.add_argument("--week-label", metavar="YYYY-Www", help="Explicit ISO week to collect and evaluate instead of the previous week.")
+    week_selection.add_argument(
+        "--scheduled-window",
+        action="store_true",
+        help="Select the current week on Sunday evening and that same week on Monday or Tuesday.",
+    )
     args = parser.parse_args()
 
     configured = load_env()
@@ -136,13 +161,23 @@ def main() -> int:
     roster = None
     attempt = 0
     try:
-        label = resolve_week_label(args.week_label)
-        week_root = out_root / label
-        codex_bin = resolve_codex_bin(configured)
-        approval_mode = preflight(codex_bin, codex_environment)
         if args.preflight:
+            codex_bin = resolve_codex_bin(configured)
+            preflight(codex_bin, codex_environment)
             print("OK: Codex evaluation preflight passed.")
             return 0
+
+        if args.scheduled_window:
+            label = scheduled_week_label()
+            if label is None:
+                print("SKIPPED: reason=OUTSIDE_SCHEDULED_WINDOW")
+                return 0
+        else:
+            label = resolve_week_label(args.week_label)
+        week_root = out_root / label
+        state_path = week_root / "automation" / "evaluation_state.json"
+        codex_bin = resolve_codex_bin(configured)
+        approval_mode = preflight(codex_bin, codex_environment)
 
         with EvaluationLock(lock_path):
             mode = configured.get("WEEKLY_CODEX_COLLECTION_MODE", "host").strip().lower() or "host"
