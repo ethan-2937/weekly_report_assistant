@@ -34,6 +34,7 @@ from run_codex_evaluation import (  # noqa: E402
     collection_command,
     parse_codex_result,
     persisted_text_digest,
+    prepare_output_directories,
     render_prompt,
     resolve_week_label,
     scheduled_week_label,
@@ -51,6 +52,23 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
     def test_scheduled_window_handles_iso_year_boundary(self) -> None:
         self.assertEqual("2026-W53", scheduled_week_label(datetime(2027, 1, 3, 18, 10, tzinfo=CN_TZ)))
         self.assertEqual("2026-W53", scheduled_week_label(datetime(2027, 1, 4, 0, 10, tzinfo=CN_TZ)))
+
+    def test_output_directories_are_prepared_for_host_side_evaluation_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            week_root = Path(temp_dir) / "output" / "2026-W29"
+            prepare_output_directories(week_root)
+
+            self.assertTrue((week_root / "automation").is_dir())
+            self.assertTrue((week_root / "summary").is_dir())
+            self.assertEqual([], list(week_root.rglob(".write-check-*")))
+
+    def test_output_directory_permission_failures_use_a_safe_error_code(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            blocker = Path(temp_dir) / "output"
+            blocker.write_text("not a directory", encoding="utf-8")
+
+            with self.assertRaisesRegex(EvaluationHarnessError, "OUTPUT_WEEK_NOT_WRITABLE"):
+                prepare_output_directories(blocker / "2026-W29")
 
     def test_explicit_week_label_resolves_and_builds_fixed_collection_range(self) -> None:
         self.assertEqual("2026-W28", resolve_week_label("2026-W28"))
@@ -360,6 +378,14 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
                     with EvaluationLock(lock_path):
                         pass
             self.assertFalse(lock_path.exists())
+
+    def test_atomic_write_wraps_parent_creation_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            blocker = Path(temp_dir) / "not-a-directory"
+            blocker.write_text("fictional blocker", encoding="utf-8")
+
+            with self.assertRaisesRegex(EvaluationHarnessError, "ATOMIC_WRITE_FAILED"):
+                atomic_write_text(blocker / "state.json", "safe state")
 
     def _input_tree(self, project: Path) -> tuple[Path, Path, Path, Path]:
         week = project / "output" / "2026-W29"

@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -90,6 +91,19 @@ def collection_command(mode: str, label: str) -> list[str]:
     if mode == "host":
         return [sys.executable, str(ROOT / "scripts" / "run_weekly.py"), *week_args]
     raise EvaluationHarnessError("COLLECTION_MODE_INVALID")
+
+
+def prepare_output_directories(week_root: Path) -> None:
+    """Ensure host-side evaluation writes remain possible when collection runs in Docker."""
+    for directory in (week_root / "automation", week_root / "summary"):
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(dir=directory, prefix=".write-check-", delete=True):
+                pass
+        except OSError as exc:
+            raise EvaluationHarnessError("OUTPUT_WEEK_NOT_WRITABLE") from exc
+
+
 def render_prompt(label: str) -> str:
     try:
         template = PROMPT_PATH.read_text(encoding="utf-8")
@@ -161,9 +175,9 @@ def main() -> int:
     roster = None
     attempt = 0
     try:
+        codex_bin = resolve_codex_bin(configured)
+        approval_mode = preflight(codex_bin, codex_environment)
         if args.preflight:
-            codex_bin = resolve_codex_bin(configured)
-            preflight(codex_bin, codex_environment)
             print("OK: Codex evaluation preflight passed.")
             return 0
 
@@ -176,8 +190,7 @@ def main() -> int:
             label = resolve_week_label(args.week_label)
         week_root = out_root / label
         state_path = week_root / "automation" / "evaluation_state.json"
-        codex_bin = resolve_codex_bin(configured)
-        approval_mode = preflight(codex_bin, codex_environment)
+        prepare_output_directories(week_root)
 
         with EvaluationLock(lock_path):
             mode = configured.get("WEEKLY_CODEX_COLLECTION_MODE", "host").strip().lower() or "host"
@@ -249,7 +262,7 @@ def main() -> int:
             return 0
     except (EvaluationHarnessError, OSError, UnicodeError, ValueError) as exc:
         code = exc.code if isinstance(exc, EvaluationHarnessError) else "HARNESS_CONFIGURATION_INVALID"
-        if not args.preflight and week_root.exists():
+        if not args.preflight and label and week_root.exists():
             try:
                 previous = read_state(state_path)
                 safe_attempt = attempt or next_attempt(previous, digest) if digest else int(previous.get("attemptCount") or 0)

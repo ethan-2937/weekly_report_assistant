@@ -46,7 +46,7 @@ Harness 会根据 `codex exec --help` 自动选择审批参数：新 CLI 使用 
 2. `codex exec --help` 必须支持 `--ephemeral`、`--output-schema`、`--sandbox`、`--ignore-rules`，以及 `--ask-for-approval`、`--full-auto` 或 `-c/--config` 之一。
 3. 同步仓库 Skill 到 `~/.codex/skills/weekly-report-assistant`；Harness 会比较 `SKILL.md`，过期时拒绝运行。
 4. Docker 服务已启动；推荐让 Harness 通过容器完成钉钉采集，Codex 本身仍运行在宿主机。
-5. `output/`、`logs/` 和项目目录对运行用户可写，临时目录应有足够空间容纳当前周附件。
+5. `output/`、`logs/` 和项目目录对运行用户可写，临时目录应有足够空间容纳当前周附件。Docker 采集与宿主机 Codex 必须共享可写目录；Harness 会在采集前由宿主机预创建并探测目标周的 `automation/` 和 `summary/`。
 
 不要把 Codex 登录文件、`auth.json`、API key 或真实业务凭据复制进仓库。`codex exec` 默认复用当前用户已有登录；若必须使用 API key，只在 cron 的私有运行环境中提供 `CODEX_API_KEY`。
 
@@ -83,6 +83,15 @@ rm -rf ~/.codex/skills/weekly-report-assistant
 cp -a codex-skills/weekly-report-assistant ~/.codex/skills/weekly-report-assistant
 chmod 700 scripts/run_codex_evaluation.sh
 ```
+
+首次从旧版 Docker 采集升级时，如果既有 `output/` 或 `logs/` 由容器 root 创建，先把属主恢复为运行 cron 的当前用户；命令不读取或打印文件内容：
+
+```bash
+sudo chown -R "$(id -u):$(id -g)" output logs
+chmod -R u+rwX,go-rwx output logs
+```
+
+之后 Harness 会在 Docker 采集前预创建宿主机需要写入的目录。若仍不可写，会返回 `OUTPUT_WEEK_NOT_WRITABLE`，不会打印 Python 堆栈或覆盖上一份有效评价。
 
 只检查 CLI 和 Skill，不读取周报或调用钉钉：
 

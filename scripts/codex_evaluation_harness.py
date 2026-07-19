@@ -207,9 +207,9 @@ def sanitized_codex_environment(source: Mapping[str, str] | None = None) -> dict
 
 
 def atomic_write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
+        path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(
             "w",
             encoding="utf-8",
