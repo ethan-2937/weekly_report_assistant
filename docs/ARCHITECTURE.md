@@ -31,7 +31,7 @@ Codex evaluation Harness
 
 ## 运行边界
 
-- Python 负责外部采集、周次计算、提交归属窗口、人员匹配、免交名单过滤、负责人附件下载和生成确定性输入包；`submission_roster.py` 应用服务器私有免交配置，`submission_reminder.py` 只生成截至当前时刻的轻量候选快照，不写正式周报输出，`attachment_download.py` 通过钉钉 Drive 短期下载信息受控落盘，`leader_compliance.py` 生成履职证据，`project_details.py` 提取不拆分的项目明细和权限身份字段，Spring 过滤后对外提供八列，`weekly_outputs.py` 统一生成 CSV/Markdown。
+- Python 负责外部采集、周次计算、提交归属窗口、人员匹配、免交名单过滤、负责人附件下载和生成确定性输入包；采集将指定模板写入 `raw/reports.json` 供统计与评价，同时将指定模板和旧“周报”模板写入 `raw/all_reports.json` 供原文件导出，两者不能混用；`submission_roster.py` 应用服务器私有免交配置，`submission_reminder.py` 只生成截至当前时刻的轻量候选快照，不写正式周报输出，`attachment_download.py` 通过钉钉 Drive 短期下载信息受控落盘，`leader_compliance.py` 生成履职证据，`project_details.py` 提取不拆分的项目明细和权限身份字段，Spring 过滤后对外提供八列，`weekly_outputs.py` 统一生成 CSV/Markdown。
 - `run_codex_evaluation.py` 在宿主机编排上一业务周采集、输入指纹和状态；只有输入变化或正式报告无效时才调用非交互 Codex。Codex 运行在只含当前周授权快照的临时目录，模型结果经覆盖/隐私校验后由 Python 原子替换正式报告。
 - 同一次自动评价还生成私有 `employee_feedback.json`；Harness 要求反馈 userid 集合与已提交集合完全一致，并拒绝姓名、其他人员信息、secret 形态和超长正文。周一通知不解析 Markdown，也不再次调用 Codex。
 - Codex Skill 负责从授权输入生成管理评价，不负责身份认证或数据权限。
@@ -49,6 +49,8 @@ controller -> service -> service/impl -> mapper/file/database
 ```
 
 Controller 不得绕过服务层读取文件或数据库。权限过滤应尽量靠近业务返回边界，并覆盖列表、详情、Markdown 和 XLSX 下载；下载工作簿由服务层从授权行生成。
+
+原周报下载使用 `GET /api/files/{week}/original-reports/download`。服务先取得当前账号范围，再读取私有 `raw/all_reports.json`，将每条原始提交映射为权限行并保留重复记录，最后用流式 OOXML 生成两个工作表。缺少完整快照、身份字段、受支持模板或单元格超出 XLSX 限制时失败关闭；前端不提交正文或员工列表。
 
 单人周报原文使用 `GET /api/weeks/{week}/reports/{userid}`。Controller 只委托 `WeeklyReportSourceService`；服务先对提交状态应用当前账号范围，再按授权行的 `report_id`、稳定 `userid` 读取目标周原始文件。响应只包含单人的展示字段，不包含原始 JSON、附件或内部标识，并对单份预览大小设置上限。
 

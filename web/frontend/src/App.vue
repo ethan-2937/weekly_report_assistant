@@ -106,6 +106,7 @@
         :selected-week="selectedWeek"
         @select-week="selectWeek"
         @download="downloadCsv"
+        @download-original="downloadCsv(true)"
       />
 
       <SubmissionStatusView
@@ -1033,7 +1034,7 @@ async function pollJob() {
   jobBusy.value = false
 }
 
-async function downloadCsv() {
+async function downloadCsv(original = false) {
   if (!canViewReports.value) {
     ElMessage.error('当前账号没有下载周报数据的权限')
     return
@@ -1041,8 +1042,8 @@ async function downloadCsv() {
   if (!selectedWeek.value) return
   try {
     await downloadWorkbook(
-      `/api/files/${selectedWeek.value}/submission-status/download`,
-      `submission_status_${selectedWeek.value}.xlsx`
+      `/api/files/${selectedWeek.value}/${original ? 'original-reports' : 'submission-status'}/download`,
+      original ? `周报明细_${selectedWeek.value}.xlsx` : `submission_status_${selectedWeek.value}.xlsx`
     )
   } catch (error) {
     ElMessage.error(error.message)

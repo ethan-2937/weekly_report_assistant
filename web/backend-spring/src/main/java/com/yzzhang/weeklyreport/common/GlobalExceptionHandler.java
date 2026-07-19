@@ -16,6 +16,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "周次或文件不存在"));
     }
 
+    @ExceptionHandler(ExportUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleExportUnavailable(ExportUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", "原周报快照不完整，请重新采集该周次后再下载"));
+    }
+
     @ExceptionHandler({BizException.class, IllegalArgumentException.class})
     public ResponseEntity<Map<String, String>> handleBadRequest(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "请求参数无效"));

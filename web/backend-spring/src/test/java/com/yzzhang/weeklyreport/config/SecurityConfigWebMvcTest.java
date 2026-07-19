@@ -1,8 +1,10 @@
 package com.yzzhang.weeklyreport.config;
 
 import com.yzzhang.weeklyreport.common.ResourceNotFoundException;
+import com.yzzhang.weeklyreport.common.ExportUnavailableException;
 import com.yzzhang.weeklyreport.controller.JobController;
 import com.yzzhang.weeklyreport.controller.NotificationTestController;
+import com.yzzhang.weeklyreport.controller.OriginalReportFileController;
 import com.yzzhang.weeklyreport.controller.ProjectDetailController;
 import com.yzzhang.weeklyreport.controller.WeekController;
 import com.yzzhang.weeklyreport.security.AuthUserDetailsService;
@@ -10,6 +12,7 @@ import com.yzzhang.weeklyreport.security.JwtAuthenticationFilter;
 import com.yzzhang.weeklyreport.security.JwtTokenProvider;
 import com.yzzhang.weeklyreport.service.JobService;
 import com.yzzhang.weeklyreport.service.NotificationTestService;
+import com.yzzhang.weeklyreport.service.OriginalReportExportService;
 import com.yzzhang.weeklyreport.service.ProjectDetailService;
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
 import com.yzzhang.weeklyreport.service.WeeklyReportSourceService;
@@ -42,7 +45,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         WeekController.class,
         ProjectDetailController.class,
         JobController.class,
-        NotificationTestController.class
+        NotificationTestController.class,
+        OriginalReportFileController.class
     },
     excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class,
     excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = WebConfig.class)
@@ -66,6 +70,9 @@ class SecurityConfigWebMvcTest {
 
     @MockBean
     private NotificationTestService notificationTestService;
+
+    @MockBean
+    private OriginalReportExportService originalReportExportService;
 
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
@@ -113,6 +120,38 @@ class SecurityConfigWebMvcTest {
                     org.hamcrest.Matchers.containsString("fictional-token"),
                     org.hamcrest.Matchers.containsString("虚构周报正文")
                 )
+            )));
+    }
+
+    @Test
+    void unauthenticatedOriginalReportDownloadReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/files/2026-W29/original-reports/download"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error").value("请先登录"));
+    }
+
+    @Test
+    @WithMockUser(username = "test-no-scope-user", roles = "USER")
+    void originalReportDownloadPreservesServiceLayerScopeRejection() throws Exception {
+        when(originalReportExportService.exportXlsx("2026-W29")).thenThrow(
+            new AccessDeniedException("当前账号没有周报查看范围，请联系管理员配置权限范围")
+        );
+
+        mockMvc.perform(get("/api/files/2026-W29/original-reports/download"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.error").value("当前账号没有周报查看范围，请联系管理员配置权限范围"));
+    }
+
+    @Test
+    @WithMockUser(username = "test-scope-user", roles = "USER")
+    void incompleteOriginalReportSnapshotReturnsSafeConflict() throws Exception {
+        when(originalReportExportService.exportXlsx("2026-W29")).thenThrow(new ExportUnavailableException());
+
+        mockMvc.perform(get("/api/files/2026-W29/original-reports/download"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.error").value("原周报快照不完整，请重新采集该周次后再下载"))
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.containsString("虚构周报正文")
             )));
     }
 

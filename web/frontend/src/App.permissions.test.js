@@ -87,6 +87,26 @@ describe('application role menus and permission guards', () => {
     expect(wrapper.get('.project-details-view h1').text()).toBe('项目明细')
     expect(wrapper.text()).toContain('该周暂无可展示的项目明细')
   })
+
+  it('requests the original report workbook as a backend-generated blob', async () => {
+    const createObjectUrl = vi.fn(() => 'blob:fictional-original-report')
+    const revokeObjectUrl = vi.fn()
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectUrl })
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectUrl })
+    const wrapper = await mountAs({ roles: ['REPORT_ALL'], deptScopes: [] })
+
+    await wrapper.findAll('.download-button').find(item => item.text() === '下载原周报').trigger('click')
+    await flushPromises()
+
+    expect(auth.request).toHaveBeenCalledWith(
+      '/api/files/2026-W29/original-reports/download',
+      { responseType: 'blob' }
+    )
+    expect(createObjectUrl).toHaveBeenCalled()
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:fictional-original-report')
+    click.mockRestore()
+  })
 })
 
 async function mountAs(user) {

@@ -149,6 +149,21 @@
   color: var(--blue);
 }
 
+.overview-download-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.download-button--primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: white;
+}
+
+.download-button--primary:hover:not(:disabled) {
+  background: #1557b0;
+}
+
 .download-button:hover:not(:disabled) {
   border-color: var(--blue);
   background: #f3f7ff;
@@ -429,6 +444,12 @@
   }
 
   .download-button-hint {
+    width: 100%;
+  }
+
+  .overview-download-actions {
+    align-items: stretch;
+    flex-direction: column;
     width: 100%;
   }
 

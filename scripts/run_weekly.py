@@ -15,7 +15,7 @@ from dingtalk_common import (
     write_json,
 )
 from download_contacts import download_contacts
-from download_reports import download_reports
+from download_reports import download_report_sets
 from leader_overrides import LEADER_OVERRIDES_ENV, apply_leader_overrides
 from submission_roster import (
     EXEMPT_SUBMITTERS_ENV,
@@ -30,7 +30,6 @@ def main() -> int:
     add_week_args(parser)
     parser.add_argument("--skip-contacts", action="store_true", help="Use existing output/contacts/*.json files.")
     args = parser.parse_args()
-
     try:
         env = load_env()
         period_start, period_end, week_label = resolve_week_args(args)
@@ -47,9 +46,9 @@ def main() -> int:
             write_json(out_root / "contacts" / "users.json", users)
             write_json(out_root / "contacts" / "departments.json", departments)
         users = apply_leader_overrides(users, env.get(LEADER_OVERRIDES_ENV))
-        reports = download_reports(
+        reports, all_reports = download_report_sets(
             access_token=access_token,
-            template_name=template_name,
+            primary_template=template_name,
             start_ms=int(submit_start.timestamp() * 1000),
             end_ms=int(submit_end.timestamp() * 1000),
         )
@@ -58,6 +57,7 @@ def main() -> int:
         statistical_reports = filter_exempt_reports(reports, exemption_rules, exempt_userids)
         week_out = out_root / week_label
         write_json(week_out / "raw" / "reports.json", reports)
+        write_json(week_out / "raw" / "all_reports.json", all_reports)
         attachment_downloads = download_team_lead_attachments(access_token, expected_users, statistical_reports, week_out)
         period_text = f"{period_start.strftime('%Y-%m-%d')} 至 {period_end.strftime('%Y-%m-%d')}"
         submission_window_text = f"{submit_start.strftime('%Y-%m-%d')} 至 {submit_end.strftime('%Y-%m-%d')}"

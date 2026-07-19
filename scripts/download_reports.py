@@ -15,6 +15,8 @@ from dingtalk_common import (
     write_json,
 )
 
+LEGACY_REPORT_TEMPLATE = "周报"
+
 
 def download_reports(access_token: str, template_name: str, start_ms: int, end_ms: int) -> list[dict[str, Any]]:
     reports: list[dict[str, Any]] = []
@@ -36,6 +38,29 @@ def download_reports(access_token: str, template_name: str, start_ms: int, end_m
     return reports
 
 
+def download_report_sets(
+    access_token: str,
+    primary_template: str,
+    start_ms: int,
+    end_ms: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    primary_reports = download_reports(
+        access_token=access_token,
+        template_name=primary_template,
+        start_ms=start_ms,
+        end_ms=end_ms,
+    )
+    if not primary_template or primary_template == LEGACY_REPORT_TEMPLATE:
+        return primary_reports, primary_reports
+    legacy_reports = download_reports(
+        access_token=access_token,
+        template_name=LEGACY_REPORT_TEMPLATE,
+        start_ms=start_ms,
+        end_ms=end_ms,
+    )
+    return primary_reports, [*primary_reports, *legacy_reports]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Download DingTalk weekly reports.")
     add_week_args(parser)
@@ -47,19 +72,21 @@ def main() -> int:
         submit_start, submit_end = submission_window(period_start, period_end)
         access_token = get_access_token(env)
         template_name = env.get("DINGTALK_REPORT_TEMPLATE", "").strip()
-        reports = download_reports(
+        reports, all_reports = download_report_sets(
             access_token=access_token,
-            template_name=template_name,
+            primary_template=template_name,
             start_ms=int(submit_start.timestamp() * 1000),
             end_ms=int(submit_end.timestamp() * 1000),
         )
-        out_path = output_root(env) / week_label / "raw" / "reports.json"
+        raw_dir = output_root(env) / week_label / "raw"
+        out_path = raw_dir / "reports.json"
         write_json(out_path, reports)
+        write_json(raw_dir / "all_reports.json", all_reports)
     except DingTalkError as exc:
         print(f"FAILED: {exc}")
         return 1
 
-    print(f"OK: downloaded {len(reports)} reports for {week_label}.")
+    print(f"OK: downloaded {len(reports)} primary reports and {len(all_reports)} export reports for {week_label}.")
     print(f"Report period: {period_start.isoformat()} -> {period_end.isoformat()}")
     print(f"Submission window: {submit_start.isoformat()} -> {submit_end.isoformat()}")
     print(f"Output: {out_path}")

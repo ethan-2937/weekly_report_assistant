@@ -38,11 +38,18 @@
           </p>
           <p class="generated-at">数据生成时间 {{ formattedGeneratedAt }}</p>
         </div>
-        <BrowserDownloadHint class="download-button-hint">
-          <button class="download-button" type="button" :disabled="!selectedWeek" @click="emit('download')">
-            下载提交表
-          </button>
-        </BrowserDownloadHint>
+        <div class="overview-download-actions">
+          <BrowserDownloadHint class="download-button-hint">
+            <button class="download-button download-button--primary" type="button" :disabled="!selectedWeek" @click="emit('download-original')">
+              下载原周报
+            </button>
+          </BrowserDownloadHint>
+          <BrowserDownloadHint class="download-button-hint">
+            <button class="download-button" type="button" :disabled="!selectedWeek" @click="emit('download')">
+              下载提交表
+            </button>
+          </BrowserDownloadHint>
+        </div>
       </header>
 
       <section class="evaluation-rules" aria-labelledby="evaluation-rules-title">
@@ -162,7 +169,7 @@ const props = defineProps({
   selectedWeek: { type: String, default: '' }
 })
 
-const emit = defineEmits(['select-week', 'download'])
+const emit = defineEmits(['select-week', 'download', 'download-original'])
 
 const managementRules = [
   { title: '虚实盘', detail: '是否有可验证交付' },

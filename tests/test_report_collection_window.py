@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -27,7 +28,7 @@ class ReportCollectionWindowTests(unittest.TestCase):
                 patch.object(run_weekly, "load_env", return_value=env),
                 patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
                 patch.object(run_weekly, "download_contacts", return_value=([], [])),
-                patch.object(run_weekly, "download_reports", return_value=[]) as download,
+                patch.object(run_weekly, "download_report_sets", return_value=([], [])) as download,
                 redirect_stdout(io.StringIO()),
             ):
                 exit_code = run_weekly.main()
@@ -71,6 +72,66 @@ class ReportCollectionWindowTests(unittest.TestCase):
                 self._milliseconds("2026-07-16") - 1,
             )
 
+    def test_collection_keeps_legacy_reports_out_of_analysis_but_in_export_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env = self._env(temp_dir)
+            primary = {
+                "report_id": "primary-report-001",
+                "template_name": "虚构周报模板",
+                "creator_id": "test-user-001",
+                "creator_name": "示例员工甲",
+                "contents": [{"key": "本周完成成果", "value": "虚构主要模板交付"}],
+            }
+            legacy = {
+                "report_id": "legacy-report-001",
+                "template_name": "周报",
+                "creator_id": "test-user-002",
+                "creator_name": "示例员工乙",
+                "contents": [{"key": "本周进展", "value": "虚构旧模板正文"}],
+            }
+            users = [
+                {"userid": "test-user-001", "name": "示例员工甲"},
+                {"userid": "test-user-002", "name": "示例员工乙"},
+            ]
+            with (
+                patch.object(sys, "argv", ["run_weekly.py", "--start", "2026-07-06"]),
+                patch.object(run_weekly, "load_env", return_value=env),
+                patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
+                patch.object(run_weekly, "download_contacts", return_value=(users, [])),
+                patch.object(run_weekly, "download_report_sets", return_value=([primary], [primary, legacy])),
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(0, run_weekly.main())
+
+            week_root = Path(temp_dir) / "2026-W28"
+            primary_snapshot = json.loads((week_root / "raw" / "reports.json").read_text(encoding="utf-8"))
+            export_snapshot = json.loads((week_root / "raw" / "all_reports.json").read_text(encoding="utf-8"))
+            analysis = (week_root / "analysis" / "analysis_input.md").read_text(encoding="utf-8")
+            self.assertEqual([primary], primary_snapshot)
+            self.assertEqual([primary, legacy], export_snapshot)
+            self.assertIn("虚构主要模板交付", analysis)
+            self.assertNotIn("虚构旧模板正文", analysis)
+
+    def test_download_report_sets_queries_primary_and_legacy_templates(self) -> None:
+        primary = {"report_id": "primary-report-001"}
+        legacy = {"report_id": "legacy-report-001"}
+        with patch.object(
+            download_reports_module,
+            "download_reports",
+            side_effect=[[primary], [legacy]],
+        ) as download:
+            primary_reports, export_reports = download_reports_module.download_report_sets(
+                "fictional-access-token",
+                "虚构周报模板",
+                100,
+                200,
+            )
+
+        self.assertEqual([primary], primary_reports)
+        self.assertEqual([primary, legacy], export_reports)
+        self.assertEqual("虚构周报模板", download.call_args_list[0].kwargs["template_name"])
+        self.assertEqual("周报", download.call_args_list[1].kwargs["template_name"])
+
     def test_exempt_submitters_are_removed_from_all_statistical_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             env = self._env(temp_dir)
@@ -91,7 +152,7 @@ class ReportCollectionWindowTests(unittest.TestCase):
                 patch.object(run_weekly, "load_env", return_value=env),
                 patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
                 patch.object(run_weekly, "download_contacts", return_value=(users, [])),
-                patch.object(run_weekly, "download_reports", return_value=reports),
+                patch.object(run_weekly, "download_report_sets", return_value=(reports, reports)),
                 redirect_stdout(io.StringIO()),
             ):
                 exit_code = run_weekly.main()
@@ -149,7 +210,7 @@ class ReportCollectionWindowTests(unittest.TestCase):
                 patch.object(run_weekly, "load_env", return_value=env),
                 patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
                 patch.object(run_weekly, "download_contacts", return_value=(users, departments)),
-                patch.object(run_weekly, "download_reports", return_value=reports),
+                patch.object(run_weekly, "download_report_sets", return_value=(reports, reports)),
                 patch.object(
                     run_weekly,
                     "download_team_lead_attachments",
@@ -204,7 +265,7 @@ class ReportCollectionWindowTests(unittest.TestCase):
                 patch.object(run_weekly, "load_env", return_value=env),
                 patch.object(run_weekly, "get_access_token", return_value="fictional-access-token"),
                 patch.object(run_weekly, "download_contacts", return_value=(users, [])),
-                patch.object(run_weekly, "download_reports", return_value=[]),
+                patch.object(run_weekly, "download_report_sets", return_value=([], [])),
                 redirect_stdout(io.StringIO()),
             ):
                 exit_code = run_weekly.main()

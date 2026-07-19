@@ -37,6 +37,17 @@ describe('submission overview', () => {
     expect(hint.text()).toContain('Safari 16.4+')
     expect(hint.text()).toContain('联系开发人员')
   })
+
+  it('offers the original report workbook without replacing the submission export', async () => {
+    const wrapper = createWrapper()
+    const buttons = wrapper.findAll('.download-button')
+
+    expect(buttons.map(button => button.text())).toEqual(['下载原周报', '下载提交表'])
+    await buttons[0].trigger('click')
+    await buttons[1].trigger('click')
+    expect(wrapper.emitted('download-original')).toHaveLength(1)
+    expect(wrapper.emitted('download')).toHaveLength(1)
+  })
 })
 
 function createWrapper() {

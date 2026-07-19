@@ -97,6 +97,8 @@ curl http://127.0.0.1:22081/api/health
 curl http://127.0.0.1:22081/api/weeks
 ```
 
+提交概览中的“下载原周报”依赖新版采集生成的私有 `output/<周次>/raw/all_reports.json`。升级前已有周次需要按原业务周期重新采集一次，例如 W28 使用 `docker compose exec weekly-report python3 /app/scripts/run_weekly.py --start 2026-07-06 --end 2026-07-12`；缺少完整快照时接口会明确拒绝，不会下载缺人的文件。
+
 周日提醒预检只输出汇总人数，不发送消息或显示 userid：
 
 ```bash
