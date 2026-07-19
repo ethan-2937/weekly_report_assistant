@@ -139,6 +139,27 @@ class OriginalReportExportServiceImplTest {
     }
 
     @Test
+    void w28CanExportTheExistingPrimarySnapshotWithoutCompletenessDetection() throws Exception {
+        Path w28Primary = tempDir.resolve("output/2026-W28/raw/reports.json");
+        Files.createDirectories(w28Primary.getParent());
+        objectMapper.writeValue(w28Primary.toFile(), List.of(
+            report("new-001", "test-user-001", "示例员工甲", "虚构研发部", outcomesFields("W28已有正文"))
+        ));
+        when(weekFileMapper.allReportsPath("2026-W28")).thenReturn(
+            tempDir.resolve("output/2026-W28/raw/all_reports.json")
+        );
+        when(weekFileMapper.rawReportsPath("2026-W28")).thenReturn(w28Primary);
+
+        Path exported = service.exportXlsx("2026-W28");
+
+        try (Workbook workbook = new XSSFWorkbook(Files.newInputStream(exported))) {
+            assertThat(workbook.getSheet(OriginalReportExportServiceImpl.OUTCOMES_TEMPLATE).getLastRowNum()).isEqualTo(1);
+            assertThat(workbook.getSheet(OriginalReportExportServiceImpl.LEGACY_TEMPLATE).getLastRowNum()).isZero();
+            assertThat(workbookText(workbook)).contains("示例员工甲", "W28已有正文");
+        }
+    }
+
+    @Test
     void checksPermissionBeforeReadingThePrivateSnapshot() {
         when(permissionService.currentPermission()).thenThrow(new AccessDeniedException("没有周报范围"));
 

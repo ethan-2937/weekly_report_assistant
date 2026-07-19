@@ -50,7 +50,7 @@ controller -> service -> service/impl -> mapper/file/database
 
 Controller 不得绕过服务层读取文件或数据库。权限过滤应尽量靠近业务返回边界，并覆盖列表、详情、Markdown 和 XLSX 下载；下载工作簿由服务层从授权行生成。
 
-原周报下载使用 `GET /api/files/{week}/original-reports/download`。服务先取得当前账号范围，再读取私有 `raw/all_reports.json`，将每条原始提交映射为权限行并保留重复记录，最后用流式 OOXML 生成两个工作表。缺少完整快照、身份字段、受支持模板或单元格超出 XLSX 限制时失败关闭；前端不提交正文或员工列表。
+原周报下载使用 `GET /api/files/{week}/original-reports/download`。服务先取得当前账号范围，再读取私有 `raw/all_reports.json`，将每条原始提交映射为权限行并保留重复记录，最后用流式 OOXML 生成两个工作表。W28 是用户确认的历史例外：缺少 `all_reports.json` 时允许回退既有 `raw/reports.json`，不检查双模板采集完整性；其他周次缺少完整快照时失败关闭。身份字段、受支持模板或单元格超出 XLSX 限制仍统一失败关闭；前端不提交正文或员工列表。
 
 单人周报原文使用 `GET /api/weeks/{week}/reports/{userid}`。Controller 只委托 `WeeklyReportSourceService`；服务先对提交状态应用当前账号范围，再按授权行的 `report_id`、稳定 `userid` 读取目标周原始文件。响应只包含单人的展示字段，不包含原始 JSON、附件或内部标识，并对单份预览大小设置上限。
 

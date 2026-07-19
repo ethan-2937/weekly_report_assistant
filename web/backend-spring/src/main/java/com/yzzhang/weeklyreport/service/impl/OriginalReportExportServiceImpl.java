@@ -28,6 +28,7 @@ import java.util.Set;
 public class OriginalReportExportServiceImpl implements OriginalReportExportService {
     static final String OUTCOMES_TEMPLATE = "优智科技周报（Weekly Outcomes ）";
     static final String LEGACY_TEMPLATE = "周报";
+    private static final String LEGACY_SNAPSHOT_OPTIONAL_WEEK = "2026-W28";
     private static final long MAX_SOURCE_BYTES = 50L * 1024 * 1024;
     private static final int MAX_REPORTS = 5_000;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm")
@@ -53,7 +54,7 @@ public class OriginalReportExportServiceImpl implements OriginalReportExportServ
             throw new IllegalArgumentException("invalid week");
         }
         ReportPermissionService.ReportPermission permission = reportPermissionService.currentPermission();
-        Path source = weekFileMapper.allReportsPath(week);
+        Path source = exportSource(week);
         if (!Files.isRegularFile(source)) {
             throw new ExportUnavailableException();
         }
@@ -77,6 +78,14 @@ public class OriginalReportExportServiceImpl implements OriginalReportExportServ
             deleteQuietly(exported);
             throw new ExportUnavailableException();
         }
+    }
+
+    private Path exportSource(String week) {
+        Path complete = weekFileMapper.allReportsPath(week);
+        if (Files.isRegularFile(complete) || !LEGACY_SNAPSHOT_OPTIONAL_WEEK.equals(week)) {
+            return complete;
+        }
+        return weekFileMapper.rawReportsPath(week);
     }
 
     private List<OriginalReportRow> filterRows(
