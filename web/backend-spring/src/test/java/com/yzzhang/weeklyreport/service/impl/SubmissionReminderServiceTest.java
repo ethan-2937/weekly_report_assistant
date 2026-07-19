@@ -59,11 +59,15 @@ class SubmissionReminderServiceTest {
 
         service.runOnce();
 
+        ArgumentCaptor<String> employeeBody = ArgumentCaptor.forClass(String.class);
         verify(workNoticeClient).sendMarkdown(
             eq("周报提交提醒"),
-            anyString(),
+            employeeBody.capture(),
             eq(List.of("test-user-002"))
         );
+        assertThat(employeeBody.getValue())
+            .contains("如有其他疑问请联系张艺政")
+            .doesNotContain("补交说明", "周一至周三提交仍归入本业务周");
         ArgumentCaptor<String> adminBody = ArgumentCaptor.forClass(String.class);
         verify(workNoticeClient).sendMarkdown(
             eq("周报提醒自动检测：成功"),
