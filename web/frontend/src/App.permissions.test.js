@@ -51,11 +51,13 @@ describe('application role menus and permission guards', () => {
     await admin.findAll('.decor-nav button').find(item => item.text() === '运行状态').trigger('click')
     await flushPromises()
     expect(admin.find('.notification-test-panel').exists()).toBe(true)
+    expect(admin.find('.feedback-review-panel').exists()).toBe(true)
 
     const reportAll = await mountAs({ roles: ['REPORT_ALL'], deptScopes: [] })
     await reportAll.findAll('.decor-nav button').find(item => item.text() === '运行状态').trigger('click')
     await flushPromises()
     expect(reportAll.find('.notification-test-panel').exists()).toBe(false)
+    expect(reportAll.find('.feedback-review-panel').exists()).toBe(false)
   })
 
   it('allows scoped report viewing without job or admin controls', async () => {

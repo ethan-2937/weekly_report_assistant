@@ -5,7 +5,7 @@ import JobStatusView from './JobStatusView.vue'
 describe('job status notification tests', () => {
   it('shows two test actions only to administrators and emits explicit types', async () => {
     const wrapper = mount(JobStatusView, {
-      props: { isAdmin: true },
+      props: { isAdmin: true, apiClient: { request: async () => ({}) } },
       global: { stubs: elementStubs() }
     })
     const buttons = wrapper.findAll('.notification-test-actions button')
@@ -17,15 +17,17 @@ describe('job status notification tests', () => {
       ['SUNDAY_REMINDER'],
       ['MONDAY_EVALUATION']
     ])
+    expect(wrapper.find('.feedback-review-panel').exists()).toBe(true)
   })
 
   it('hides test actions from non-admin job operators', () => {
     const wrapper = mount(JobStatusView, {
-      props: { isAdmin: false },
+      props: { isAdmin: false, apiClient: { request: async () => ({}) } },
       global: { stubs: elementStubs() }
     })
 
     expect(wrapper.find('.notification-test-panel').exists()).toBe(false)
+    expect(wrapper.find('.feedback-review-panel').exists()).toBe(false)
   })
 })
 

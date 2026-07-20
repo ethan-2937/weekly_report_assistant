@@ -3,6 +3,7 @@ package com.yzzhang.weeklyreport.config;
 import com.yzzhang.weeklyreport.common.ResourceNotFoundException;
 import com.yzzhang.weeklyreport.common.ExportUnavailableException;
 import com.yzzhang.weeklyreport.controller.JobController;
+import com.yzzhang.weeklyreport.controller.EvaluationFeedbackPreviewController;
 import com.yzzhang.weeklyreport.controller.NotificationTestController;
 import com.yzzhang.weeklyreport.controller.OriginalReportFileController;
 import com.yzzhang.weeklyreport.controller.ProjectDetailController;
@@ -11,12 +12,15 @@ import com.yzzhang.weeklyreport.security.AuthUserDetailsService;
 import com.yzzhang.weeklyreport.security.JwtAuthenticationFilter;
 import com.yzzhang.weeklyreport.security.JwtTokenProvider;
 import com.yzzhang.weeklyreport.service.JobService;
+import com.yzzhang.weeklyreport.service.EvaluationFeedbackPreviewService;
 import com.yzzhang.weeklyreport.service.NotificationTestService;
 import com.yzzhang.weeklyreport.service.OriginalReportExportService;
 import com.yzzhang.weeklyreport.service.ProjectDetailService;
 import com.yzzhang.weeklyreport.service.WeeklyReportService;
 import com.yzzhang.weeklyreport.service.WeeklyReportSourceService;
+import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackPreviewException;
 import com.yzzhang.weeklyreport.vo.JobRecordVO;
+import com.yzzhang.weeklyreport.vo.EvaluationFeedbackPreviewVO;
 import com.yzzhang.weeklyreport.vo.NotificationTestResultVO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         WeekController.class,
         ProjectDetailController.class,
         JobController.class,
+        EvaluationFeedbackPreviewController.class,
         NotificationTestController.class,
         OriginalReportFileController.class
     },
@@ -67,6 +72,9 @@ class SecurityConfigWebMvcTest {
 
     @MockBean
     private JobService jobService;
+
+    @MockBean
+    private EvaluationFeedbackPreviewService evaluationFeedbackPreviewService;
 
     @MockBean
     private NotificationTestService notificationTestService;
@@ -189,6 +197,75 @@ class SecurityConfigWebMvcTest {
             .andExpect(content().string(org.hamcrest.Matchers.not(
                 org.hamcrest.Matchers.containsString("test-user-001")
             )));
+    }
+
+    @Test
+    void unauthenticatedFeedbackPreviewReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/admin/evaluation-feedback-previews/2026-W29"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error").value("请先登录"));
+    }
+
+    @Test
+    @WithMockUser(username = "test-report-all", roles = "REPORT_ALL")
+    void reportAllCannotReadFeedbackPreviews() throws Exception {
+        mockMvc.perform(get("/api/admin/evaluation-feedback-previews/2026-W29"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.error").value("没有访问权限"));
+    }
+
+    @Test
+    @WithMockUser(username = "test-admin", roles = "ADMIN")
+    void adminCanReadFeedbackPreviewWithoutInternalIdentity() throws Exception {
+        when(evaluationFeedbackPreviewService.getPreview("2026-W29")).thenReturn(
+            new EvaluationFeedbackPreviewVO(
+                "2026-W29",
+                "COMPLETE",
+                1,
+                1,
+                "2026-07-20T04:00:00Z",
+                true,
+                "DIGEST",
+                "",
+                List.of(new EvaluationFeedbackPreviewVO.NotificationVO(
+                    "示例员工甲",
+                    "虚构研发部",
+                    "工程师",
+                    "### 示例员工甲，您的 2026-W29 周报评价"
+                ))
+            )
+        );
+
+        mockMvc.perform(get("/api/admin/evaluation-feedback-previews/2026-W29"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notifications[0].name").value("示例员工甲"))
+            .andExpect(jsonPath("$.notifications[0].markdown").value(
+                "### 示例员工甲，您的 2026-W29 周报评价"
+            ))
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.containsString("test-user-001")
+            )));
+    }
+
+    @Test
+    @WithMockUser(username = "test-admin", roles = "ADMIN")
+    void feedbackPreviewFailuresReturnOnlySafeErrors() throws Exception {
+        when(evaluationFeedbackPreviewService.getPreview("invalid-week"))
+            .thenThrow(new IllegalArgumentException("fictional-token internal path"));
+        mockMvc.perform(get("/api/admin/evaluation-feedback-previews/invalid-week"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("请求参数无效"))
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.containsString("fictional-token")
+            )));
+
+        when(evaluationFeedbackPreviewService.getPreview("2026-W30"))
+            .thenThrow(new EvaluationFeedbackPreviewException(
+                EvaluationFeedbackPreviewException.Reason.NOT_COMPLETE
+            ));
+        mockMvc.perform(get("/api/admin/evaluation-feedback-previews/2026-W30"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.error").value("该周反馈通知尚未完整发送，暂无可复核内容"));
     }
 
     @Test

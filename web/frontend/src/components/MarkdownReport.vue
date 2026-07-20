@@ -127,9 +127,7 @@
               </div>
             </li>
           </ol>
-          <p v-else class="ai-ranking-empty">
-            {{ block.emptyText || (block.tone === 'red' ? '本周暂无 AI 红榜条目' : '本周暂无 AI 黑榜条目') }}
-          </p>
+          <p v-else class="ai-ranking-empty">{{ block.emptyText || (block.tone === 'red' ? '本周暂无 AI 红榜条目' : '本周暂无 AI 黑榜条目') }}</p>
           </div>
         </div>
 
@@ -243,7 +241,6 @@ function headingLabel(level) {
   if (level === 2) return 'SECTION'
   return 'DETAIL'
 }
-
 function isRankingOpen(rankingId) {
   return !collapsedRankings.value.has(rankingId)
 }

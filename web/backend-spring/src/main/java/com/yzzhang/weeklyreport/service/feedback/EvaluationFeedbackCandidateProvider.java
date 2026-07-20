@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,7 +64,8 @@ public class EvaluationFeedbackCandidateProvider {
 
         Path weekRoot = weekFileMapper.weekDir(weekLabel);
         JsonNode state = readJson(weekRoot.resolve("automation").resolve("evaluation_state.json"));
-        JsonNode artifact = readJson(weekRoot.resolve("automation").resolve("employee_feedback.json"));
+        Path artifactPath = weekRoot.resolve("automation").resolve("employee_feedback.json");
+        JsonNode artifact = readJson(artifactPath);
         int artifactVersion = validateArtifactEnvelope(
             weekLabel,
             state,
@@ -86,9 +88,22 @@ public class EvaluationFeedbackCandidateProvider {
             String improvement = text(item, "improvement").trim();
             String thanks = artifactVersion == 2 ? text(item, "thanks").trim() : LEGACY_THANKS;
             validateProse(praise, improvement, thanks, allNames, allUserIds);
-            candidates.add(new EmployeeFeedback(row.getUserid(), row.getName(), praise, improvement, thanks));
+            candidates.add(new EmployeeFeedback(
+                row.getUserid(),
+                row.getName(),
+                row.getDept(),
+                row.getTitle(),
+                praise,
+                improvement,
+                thanks
+            ));
         }
-        return new EvaluationFeedbackSnapshot(weekLabel, candidates);
+        return new EvaluationFeedbackSnapshot(
+            weekLabel,
+            candidates,
+            fileDigest(artifactPath),
+            lastModified(artifactPath)
+        );
     }
 
     private void validateSubmittedRows(List<SubmissionStatusPO> submitted) {
@@ -176,6 +191,14 @@ public class EvaluationFeedbackCandidateProvider {
             return HexFormat.of().formatHex(digest.digest());
         } catch (IOException | NoSuchAlgorithmException ex) {
             throw new EvaluationFeedbackException("正式评价摘要校验失败", ex);
+        }
+    }
+
+    private Instant lastModified(Path path) {
+        try {
+            return Files.getLastModifiedTime(path).toInstant();
+        } catch (IOException ex) {
+            throw new EvaluationFeedbackException("正式评价更新时间读取失败", ex);
         }
     }
 

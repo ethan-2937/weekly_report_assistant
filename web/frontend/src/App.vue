@@ -282,6 +282,7 @@
       <JobStatusView
         v-if="currentView === 'jobs' && canRunJobs"
         :latest-job="latestJob" :job-busy="jobBusy" :is-admin="isAdmin" :notification-test-busy="notificationTestBusy"
+        :api-client="weekClient" :selected-week="selectedWeek"
         @run-job="runJob" @refresh-job="loadJob"
         @test-notification="testNotification"
       />

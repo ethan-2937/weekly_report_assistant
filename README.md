@@ -124,6 +124,7 @@ Web 推荐使用 Java + Vue 实现：
 - 方案 B 数据权限已启用：`REPORT_ALL` 查看完整周报；`ADMIN` 只管理账号，不因角色自动读取完整周报，需通过 `sys_dept_scope` 获得部门、人员或 `userid` 范围。
 - `/api/weeks/**` 和 `/api/files/**` 在服务层按当前用户权限过滤提交概览、未交名单、AI 评价和 CSV 下载；`/api/jobs/**` 仍仅允许 `ADMIN` / `REPORT_ALL` 触发或查看采集任务。
 - `ADMIN` 登录后可以进入“用户管理”，新建账号、分配角色、启停账号、绑定钉钉 `userId/unionId`、重置密码，并配置部门/人员权限范围。
+- `ADMIN` 可在“运行状态”中按周加载已经完整发送的 Feedback 通知并逐人复核正文；该接口不会授予原始周报权限，也不会返回 userid、文件路径或私有反馈 JSON。
 - 钉钉登录由钉钉证明身份，本系统仍通过 `sys_user.ding_user_id` 或 `sys_user.ding_union_id` 判断是否允许进入系统。
 - 登录后右上角下拉框提供“提出 bug 或建议”，系统会自动附带账号、周次、页面信息，记录到 `logs/feedback-YYYY-MM.jsonl`，并按部署配置发送钉钉工作通知。
 

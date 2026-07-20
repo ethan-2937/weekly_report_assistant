@@ -53,7 +53,24 @@ public class EvaluationFeedbackRunStore {
     }
 
     public RunState state(String weekLabel, String phase, int eligibleCount, int sentCount) {
-        return new RunState(weekLabel, phase, eligibleCount, sentCount, Instant.now().toString());
+        return state(weekLabel, phase, eligibleCount, sentCount, null);
+    }
+
+    public RunState state(
+        String weekLabel,
+        String phase,
+        int eligibleCount,
+        int sentCount,
+        String feedbackDigest
+    ) {
+        return new RunState(
+            weekLabel,
+            phase,
+            eligibleCount,
+            sentCount,
+            Instant.now().toString(),
+            feedbackDigest
+        );
     }
 
     private Path statePath(String weekLabel) {
@@ -72,6 +89,17 @@ public class EvaluationFeedbackRunStore {
         String phase,
         int eligibleCount,
         int sentCount,
-        String updatedAt
-    ) {}
+        String updatedAt,
+        String feedbackDigest
+    ) {
+        public RunState(
+            String weekLabel,
+            String phase,
+            int eligibleCount,
+            int sentCount,
+            String updatedAt
+        ) {
+            this(weekLabel, phase, eligibleCount, sentCount, updatedAt, null);
+        }
+    }
 }

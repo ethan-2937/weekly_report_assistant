@@ -1,5 +1,6 @@
 package com.yzzhang.weeklyreport.common;
 
+import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackPreviewException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,6 +21,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleExportUnavailable(ExportUnavailableException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(Map.of("error", "原周报快照不完整，请重新采集该周次后再下载"));
+    }
+
+    @ExceptionHandler(EvaluationFeedbackPreviewException.class)
+    public ResponseEntity<Map<String, String>> handleFeedbackPreviewUnavailable(
+        EvaluationFeedbackPreviewException ex
+    ) {
+        String message = ex.reason() == EvaluationFeedbackPreviewException.Reason.NOT_COMPLETE
+            ? "该周反馈通知尚未完整发送，暂无可复核内容"
+            : "该周反馈通知暂时无法安全复核";
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", message));
     }
 
     @ExceptionHandler({BizException.class, IllegalArgumentException.class})

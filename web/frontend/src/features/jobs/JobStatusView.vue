@@ -45,15 +45,25 @@
         </el-button>
       </div>
     </section>
+
+    <FeedbackPreviewPanel
+      v-if="isAdmin"
+      :api-client="apiClient"
+      :selected-week="selectedWeek"
+    />
   </section>
 </template>
 
 <script setup>
+import FeedbackPreviewPanel from './FeedbackPreviewPanel.vue'
+
 defineProps({
   latestJob: { type: Object, default: () => ({}) },
   jobBusy: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },
-  notificationTestBusy: { type: String, default: '' }
+  notificationTestBusy: { type: String, default: '' },
+  apiClient: { type: Object, required: true },
+  selectedWeek: { type: String, default: '' }
 })
 
 const emit = defineEmits(['run-job', 'refresh-job', 'test-notification'])

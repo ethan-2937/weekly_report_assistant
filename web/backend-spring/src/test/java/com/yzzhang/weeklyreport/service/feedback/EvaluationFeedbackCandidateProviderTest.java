@@ -62,9 +62,13 @@ class EvaluationFeedbackCandidateProviderTest {
         EvaluationFeedbackSnapshot snapshot = provider.collect(WEEK);
 
         assertThat(snapshot.weekLabel()).isEqualTo(WEEK);
+        assertThat(snapshot.feedbackDigest()).hasSize(64);
+        assertThat(snapshot.feedbackUpdatedAt()).isAfter(java.time.Instant.EPOCH);
         assertThat(snapshot.employees()).singleElement().satisfies(item -> {
             assertThat(item.userId()).isEqualTo("test-user-001");
             assertThat(item.name()).isEqualTo("示例员工甲");
+            assertThat(item.department()).isEqualTo("虚构研发部");
+            assertThat(item.title()).isEqualTo("工程师");
             assertThat(item.praise()).contains("虚构交付物");
             assertThat(item.improvement()).contains("量化效果");
             assertThat(item.thanks()).contains("团队因您");
@@ -175,6 +179,8 @@ class EvaluationFeedbackCandidateProviderTest {
         row.setName(name);
         row.setUserid(userId);
         row.setStatus(status);
+        row.setDept("虚构研发部");
+        row.setTitle("工程师");
         return row;
     }
 

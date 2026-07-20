@@ -1,7 +1,7 @@
 package com.yzzhang.weeklyreport.service.impl;
 
-import com.yzzhang.weeklyreport.config.EvaluationFeedbackProperties;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackCandidateProvider;
+import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackMessageFormatter;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackRunStore;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackRunStore.RunState;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackSnapshot;
@@ -37,7 +37,7 @@ public class EvaluationFeedbackService {
     private final EvaluationFeedbackRunStore runStore;
     private final DingTalkWorkNoticeClient workNoticeClient;
     private final FeedbackRecipientResolver recipientResolver;
-    private final EvaluationFeedbackProperties properties;
+    private final EvaluationFeedbackMessageFormatter messageFormatter;
     private final Clock clock;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -47,14 +47,14 @@ public class EvaluationFeedbackService {
         EvaluationFeedbackRunStore runStore,
         DingTalkWorkNoticeClient workNoticeClient,
         FeedbackRecipientResolver recipientResolver,
-        EvaluationFeedbackProperties properties
+        EvaluationFeedbackMessageFormatter messageFormatter
     ) {
         this(
             candidateProvider,
             runStore,
             workNoticeClient,
             recipientResolver,
-            properties,
+            messageFormatter,
             Clock.system(CN_ZONE)
         );
     }
@@ -64,14 +64,14 @@ public class EvaluationFeedbackService {
         EvaluationFeedbackRunStore runStore,
         DingTalkWorkNoticeClient workNoticeClient,
         FeedbackRecipientResolver recipientResolver,
-        EvaluationFeedbackProperties properties,
+        EvaluationFeedbackMessageFormatter messageFormatter,
         Clock clock
     ) {
         this.candidateProvider = candidateProvider;
         this.runStore = runStore;
         this.workNoticeClient = workNoticeClient;
         this.recipientResolver = recipientResolver;
-        this.properties = properties;
+        this.messageFormatter = messageFormatter;
         this.clock = clock;
     }
 
@@ -112,29 +112,37 @@ public class EvaluationFeedbackService {
 
             EvaluationFeedbackSnapshot snapshot = candidateProvider.collect(weekLabel);
             int eligible = snapshot.employees().size();
+            String feedbackDigest = messageFormatter.digest(weekLabel, snapshot.employees());
 
             AtomicInteger sent = new AtomicInteger();
-            runStore.save(runStore.state(weekLabel, PHASE_EMPLOYEE_SENDING, eligible, 0));
+            runStore.save(runState(weekLabel, PHASE_EMPLOYEE_SENDING, eligible, 0, feedbackDigest));
             if (eligible > 0) {
                 List<PersonalNotice> notices = snapshot.employees().stream()
                     .map(employee -> new PersonalNotice(
                         "周报个人评价",
-                        employeeMessage(weekLabel, employee),
+                        messageFormatter.format(weekLabel, employee),
                         employee.userId()
                     ))
                     .toList();
                 try {
                     workNoticeClient.sendPersonalMarkdown(notices, delivered -> {
                         sent.set(delivered);
-                        runStore.save(runStore.state(
+                        runStore.save(runState(
                             weekLabel,
                             PHASE_EMPLOYEE_SENDING,
                             eligible,
-                            delivered
+                            delivered,
+                            feedbackDigest
                         ));
                     });
                 } catch (WorkNoticeException ex) {
-                    runStore.save(runStore.state(weekLabel, PHASE_UNKNOWN, eligible, sent.get()));
+                    runStore.save(runState(
+                        weekLabel,
+                        PHASE_UNKNOWN,
+                        eligible,
+                        sent.get(),
+                        feedbackDigest
+                    ));
                     administratorNotified = sendAdministratorFailure(
                         administrator,
                         weekLabel,
@@ -143,7 +151,13 @@ public class EvaluationFeedbackService {
                     return;
                 }
             }
-            RunState sentState = runStore.state(weekLabel, PHASE_EMPLOYEE_SENDING, eligible, sent.get());
+            RunState sentState = runState(
+                weekLabel,
+                PHASE_EMPLOYEE_SENDING,
+                eligible,
+                sent.get(),
+                feedbackDigest
+            );
             sendAdministratorSuccess(administrator, sentState);
             administratorNotified = true;
             runStore.save(withPhase(sentState, PHASE_COMPLETE));
@@ -172,33 +186,6 @@ public class EvaluationFeedbackService {
         }
         log.error("Evaluation feedback aborted: administrator recipient is unavailable.");
         return null;
-    }
-
-    private String employeeMessage(String weekLabel, EmployeeFeedback employee) {
-        return """
-            ### %s，您的 %s 周报评价
-
-            #### 做得好的地方
-
-            %s
-
-            #### 建议重点改进
-
-            %s
-
-            %s
-
-            ---
-
-            如有疑问请联系HR%s
-            """.formatted(
-                employee.name(),
-                weekLabel,
-                employee.praise(),
-                employee.improvement(),
-                employee.thanks(),
-                properties.getHrContactName().trim()
-            ).strip();
     }
 
     private void sendAdministratorSuccess(
@@ -242,7 +229,26 @@ public class EvaluationFeedbackService {
     }
 
     private RunState withPhase(RunState state, String phase) {
-        return runStore.state(state.weekLabel(), phase, state.eligibleCount(), state.sentCount());
+        return runState(
+            state.weekLabel(),
+            phase,
+            state.eligibleCount(),
+            state.sentCount(),
+            state.feedbackDigest()
+        );
+    }
+
+    private RunState runState(
+        String weekLabel,
+        String phase,
+        int eligibleCount,
+        int sentCount,
+        String feedbackDigest
+    ) {
+        if (feedbackDigest == null || feedbackDigest.isBlank()) {
+            return runStore.state(weekLabel, phase, eligibleCount, sentCount);
+        }
+        return runStore.state(weekLabel, phase, eligibleCount, sentCount, feedbackDigest);
     }
 
     private String previousWeekLabel() {

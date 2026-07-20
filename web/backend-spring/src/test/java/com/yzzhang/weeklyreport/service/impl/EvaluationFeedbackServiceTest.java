@@ -3,6 +3,7 @@ package com.yzzhang.weeklyreport.service.impl;
 import com.yzzhang.weeklyreport.config.EvaluationFeedbackProperties;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackCandidateProvider;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackException;
+import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackMessageFormatter;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackRunStore;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackRunStore.RunState;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackSnapshot;
@@ -26,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -58,6 +60,20 @@ class EvaluationFeedbackServiceTest {
                 invocation.getArgument(3),
                 "2026-07-20T04:00:00Z"
             ));
+        when(runStore.state(
+            anyString(),
+            anyString(),
+            org.mockito.ArgumentMatchers.anyInt(),
+            org.mockito.ArgumentMatchers.anyInt(),
+            anyString()
+        )).thenAnswer(invocation -> new RunState(
+            invocation.getArgument(0),
+            invocation.getArgument(1),
+            invocation.getArgument(2),
+            invocation.getArgument(3),
+            "2026-07-20T04:00:00Z",
+            invocation.getArgument(4)
+        ));
         org.mockito.Mockito.doAnswer(invocation -> {
             List<PersonalNotice> notices = invocation.getArgument(0);
             IntConsumer callback = invocation.getArgument(1);
@@ -72,7 +88,7 @@ class EvaluationFeedbackServiceTest {
             runStore,
             workNoticeClient,
             recipientResolver,
-            properties,
+            new EvaluationFeedbackMessageFormatter(properties),
             clock
         );
     }
@@ -111,7 +127,14 @@ class EvaluationFeedbackServiceTest {
             anyString(),
             eq(List.of("test-admin-001"))
         );
-        verify(runStore).save(new RunState("2026-W29", "COMPLETE", 1, 1, "2026-07-20T04:00:00Z"));
+        verify(runStore).save(argThat(state ->
+            "2026-W29".equals(state.weekLabel())
+                && "COMPLETE".equals(state.phase())
+                && state.eligibleCount() == 1
+                && state.sentCount() == 1
+                && state.feedbackDigest() != null
+                && state.feedbackDigest().length() == 64
+        ));
     }
 
     @Test
@@ -142,7 +165,14 @@ class EvaluationFeedbackServiceTest {
 
         service.runOnce();
 
-        verify(runStore).save(new RunState("2026-W29", "UNKNOWN", 1, 0, "2026-07-20T04:00:00Z"));
+        verify(runStore).save(argThat(state ->
+            "2026-W29".equals(state.weekLabel())
+                && "UNKNOWN".equals(state.phase())
+                && state.eligibleCount() == 1
+                && state.sentCount() == 0
+                && state.feedbackDigest() != null
+                && state.feedbackDigest().length() == 64
+        ));
         verify(workNoticeClient).sendMarkdown(
             eq("周报个人评价通知：失败"),
             anyString(),
@@ -171,6 +201,29 @@ class EvaluationFeedbackServiceTest {
             anyString(),
             eq(List.of("test-admin-001"))
         );
+    }
+
+    @Test
+    void recordsFeedbackDigestForFutureExactPreviewChecks() {
+        EvaluationFeedbackSnapshot snapshot = new EvaluationFeedbackSnapshot(
+            "2026-W29",
+            snapshot().employees(),
+            "fictional-feedback-digest",
+            Instant.parse("2026-07-20T03:59:00Z")
+        );
+        when(candidateProvider.collect("2026-W29")).thenReturn(snapshot);
+
+        service.runOnce();
+
+        ArgumentCaptor<RunState> states = ArgumentCaptor.forClass(RunState.class);
+        verify(runStore, times(3)).save(states.capture());
+        RunState completed = states.getAllValues().stream()
+            .filter(state -> "COMPLETE".equals(state.phase()))
+            .findFirst()
+            .orElseThrow();
+        assertThat(completed.feedbackDigest())
+            .hasSize(64)
+            .doesNotContain("test-user-001", "示例员工甲", "示例HR联系人");
     }
 
     private EvaluationFeedbackSnapshot snapshot() {
