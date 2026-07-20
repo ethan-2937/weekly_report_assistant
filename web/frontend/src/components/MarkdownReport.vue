@@ -195,7 +195,7 @@ const props = defineProps({
 const emit = defineEmits(['person-select'])
 
 const blocks = computed(() => prepareReportBlocks(parseMarkdown(props.content)))
-const sections = computed(() => buildSections(blocks.value, props.variant))
+const sections = computed(() => buildSections(blocks.value, props.variant, props.people))
 const openSections = ref(new Set())
 const collapsedRankings = ref(new Set())
 

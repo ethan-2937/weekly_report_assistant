@@ -1,3 +1,5 @@
+import { collectAiEvidence, collectPersonDetails } from './aiEvidence.js'
+
 export function prepareReportBlocks(parsedBlocks) {
   return parsedBlocks.map(normalizeReportBlock).filter(Boolean)
 }
@@ -40,7 +42,7 @@ function sanitizeDisplayText(value) {
     .trim()
 }
 
-export function buildSections(reportBlocks, variant) {
+export function buildSections(reportBlocks, variant, people = []) {
   if (variant !== 'report') {
     return [{ id: 'content', title: '', kicker: '', blocks: reportBlocks, collapsible: false, focus: false }]
   }
@@ -77,8 +79,8 @@ export function buildSections(reportBlocks, variant) {
     .sort((left, right) => focusRank(left.focusType) - focusRank(right.focusType))
   const focusBlocks = focusSections.flatMap(section => section.blocks)
   const personDetails = collectPersonDetails(grouped)
-  const redEvidence = collectAiEvidence(grouped, 'red', personDetails)
-  const blackEvidence = collectAiEvidence(grouped, 'black', personDetails)
+  const redEvidence = collectAiEvidence(grouped, 'red', personDetails, people)
+  const blackEvidence = collectAiEvidence(grouped, 'black', personDetails, people)
   const focusText = blocksText(focusBlocks)
 
   if (redEvidence.length && !/红榜|可复用|AI亮点/.test(focusText)) {
@@ -166,65 +168,6 @@ function createSection(index, title) {
 
 function isCollapsibleTitle(title) {
   return /员工(?:[四五]维)?评价|员工评价总表|团队负责人(?:履职)?(?:检查|评价)/.test(title)
-}
-
-function collectAiEvidence(sections, tone, personDetails = new Map()) {
-  const evidence = []
-  const matchesTone = tone === 'red'
-    ? text => /红榜|可复用|AI亮点/.test(text)
-    : text => /黑榜|未使用|无AI/.test(text)
-
-  for (const section of sections.filter(item => !item.focus)) {
-    for (const block of section.blocks) {
-      if (block.type !== 'table') continue
-      const aiColumn = block.headers.findIndex(header => /AI.*(?:红黑榜|使用|应用)/i.test(header))
-      if (aiColumn < 0) continue
-      const personColumn = block.headers.findIndex(header => /姓名|人员|员工|负责人/.test(header))
-      const departmentColumn = block.headers.findIndex(header => /部门|团队|管理团队/.test(header))
-      const titleColumn = block.headers.findIndex(header => /职务|职位|岗位|title/i.test(header))
-      for (const row of block.rows) {
-        const conclusion = row[aiColumn] || ''
-        if (!matchesTone(conclusion)) continue
-        const person = personColumn >= 0 ? row[personColumn] : ''
-        const department = departmentColumn >= 0 ? row[departmentColumn] : ''
-        const title = titleColumn >= 0 ? row[titleColumn] : ''
-        const profile = [department, title].filter(Boolean).join('｜')
-        const identity = person && profile ? `${person}（${profile}）` : person
-        const detail = person ? findPersonDetail(personDetails, person) : ''
-        const detailSuffix = detail && detail !== conclusion ? `；具体内容：${detail}` : ''
-        evidence.push(identity ? `${identity}：${conclusion}${detailSuffix}` : conclusion)
-      }
-    }
-  }
-  return [...new Set(evidence)]
-}
-
-function collectPersonDetails(sections) {
-  const details = new Map()
-  for (const section of sections.filter(item => !item.focus)) {
-    let person = ''
-    for (const block of section.blocks) {
-      if (block.type === 'heading' && block.level >= 3) {
-        person = `${block.text || ''}`.trim()
-        continue
-      }
-      if (!person) continue
-      const text = blocksText([block]).replace(/\s+/g, ' ').trim()
-      if (!text || !/AI|工具|场景|效果|模型|自动化|可复用|使用/.test(text)) continue
-      const previous = details.get(person) || ''
-      const merged = previous ? `${previous}；${text}` : text
-      details.set(person, merged.slice(0, 240))
-    }
-  }
-  return details
-}
-
-function findPersonDetail(details, person) {
-  const normalized = `${person}`.trim()
-  for (const [name, detail] of details.entries()) {
-    if (name === normalized || name.includes(normalized) || normalized.includes(name)) return detail
-  }
-  return ''
 }
 
 function replaceAiEvidence(blocks, tone, evidence) {

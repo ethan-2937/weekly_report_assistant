@@ -140,4 +140,41 @@ describe('Markdown report presentation', () => {
     expect(wrapper.findAll('.ai-ranking-person')).toHaveLength(2)
     expect(wrapper.findAll('.ai-ranking-row--detail')).toHaveLength(2)
   })
+
+  it('keeps people in weekly focus when employee evaluations use narrative blocks', () => {
+    const wrapper = mount(MarkdownReport, {
+      props: {
+        variant: 'report',
+        people: [
+          { name: '测试员工甲', userId: 'test-user-001', department: '虚构研发部', title: '工程师' },
+          { name: '测试员工乙', userId: 'test-user-002', department: '虚构市场部', title: '产品经理' }
+        ],
+        content: `# 管理评价
+
+## 需老板拍板/协调事项
+| 优先级 | 人员/团队 | 卡点 |
+| --- | --- | --- |
+| P2 | 虚构研发团队 | 需要统一接口标准 |
+
+## 员工五维评价
+### 测试员工甲
+- 虚实盘（本周成果）：完成接口脚本。
+- AI使用红黑榜：红榜：使用代码助手生成校验脚本，减少重复检查。
+
+### 测试员工乙
+- AI使用红黑榜：黑榜：仅写使用工具，未说明场景与效果。
+`
+      }
+    })
+
+    const focusText = wrapper.get('[aria-label="本周重点"]').text()
+    expect(focusText).toContain('虚构研发团队')
+    expect(focusText).toContain('测试员工甲')
+    expect(focusText).toContain('虚构研发部')
+    expect(focusText).toContain('工程师')
+    expect(focusText).toContain('测试员工乙')
+    expect(focusText).toContain('虚构市场部')
+    expect(focusText).toContain('产品经理')
+    expect(wrapper.findAll('.ai-ranking-person')).toHaveLength(2)
+  })
 })
