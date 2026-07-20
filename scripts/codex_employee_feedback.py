@@ -17,6 +17,8 @@ FORBIDDEN_FEEDBACK = (
     re.compile(r"(?i)\b(userid|unionid|fileid|spaceid)\b"),
     re.compile(r"(?i)(?:[A-Z]:\\|/app/|output/)"),
 )
+THANKS_MIN_LENGTH = 24
+THANKS_MAX_LENGTH = 220
 
 
 class RosterLike(Protocol):
@@ -25,19 +27,27 @@ class RosterLike(Protocol):
     submitted_userids: tuple[str, ...]
 
 
-def validate_employee_feedback(feedback: Any, roster: RosterLike) -> tuple[str, ...]:
+def validate_employee_feedback(
+    feedback: Any,
+    roster: RosterLike,
+    require_thanks: bool = True,
+) -> tuple[str, ...]:
     if not isinstance(feedback, (list, tuple)) or len(feedback) > 300:
         return ("EMPLOYEE_FEEDBACK_SCHEMA_INVALID",)
     errors: list[str] = []
     seen: set[str] = set()
     for item in feedback:
-        if not isinstance(item, dict) or set(item) != {"userid", "praise", "improvement"}:
+        expected_fields = {"userid", "praise", "improvement", "thanks"} if require_thanks else {
+            "userid", "praise", "improvement"
+        }
+        if not isinstance(item, dict) or set(item) != expected_fields:
             errors.append("EMPLOYEE_FEEDBACK_SCHEMA_INVALID")
             continue
         userid = item.get("userid")
         praise = item.get("praise")
         improvement = item.get("improvement")
-        if not all(isinstance(value, str) for value in (userid, praise, improvement)):
+        thanks = item.get("thanks", "")
+        if not all(isinstance(value, str) for value in (userid, praise, improvement, thanks)):
             errors.append("EMPLOYEE_FEEDBACK_SCHEMA_INVALID")
             continue
         if not userid or len(userid) > 128 or userid in seen:
@@ -45,7 +55,13 @@ def validate_employee_feedback(feedback: Any, roster: RosterLike) -> tuple[str, 
         seen.add(userid)
         if not 4 <= len(praise.strip()) <= 400 or not 4 <= len(improvement.strip()) <= 700:
             errors.append("EMPLOYEE_FEEDBACK_CONTENT_INVALID")
-        prose = f"{praise}\n{improvement}"
+        if require_thanks and (
+            not THANKS_MIN_LENGTH <= len(thanks.strip()) <= THANKS_MAX_LENGTH
+            or not thanks.strip().startswith("感谢您")
+            or "团队因您" not in thanks
+        ):
+            errors.append("EMPLOYEE_FEEDBACK_THANKS_INVALID")
+        prose = f"{praise}\n{improvement}\n{thanks}"
         if any(pattern.search(prose) for pattern in SENSITIVE_FEEDBACK):
             errors.append("EMPLOYEE_FEEDBACK_SECRET_EXPOSED")
         if any(pattern.search(prose) for pattern in FORBIDDEN_FEEDBACK):
@@ -77,10 +93,14 @@ def validate_employee_feedback_artifact(
     if not isinstance(payload, dict):
         return ("EMPLOYEE_FEEDBACK_ARTIFACT_INVALID",)
     if (
-        payload.get("version") != 1
+        payload.get("version") not in (1, 2)
         or payload.get("weekLabel") != week_label
         or payload.get("inputDigest") != input_digest
         or payload.get("reportDigest") != report_digest
     ):
         return ("EMPLOYEE_FEEDBACK_ARTIFACT_MISMATCH",)
-    return validate_employee_feedback(payload.get("feedback"), roster)
+    return validate_employee_feedback(
+        payload.get("feedback"),
+        roster,
+        require_thanks=payload.get("version") == 2,
+    )

@@ -107,7 +107,7 @@ docker compose exec weekly-report python3 /app/scripts/submission_reminder.py
 
 预检应在本周周四 00:00 之后执行。确认模板、应交人数、免交人数、反馈通知接收人和应用可见范围后，在根 `.env` 设置 `WEEKLY_SUBMISSION_REMINDER_ENABLED=true`，再执行 `docker compose up -d --build --force-recreate weekly-report`。正常任务在周日 18:00 执行，成功或失败都会向配置的反馈接收人发送汇总结果。
 
-周一个人评价通知同样默认关闭。它依赖当前版本 Skill 在同一次自动评价中生成的私有反馈清单，不会为每名员工单独调用 Codex。首次启用时，在根 `.env` 设置 `WEEKLY_EVALUATION_FEEDBACK_ENABLED=true`、周一 12:00 cron、上海时区和私有 HR 联系人；随后重新复制 Skill、执行一次 `./scripts/run_codex_evaluation.sh --force`，确认成功后再重建应用容器。完整配置和幂等说明见 `docs/docker_deploy.md`。
+周一个人评价通知同样默认关闭。它依赖当前版本 Skill 在同一次自动评价中生成表扬、改进和暖心感谢，不会为每名员工单独调用 Codex。首次启用或升级感谢语时，在根 `.env` 设置 `WEEKLY_EVALUATION_FEEDBACK_ENABLED=true`、周一 12:00 cron、上海时区和私有 HR 联系人；随后重新复制 Skill、显式对目标周执行一次 `./scripts/run_codex_evaluation.sh --week-label <YYYY-Www> --force`，确认成功后再重建应用容器。完整配置和幂等说明见 `docs/docker_deploy.md`。
 
 需要立即验证钉钉链路时，确保反馈接收人名称为张艺政且只配置一个对应 userid，使用 ADMIN 登录后进入“运行状态 → 自动通知试发”，分别发送周日提醒样例和周一评价样例。试发不读取真实周报、不写正式幂等状态；普通用户和 REPORT_ALL 账号无权操作。
 

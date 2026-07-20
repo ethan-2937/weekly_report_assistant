@@ -27,6 +27,8 @@ import java.util.regex.Pattern;
 @Component
 public class EvaluationFeedbackCandidateProvider {
     private static final int MAX_ARTIFACT_BYTES = 512 * 1024;
+    private static final String LEGACY_THANKS =
+        "感谢您认真完成本周工作记录。团队因您的每一份投入而更加完整，也更有力量。";
     private static final Pattern SECRET = Pattern.compile(
         "(?i)(access[_ -]?token\\s*[:=]\\s*\\S+|(?:appsecret|client[_ -]?secret|password|密码)\\s*[:=：]\\s*\\S+|bearer\\s+\\S+|eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{10,})"
     );
@@ -62,7 +64,12 @@ public class EvaluationFeedbackCandidateProvider {
         Path weekRoot = weekFileMapper.weekDir(weekLabel);
         JsonNode state = readJson(weekRoot.resolve("automation").resolve("evaluation_state.json"));
         JsonNode artifact = readJson(weekRoot.resolve("automation").resolve("employee_feedback.json"));
-        validateArtifactEnvelope(weekLabel, state, artifact, weekFileMapper.managerReportPath(weekLabel));
+        int artifactVersion = validateArtifactEnvelope(
+            weekLabel,
+            state,
+            artifact,
+            weekFileMapper.managerReportPath(weekLabel)
+        );
 
         Map<String, JsonNode> feedbackByUserId = feedbackByUserId(artifact.get("feedback"));
         Set<String> expectedIds = submitted.stream().map(SubmissionStatusPO::getUserid).collect(java.util.stream.Collectors.toSet());
@@ -77,8 +84,9 @@ public class EvaluationFeedbackCandidateProvider {
             JsonNode item = feedbackByUserId.get(row.getUserid());
             String praise = text(item, "praise").trim();
             String improvement = text(item, "improvement").trim();
-            validateProse(praise, improvement, allNames, allUserIds);
-            candidates.add(new EmployeeFeedback(row.getUserid(), row.getName(), praise, improvement));
+            String thanks = artifactVersion == 2 ? text(item, "thanks").trim() : LEGACY_THANKS;
+            validateProse(praise, improvement, thanks, allNames, allUserIds);
+            candidates.add(new EmployeeFeedback(row.getUserid(), row.getName(), praise, improvement, thanks));
         }
         return new EvaluationFeedbackSnapshot(weekLabel, candidates);
     }
@@ -103,18 +111,20 @@ public class EvaluationFeedbackCandidateProvider {
         }
     }
 
-    private void validateArtifactEnvelope(String week, JsonNode state, JsonNode artifact, Path reportPath) {
+    private int validateArtifactEnvelope(String week, JsonNode state, JsonNode artifact, Path reportPath) {
         String reportDigest = text(state, "reportDigest");
         String inputDigest = text(state, "inputDigest");
+        int artifactVersion = artifact.path("version").asInt(0);
         if (!"SUCCESS".equals(text(state, "status")) || !week.equals(text(state, "weekLabel"))
             || !hasText(reportDigest) || !hasText(inputDigest)
-            || artifact.path("version").asInt(0) != 1
+            || (artifactVersion != 1 && artifactVersion != 2)
             || !week.equals(text(artifact, "weekLabel"))
             || !reportDigest.equals(text(artifact, "reportDigest"))
             || !inputDigest.equals(text(artifact, "inputDigest"))
             || !reportDigest.equals(fileDigest(reportPath))) {
             throw new EvaluationFeedbackException("正式评价反馈校验失败");
         }
+        return artifactVersion;
     }
 
     private Map<String, JsonNode> feedbackByUserId(JsonNode feedback) {
@@ -134,14 +144,17 @@ public class EvaluationFeedbackCandidateProvider {
     private void validateProse(
         String praise,
         String improvement,
+        String thanks,
         List<String> names,
         List<String> userIds
     ) {
         if (praise.length() < 4 || praise.length() > 400
-            || improvement.length() < 4 || improvement.length() > 700) {
+            || improvement.length() < 4 || improvement.length() > 700
+            || thanks.length() < 24 || thanks.length() > 220
+            || !thanks.startsWith("感谢您") || !thanks.contains("团队因您")) {
             throw new EvaluationFeedbackException("评价反馈内容长度无效");
         }
-        String prose = praise + "\n" + improvement;
+        String prose = praise + "\n" + improvement + "\n" + thanks;
         if (SECRET.matcher(prose).find() || URL.matcher(prose).find() || INTERNAL.matcher(prose).find()
             || names.stream().anyMatch(prose::contains)
             || userIds.stream().filter(id -> id.length() >= 6).anyMatch(prose::contains)) {

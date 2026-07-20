@@ -14,6 +14,7 @@ public record EvaluationFeedbackSnapshot(
         String userId,
         String name,
         String praise,
-        String improvement
+        String improvement,
+        String thanks
     ) {}
 }

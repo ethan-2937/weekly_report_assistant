@@ -243,7 +243,7 @@ def main() -> int:
 
             report_digest = persisted_text_digest(markdown)
             feedback_payload = {
-                "version": 1,
+                "version": 2,
                 "weekLabel": label,
                 "inputDigest": digest,
                 "reportDigest": report_digest,

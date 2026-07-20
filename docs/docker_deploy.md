@@ -138,7 +138,7 @@ cp -a codex-skills/weekly-report-assistant "$HOME/.codex/skills/weekly-report-as
 docker compose up -d --build --force-recreate weekly-report
 ```
 
-每位已提交员工只收到本人的私人消息，先展示做得好的地方，再重点展示改进建议，并附配置的 HR 联系方式。管理员收到的成功或失败结果只含周次和人数。防重复状态写入 `output/<YYYY-Www>/notifications/monday-evaluation-feedback.json`；远程结果不确定时不会自动重发。
+每位已提交员工只收到本人的私人消息，先展示做得好的地方，再重点展示改进建议，然后用基于本人当周贡献的两句式感谢收束，最后附配置的 HR 联系方式。v1 旧反馈没有 `thanks` 时使用固定暖心感谢，不阻断既有通知。管理员收到的成功或失败结果只含周次和人数。防重复状态写入 `output/<YYYY-Www>/notifications/monday-evaluation-feedback.json`；远程结果不确定时不会自动重发。
 
 ### 上线前向单一接收人试发
 

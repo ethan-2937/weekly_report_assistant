@@ -57,7 +57,7 @@ class EvaluationFeedbackCandidateProviderTest {
             row("示例员工甲", "test-user-001", "已提交"),
             row("示例员工乙", "test-user-002", "未提交")
         ));
-        writeArtifacts(List.of(feedback("test-user-001")), digest(report));
+        writeArtifacts(2, List.of(feedback("test-user-001")), digest(report));
 
         EvaluationFeedbackSnapshot snapshot = provider.collect(WEEK);
 
@@ -67,7 +67,24 @@ class EvaluationFeedbackCandidateProviderTest {
             assertThat(item.name()).isEqualTo("示例员工甲");
             assertThat(item.praise()).contains("虚构交付物");
             assertThat(item.improvement()).contains("量化效果");
+            assertThat(item.thanks()).contains("团队因您");
         });
+    }
+
+    @Test
+    void keepsLegacyFeedbackDeliverableWithAWarmFallback() throws Exception {
+        when(submissionStatusMapper.selectByWeek(WEEK)).thenReturn(List.of(
+            row("示例员工甲", "test-user-001", "已提交")
+        ));
+        writeArtifacts(1, List.of(legacyFeedback("test-user-001")), digest(report));
+
+        EvaluationFeedbackSnapshot snapshot = provider.collect(WEEK);
+
+        assertThat(snapshot.employees()).singleElement().satisfies(item ->
+            assertThat(item.thanks())
+                .startsWith("感谢您")
+                .contains("团队因您")
+        );
     }
 
     @Test
@@ -75,7 +92,7 @@ class EvaluationFeedbackCandidateProviderTest {
         when(submissionStatusMapper.selectByWeek(WEEK)).thenReturn(List.of(
             row("示例员工甲", "test-user-001", "已提交")
         ));
-        writeArtifacts(List.of(feedback("test-user-002")), digest(report));
+        writeArtifacts(2, List.of(feedback("test-user-002")), digest(report));
 
         assertThatThrownBy(() -> provider.collect(WEEK))
             .isInstanceOf(EvaluationFeedbackException.class)
@@ -87,23 +104,38 @@ class EvaluationFeedbackCandidateProviderTest {
         when(submissionStatusMapper.selectByWeek(WEEK)).thenReturn(List.of(
             row("示例员工甲", "test-user-001", "已提交")
         ));
-        writeArtifacts(List.of(feedback("test-user-001")), "wrong-report-digest");
+        writeArtifacts(2, List.of(feedback("test-user-001")), "wrong-report-digest");
 
         assertThatThrownBy(() -> provider.collect(WEEK))
             .isInstanceOf(EvaluationFeedbackException.class)
             .hasMessage("正式评价反馈校验失败");
 
-        writeArtifacts(List.of(Map.of(
+        writeArtifacts(2, List.of(Map.of(
             "userid", "test-user-001",
             "praise", "示例员工甲形成了虚构交付物。",
-            "improvement", "建议补充量化效果和明确日期。"
+            "improvement", "建议补充量化效果和明确日期。",
+            "thanks", "感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。"
+        )), digest(report));
+        assertThatThrownBy(() -> provider.collect(WEEK))
+            .isInstanceOf(EvaluationFeedbackException.class)
+            .hasMessage("评价反馈包含不允许的内容");
+
+        writeArtifacts(2, List.of(Map.of(
+            "userid", "test-user-001",
+            "praise", "本周形成了明确的虚构交付物。",
+            "improvement", "建议补充量化效果和明确日期。",
+            "thanks", "感谢您本周通过形成明确交付物推动工作落地。团队因您和示例员工甲的投入而更有力量。"
         )), digest(report));
         assertThatThrownBy(() -> provider.collect(WEEK))
             .isInstanceOf(EvaluationFeedbackException.class)
             .hasMessage("评价反馈包含不允许的内容");
     }
 
-    private void writeArtifacts(List<Map<String, String>> feedback, String reportDigest) throws IOException {
+    private void writeArtifacts(
+        int version,
+        List<Map<String, String>> feedback,
+        String reportDigest
+    ) throws IOException {
         Path automation = weekRoot.resolve("automation");
         Files.createDirectories(automation);
         objectMapper.writeValue(automation.resolve("evaluation_state.json").toFile(), Map.of(
@@ -113,7 +145,7 @@ class EvaluationFeedbackCandidateProviderTest {
             "reportDigest", reportDigest
         ));
         objectMapper.writeValue(automation.resolve("employee_feedback.json").toFile(), Map.of(
-            "version", 1,
+            "version", version,
             "weekLabel", WEEK,
             "inputDigest", "fictional-input-digest",
             "reportDigest", reportDigest,
@@ -122,6 +154,15 @@ class EvaluationFeedbackCandidateProviderTest {
     }
 
     private Map<String, String> feedback(String userId) {
+        return Map.of(
+            "userid", userId,
+            "praise", "本周形成了明确的虚构交付物，证据较完整。",
+            "improvement", "建议补充量化效果，并为下周计划写明日期和产出。",
+            "thanks", "感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。"
+        );
+    }
+
+    private Map<String, String> legacyFeedback(String userId) {
         return Map.of(
             "userid", userId,
             "praise", "本周形成了明确的虚构交付物，证据较完整。",

@@ -126,6 +126,7 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
                     "userid": "test-user-001",
                     "praise": "本周形成了明确的虚构交付物，成果证据较完整。",
                     "improvement": "建议补充量化效果，并为下周计划写明日期和产出。",
+                    "thanks": "感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。",
                 }
             ]
 
@@ -148,6 +149,27 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
             self.assertIn(
                 "EMPLOYEE_FEEDBACK_FORBIDDEN_CONTENT",
                 validate_employee_feedback(link, roster),
+            )
+            cold = [dict(valid[0], thanks="感谢本周投入。")]
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_THANKS_INVALID",
+                validate_employee_feedback(cold, roster),
+            )
+            named_thanks = [dict(
+                valid[0],
+                thanks="感谢您本周通过形成明确交付物推动工作落地。团队因您和示例员工甲的投入而更有力量。",
+            )]
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_NAME_EXPOSED",
+                validate_employee_feedback(named_thanks, roster),
+            )
+            secret_thanks = [dict(
+                valid[0],
+                thanks="感谢您本周妥善处理 access_token=fictional-sensitive-token。团队因您的投入而更有保障。",
+            )]
+            self.assertIn(
+                "EMPLOYEE_FEEDBACK_SECRET_EXPOSED",
+                validate_employee_feedback(secret_thanks, roster),
             )
 
     def test_employee_feedback_artifact_must_match_week_and_report_digest(self) -> None:
@@ -185,6 +207,22 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
                 validate_employee_feedback_artifact(
                     artifact,
                     "2026-W28",
+                    roster,
+                    "input-digest",
+                    "report-digest",
+                ),
+            )
+
+            payload["version"] = 2
+            payload["feedback"][0]["thanks"] = (
+                "感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。"
+            )
+            artifact.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            self.assertEqual(
+                (),
+                validate_employee_feedback_artifact(
+                    artifact,
+                    "2026-W29",
                     roster,
                     "input-digest",
                     "report-digest",
@@ -342,7 +380,9 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
             f'"manager_report_markdown":{json.dumps(report, ensure_ascii=False)},'
             '"employee_feedback":[{"userid":"test-user-001",'
             '"praise":"形成了明确的虚构交付物。",'
-            '"improvement":"建议补充量化效果和明确日期。"}],"warnings":[]}'
+            '"improvement":"建议补充量化效果和明确日期。",'
+            '"thanks":"感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。"}],'
+            '"warnings":[]}'
         )
 
         parsed, feedback, warnings = parse_codex_result(stdout, "2026-W29")

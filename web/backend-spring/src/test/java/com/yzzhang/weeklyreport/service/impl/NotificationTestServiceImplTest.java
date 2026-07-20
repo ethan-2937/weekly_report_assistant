@@ -54,7 +54,8 @@ class NotificationTestServiceImplTest {
         verify(workNoticeClient).sendPersonalMarkdown(notices.capture(), any(IntConsumer.class));
         assertThat(notices.getValue()).hasSize(1);
         assertThat(notices.getValue().getFirst().userId()).isEqualTo("test-user-001");
-        assertThat(notices.getValue().getFirst().markdown()).contains("不包含真实周报评价");
+        assertThat(notices.getValue().getFirst().markdown())
+            .contains("不包含真实周报评价", "感谢您", "团队因您");
     }
 
     @Test

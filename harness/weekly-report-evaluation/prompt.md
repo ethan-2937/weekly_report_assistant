@@ -26,11 +26,13 @@ Evaluation requirements:
 Private employee feedback requirements:
 
 1. Populate `employee_feedback` for every and only roster row whose `提交状态` is `已提交`.
-2. Copy that row's exact `userid` into the private `employee_feedback` item. Never place userid in `manager_report_markdown`, `praise`, or `improvement`.
+2. Copy that row's exact `userid` into the private `employee_feedback` item. Never place userid in `manager_report_markdown`, `praise`, `improvement`, or `thanks`.
 3. `praise` should concisely recognize evidence-backed strengths from that employee's five-dimension evaluation.
 4. `improvement` is the emphasis: give specific, actionable improvements grounded in weak or incomplete dimensions. Do not invent work, metrics, dates, or role expectations.
-5. Do not include any employee name, another employee's information, raw weekly-report paragraph, secret, token, internal path, or attachment identifier in either feedback field. The delivery layer adds the recipient greeting and HR contact footer.
-6. This private list is generated in the same model call; do not make another model request or create messages for missing/exempt employees.
+5. `thanks` must be a warm, evidence-based two-sentence closing written directly to the employee. Start with `感谢您` and include a second sentence beginning with `团队因您`. Thank one concrete current-week contribution when evidence exists; prefer the report content over a generic role stereotype. Example tone only: `感谢您本周用扎实的代码推动交付落地。团队因您的专注与可靠而更加稳健，也更有力量。` Do not copy this example mechanically or force novelty when the evidence is unchanged.
+6. If no concrete contribution is supported, use exactly: `感谢您认真完成本周工作记录。团队因您的每一份投入而更加完整，也更有力量。`
+7. Do not include any employee name, another employee's information, customer or project identifiers, raw weekly-report paragraph, secret, token, internal path, or attachment identifier in any feedback prose. The delivery layer adds the recipient greeting and HR contact footer.
+8. This private list is generated in the same model call; do not make another model request or create messages for missing/exempt employees.
 
 The Markdown must contain `{{WEEK_LABEL}}` and these exact level-two headings, in this order:
 

@@ -96,6 +96,8 @@ public class NotificationTestServiceImpl implements NotificationTestService {
 
             正式内容将在评价文件通过覆盖、摘要和隐私校验后发送。
 
+            感谢您参与本次通知链路验证。团队因您的认真确认而更有保障，也更有信心。
+
             - **正式任务**：每周一 12:00（Asia/Shanghai）
             - **测试时间**：%s
             - **正式状态**：本次试发不读取评价文件，也不写正式通知状态

@@ -173,6 +173,6 @@ output/<YYYY-Www>/summary/manager_report.md
 output/<YYYY-Www>/automation/employee_feedback.json
 ```
 
-第二个文件是周一私人评价通知的受限输入，不进入 Web API；它与正式报告在同一次 Codex 调用中生成，并带输入和报告摘要供 Spring 再校验。更新本能力后必须重新复制 Skill，并对目标周重新运行一次评价；只有旧 `manager_report.md` 不足以发送员工通知。
+第二个文件是周一私人评价通知的受限输入，不进入 Web API；v2 为每人保存表扬、改进和两句式暖心感谢，并与正式报告在同一次 Codex 调用中生成。它带输入和报告摘要供 Spring 再校验；v1 文件由 Spring 使用固定暖心感谢兼容。更新本能力后必须重新复制 Skill，并对目标周重新运行一次评价，才能得到按当周贡献定制的感谢语；只有旧 `manager_report.md` 不足以发送员工通知。
 
 常见安全错误码包括 `CODEX_SKILL_OUTDATED`、`COLLECTION_FAILED`、`CODEX_EXEC_FAILED`、`CODEX_OUTPUT_BLOCKED`、`CODEX_OUTPUT_WRONG_WEEK`、`CODEX_OUTPUT_STATUS_INVALID`、`ROSTER_COVERAGE_INCOMPLETE`、`EMPLOYEE_FEEDBACK_COVERAGE_INVALID`、`EMPLOYEE_FEEDBACK_SECRET_EXPOSED`、`LEADER_COVERAGE_INCOMPLETE`、`USERID_EXPOSED` 和 `RUN_ALREADY_ACTIVE`。其中输出错误码只记录结构化状态，不打印模型输出、警告原文、员工姓名或钉钉响应。

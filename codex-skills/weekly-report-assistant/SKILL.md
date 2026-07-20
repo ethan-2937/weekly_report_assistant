@@ -73,7 +73,8 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
 8. Produce private employee feedback only when the invoking Harness explicitly requests it.
    - Generate one item for every and only submitted roster `userid`; never infer or copy feedback for missing or exempt employees.
    - Keep `praise` concise and evidence-based. Make `improvement` the emphasis, with specific actions derived from weak or incomplete evaluation dimensions.
-   - Do not include names, userid values, colleagues, raw report paragraphs, secrets, paths, or attachment identifiers inside the feedback prose. The delivery layer adds the greeting and configured HR contact footer.
+   - Add one warm, evidence-based `thanks` closing for each employee. It must start with `感谢您`, then use a second sentence beginning with `团队因您`; thank one concrete current-week contribution rather than relying on a role stereotype. If evidence is insufficient, use the approved generic thanks from the Harness prompt.
+   - Do not include names, userid values, colleagues, customer/project identifiers, raw report paragraphs, secrets, paths, or attachment identifiers inside the feedback prose. The delivery layer adds the greeting and configured HR contact footer.
    - This private structured output is not part of `manager_report.md`, is not a second model call, and must pass Harness coverage/privacy validation before notification code can consume it.
 
 ## DingTalk Auto-Pull Workflow

@@ -91,9 +91,20 @@ class EvaluationFeedbackServiceTest {
             assertThat(notice.userId()).isEqualTo("test-user-001");
         });
         assertThat(notices.getValue().get(0).markdown())
-            .contains("示例员工甲", "做得好的地方", "建议重点改进", "如有疑问请联系HR示例HR联系人")
+            .contains(
+                "示例员工甲",
+                "做得好的地方",
+                "建议重点改进",
+                "感谢您本周通过形成明确交付物推动工作落地",
+                "团队因您的认真投入而更加稳健",
+                "如有疑问请联系HR示例HR联系人"
+            )
             .satisfies(message -> assertThat(message.indexOf("做得好的地方"))
                 .isLessThan(message.indexOf("建议重点改进")))
+            .satisfies(message -> assertThat(message.indexOf("建议重点改进"))
+                .isLessThan(message.indexOf("感谢您")))
+            .satisfies(message -> assertThat(message.indexOf("感谢您"))
+                .isLessThan(message.indexOf("如有疑问请联系HR")))
             .doesNotContain("test-user-001");
         verify(workNoticeClient).sendMarkdown(
             eq("周报个人评价通知：成功"),
@@ -168,7 +179,8 @@ class EvaluationFeedbackServiceTest {
                 "test-user-001",
                 "示例员工甲",
                 "本周形成了明确的虚构交付物。",
-                "建议补充量化效果和明确日期。"
+                "建议补充量化效果和明确日期。",
+                "感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。"
             )
         ));
     }

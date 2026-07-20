@@ -23,7 +23,7 @@
 8. 后端权限决定可见数据，前端只负责呈现。
 9. 周一至周三补交的周报归入上一业务周；周四 00:00 起提交的周报归入新的业务周，归属窗口不得重叠。
 10. 每周日 18:00 的自动检查面向当前业务周，只是一条提交提醒而不是最终逾期结论；未交人员收到私人工作通知，配置的管理员无论任务成功或失败都收到不含人员明细的执行结果。
-11. 每周一 12:00 的个人评价通知面向上一完整业务周，只发送给已提交且私有反馈通过 Harness 校验的人员；消息先肯定证据充分的优点，再重点给出改进建议，并附服务器私有配置的 HR 联系方式。未提交、免交、评价未就绪或身份不确定时不得发送。
+11. 每周一 12:00 的个人评价通知面向上一完整业务周，只发送给已提交且私有反馈通过 Harness 校验的人员；消息先肯定证据充分的优点，再重点给出改进建议，随后用两句式暖心感谢收束并附服务器私有配置的 HR 联系方式。感谢语优先依据本人当周具体贡献，第二句使用“团队因您”表达团队价值；旧版反馈安全回退为通用感谢。未提交、免交、评价未就绪或身份不确定时不得发送。
 12. 管理员可向服务器配置的单一反馈接收人试发周日提醒和周一评价样例；试发不得读取真实候选或评价，不得写正式幂等状态，也不得提供任意 userid 输入。
 
 ## 输出契约
@@ -40,7 +40,7 @@ output/<YYYY-Www>/analysis/analysis_input.md
 output/<YYYY-Www>/summary/submission_check.md
 output/<YYYY-Www>/summary/manager_report.md
 output/<YYYY-Www>/automation/evaluation_state.json # 自动评价状态，仅含摘要和散列
-output/<YYYY-Www>/automation/employee_feedback.json # 私有个人反馈，含稳定 userid 和精简评价
+output/<YYYY-Www>/automation/employee_feedback.json # 私有个人反馈，含稳定 userid、精简评价和暖心感谢
 output/<YYYY-Www>/notifications/monday-evaluation-feedback.json # 评价通知幂等状态，不含人员明细
 ```
 

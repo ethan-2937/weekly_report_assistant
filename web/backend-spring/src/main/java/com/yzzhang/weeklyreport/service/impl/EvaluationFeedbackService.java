@@ -186,6 +186,8 @@ public class EvaluationFeedbackService {
 
             %s
 
+            %s
+
             ---
 
             如有疑问请联系HR%s
@@ -194,6 +196,7 @@ public class EvaluationFeedbackService {
                 weekLabel,
                 employee.praise(),
                 employee.improvement(),
+                employee.thanks(),
                 properties.getHrContactName().trim()
             ).strip();
     }

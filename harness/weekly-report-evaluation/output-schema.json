@@ -32,9 +32,14 @@
             "type": "string",
             "minLength": 4,
             "maxLength": 700
+          },
+          "thanks": {
+            "type": "string",
+            "minLength": 24,
+            "maxLength": 220
           }
         },
-        "required": ["userid", "praise", "improvement"],
+        "required": ["userid", "praise", "improvement", "thanks"],
         "additionalProperties": false
       },
       "maxItems": 300
