@@ -68,6 +68,7 @@ description: Summarize employee weekly reports, evaluate work effectiveness agai
    - Keep `需老板拍板/协调事项` as a separate top-level module, because leaders need to scan it quickly.
    - Include team-lead compliance table.
    - Include data-quality notes: missing roster, ambiguous names, API permission gaps, unreadable attachments.
+   - The manager-facing Markdown must not repeat literal internal field names for user, union, file, or space identifiers, even to say they were omitted. Use `内部稳定标识` or `附件标识` in human-readable explanations; keep the required private structured identity key outside the Markdown.
    - Do not expose secrets, access tokens, or raw sensitive data unnecessarily.
 
 8. Produce private employee feedback only when the invoking Harness explicitly requests it.

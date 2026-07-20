@@ -159,4 +159,6 @@ Every row from `团队负责人履职输入（确定性证据）` must appear in
 
 For the weekly-report web interface, save the final formal evaluation as `output/<YYYY-Www>/summary/manager_report.md`. Do not overwrite `analysis_input.md`; it is the raw analysis pack.
 
+Manager-facing Markdown must use `内部稳定标识` or `附件标识` instead of repeating literal internal field names for user, union, file, or space identifiers. This applies even to data-quality notes that merely say such values were omitted; the private structured feedback identity key remains outside the Markdown.
+
 When the automated Harness requests private employee feedback, return one concise `praise`, one actionable `improvement`, and one warm `thanks` for each submitted stable `userid`. The thanks must start with `感谢您`, use a second sentence beginning with `团队因您`, and remain grounded in that employee's current-week evidence. Keep these fields out of the manager Markdown and omit names, identifiers, colleagues, customer/project identifiers, raw paragraphs, secrets, paths, and attachment metadata from their prose.

@@ -22,6 +22,7 @@ Evaluation requirements:
    Use the separate `负责人下属映射（待上级确认）` table as deterministic evidence: explicit userid mappings take precedence; department mappings remain provisional. If a mapped non-exempt subordinate is missing, mark that leader's compliance conclusion `不合格（下属未提交）`.
 5. Keep conclusions concise and evidence-based. Do not invent metrics, duties, dates, role baselines, attachment content, risks, or AI usage.
 6. Do not expose userid, unionId, fileId, spaceId, local paths, tokens, credentials, raw API data, or full report bodies.
+7. `manager_report_markdown` must not contain the literal internal field-name spellings `userid`, `unionid`, `fileid`, or `spaceid` in any capitalization, even in data-quality explanations or statements that no value was exposed. When identity matching must be discussed, write `内部稳定标识`; when attachment identity must be discussed, write `附件标识`. These forbidden spellings are allowed only as instructions here and as the private structured `userid` key required by the output schema.
 
 Private employee feedback requirements:
 

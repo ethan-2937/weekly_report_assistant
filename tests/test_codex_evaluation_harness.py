@@ -84,6 +84,8 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
         self.assertNotIn("{{WEEK_LABEL}}", prompt)
         self.assertGreaterEqual(prompt.count("2026-W28"), 3)
         self.assertIn('top-level JSON `week_label` to exactly `2026-W28`', prompt)
+        self.assertIn("must not contain the literal internal field-name spellings", prompt)
+        self.assertIn("内部稳定标识", prompt)
 
     def test_input_digest_changes_for_new_reports_attachments_and_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -252,6 +254,17 @@ class CodexEvaluationHarnessTests(unittest.TestCase):
 
         self.assertIn("SECRET_SHAPE_EXPOSED", errors)
         self.assertNotIn("fictional-token-001234", " ".join(errors))
+
+    def test_validation_rejects_internal_identifier_labels_even_without_values(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            roster_path = Path(temp_dir) / "submission_status.csv"
+            self._write_roster(roster_path)
+            roster = load_roster_evidence(roster_path)
+            report = self._valid_report() + "\n数据质量说明：未展示 userid。\n"
+
+            errors = validate_manager_report(report, "2026-W29", roster)
+
+        self.assertIn("INTERNAL_IDENTIFIER_LABEL_EXPOSED", errors)
 
     def test_validation_rejects_reordered_required_sections(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
