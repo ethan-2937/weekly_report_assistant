@@ -156,6 +156,14 @@
   list-style: none;
 }
 
+.ai-ranking-empty {
+  margin: 0;
+  padding: 22px 24px;
+  color: #34404b;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
 .ai-ranking-list > li {
   display: grid;
   grid-template-columns: minmax(210px, 0.34fr) minmax(0, 1fr);

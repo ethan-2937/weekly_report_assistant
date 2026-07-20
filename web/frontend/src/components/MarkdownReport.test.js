@@ -177,4 +177,23 @@ describe('Markdown report presentation', () => {
     expect(focusText).toContain('产品经理')
     expect(wrapper.findAll('.ai-ranking-person')).toHaveLength(2)
   })
+
+  it('keeps the black-list card visible when a report has no black-list entries', () => {
+    const wrapper = mount(MarkdownReport, {
+      props: {
+        variant: 'report',
+        content: `# 管理评价
+
+## AI 红榜
+- 红榜：形成可复用的自动化方案`
+      }
+    })
+
+    const rankings = wrapper.get('[aria-label="本周重点"]').findAll('.report-block--ai-ranking')
+    expect(rankings).toHaveLength(2)
+    expect(rankings[0].text()).toContain('AI红榜')
+    expect(rankings[1].text()).toContain('AI黑榜')
+    expect(rankings[1].text()).toContain('本周暂无 AI 黑榜条目')
+    expect(rankings[1].findAll('.ai-ranking-list > li')).toHaveLength(0)
+  })
 })

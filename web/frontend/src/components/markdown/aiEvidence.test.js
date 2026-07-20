@@ -22,4 +22,20 @@ describe('AI evidence extraction', () => {
     expect(evidence.join(' ')).not.toContain('虚构研发一部')
     expect(evidence.join(' ')).not.toContain('虚构研发二部')
   })
+
+  it('recognizes improvement wording in an AI field as black-list evidence', () => {
+    const sections = [{
+      title: '员工四维评价',
+      focus: false,
+      blocks: [{
+        type: 'table',
+        headers: ['姓名', 'AI用得怎样（红黑榜）'],
+        rows: [['测试员工乙', '需改进：未说明工具、应用场景与使用效果']]
+      }]
+    }]
+
+    expect(collectAiEvidence(sections, 'black')).toEqual([
+      '测试员工乙：需改进：未说明工具、应用场景与使用效果'
+    ])
+  })
 })

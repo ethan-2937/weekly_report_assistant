@@ -1,12 +1,13 @@
 const AI_TEXT = /AI|人工智能|红榜|黑榜|可复用|未使用|无AI|工具|模型|场景|自动化|使用效果/i
 const EMPLOYEE_SECTION = /员工(?:[四五]维)?评价|员工评价总表|授权范围内员工评价|每人工作总结|效果评价|虚实盘/
+const AI_BLACK_TONE = /黑榜|未使用|无AI|不合格|需(?:改进|补充|明确)|建议(?:补充|明确)|未(?:说明|写明|体现|提供).*(?:工具|模型|场景|效果|产出)|(?:工具|模型|场景|效果|产出).*(?:缺少|不明|不清晰|不具体)/
 
 export function collectAiEvidence(sections, tone, personDetails = new Map(), people = []) {
   const evidence = []
   const coveredPeople = new Set()
   const matchesTone = tone === 'red'
     ? text => /红榜|可复用|AI亮点/.test(text)
-    : text => /黑榜|未使用|无AI/.test(text)
+    : text => AI_BLACK_TONE.test(text)
 
   for (const section of sections.filter(item => !item.focus)) {
     for (const block of section.blocks) {

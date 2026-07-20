@@ -104,7 +104,7 @@
             :id="`${block.id}-content`"
             class="ai-ranking-card__content"
           >
-          <ol class="ai-ranking-list">
+          <ol v-if="block.items.length" class="ai-ranking-list">
             <li
               v-for="(entry, itemIndex) in aiRankingEntries(block)"
               :key="itemIndex"
@@ -127,6 +127,9 @@
               </div>
             </li>
           </ol>
+          <p v-else class="ai-ranking-empty">
+            {{ block.emptyText || (block.tone === 'red' ? '本周暂无 AI 红榜条目' : '本周暂无 AI 黑榜条目') }}
+          </p>
           </div>
         </div>
 

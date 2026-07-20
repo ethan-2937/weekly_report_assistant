@@ -106,7 +106,7 @@ export function buildSections(reportBlocks, variant, people = []) {
   replaceAiEvidence(focusBlocks, 'red', redEvidence)
   replaceAiEvidence(focusBlocks, 'black', blackEvidence)
   if (!focusBlocks.length) return grouped
-  const composedFocusBlocks = composeAiRankings(focusBlocks)
+  const composedFocusBlocks = ensureAiRankingCards(composeAiRankings(focusBlocks))
 
   const firstFocusIndex = grouped.findIndex(section => section.focus)
   const remaining = grouped.filter(section => !section.focus)
@@ -123,6 +123,27 @@ export function buildSections(reportBlocks, variant, people = []) {
     focusType: 'focus'
   })
   return remaining
+}
+
+function ensureAiRankingCards(blocks) {
+  const result = [...blocks]
+  for (const tone of ['red', 'black']) {
+    if (result.some(block => block.type === 'ai-ranking' && block.tone === tone)) continue
+    result.push({
+      type: 'ai-ranking',
+      tone,
+      id: `ai-ranking-${tone}`,
+      text: tone === 'red' ? 'AI红榜' : 'AI黑榜',
+      items: [],
+      emptyText: tone === 'red' ? '本周暂无 AI 红榜条目' : '本周暂无 AI 黑榜条目'
+    })
+  }
+  return result.sort((left, right) => aiRankingOrder(left) - aiRankingOrder(right))
+}
+
+function aiRankingOrder(block) {
+  if (block.type !== 'ai-ranking') return 0
+  return block.tone === 'red' ? 1 : 2
 }
 
 function composeAiRankings(blocks) {
