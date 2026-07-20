@@ -196,4 +196,36 @@ describe('Markdown report presentation', () => {
     expect(rankings[1].text()).toContain('本周暂无 AI 黑榜条目')
     expect(rankings[1].findAll('.ai-ranking-list > li')).toHaveLength(0)
   })
+
+  it('does not mistake a combined red-black heading for an existing black-list card', () => {
+    const wrapper = mount(MarkdownReport, {
+      props: {
+        variant: 'report',
+        content: `# 管理评价
+
+## 本周重点
+### AI 使用红黑榜
+- 根据员工评价汇总红黑榜
+
+## 员工五维评价
+| 姓名 | 部门 | 职位 | AI使用红黑榜 |
+| --- | --- | --- | --- |
+| 测试员工甲 | 虚构研发部 | 工程师 | 红榜：工具、场景与效果完整 |
+| 测试员工乙 | 虚构产品部 | 产品经理 | 黑榜：仅写代码助手协助 |
+| 测试员工丙 | 虚构运维部 | 运维工程师 | 未使用：AI栏为横线 |
+| 测试员工丁 | 虚构测试部 | 测试工程师 | 黑榜：只列工具名称 |
+| 测试员工戊 | 虚构测试部 | 测试工程师 | 需改进：有测试场景，缺工具和效果 |
+| 测试员工己 | 虚构销售部 | 销售经理 | 未使用：明确填无 |`
+      }
+    })
+
+    const rankings = wrapper.get('[aria-label="本周重点"]').findAll('.report-block--ai-ranking')
+    const redRanking = rankings.find(block => block.text().includes('AI红榜'))
+    const blackRanking = rankings.find(block => block.text().includes('AI黑榜'))
+    expect(redRanking.text()).toContain('测试员工甲')
+    expect(blackRanking.text()).toContain('5 条')
+    expect(blackRanking.text()).toContain('测试员工乙')
+    expect(blackRanking.text()).toContain('测试员工己')
+    expect(blackRanking.text()).not.toContain('本周暂无 AI 黑榜条目')
+  })
 })

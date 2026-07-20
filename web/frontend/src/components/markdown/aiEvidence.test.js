@@ -23,19 +23,29 @@ describe('AI evidence extraction', () => {
     expect(evidence.join(' ')).not.toContain('虚构研发二部')
   })
 
-  it('recognizes improvement wording in an AI field as black-list evidence', () => {
+  it('recognizes current evaluation labels in an AI field as black-list evidence', () => {
     const sections = [{
       title: '员工四维评价',
       focus: false,
       blocks: [{
         type: 'table',
         headers: ['姓名', 'AI用得怎样（红黑榜）'],
-        rows: [['测试员工乙', '需改进：未说明工具、应用场景与使用效果']]
+        rows: [
+          ['测试员工甲', '黑榜：仅写代码助手协助'],
+          ['测试员工乙', '未使用：AI栏为横线'],
+          ['测试员工丙', '黑榜：只列工具名称'],
+          ['测试员工丁', '需改进：有测试场景，缺工具和效果'],
+          ['测试员工戊', '未使用：明确填无']
+        ]
       }]
     }]
 
     expect(collectAiEvidence(sections, 'black')).toEqual([
-      '测试员工乙：需改进：未说明工具、应用场景与使用效果'
+      '测试员工甲：黑榜：仅写代码助手协助',
+      '测试员工乙：未使用：AI栏为横线',
+      '测试员工丙：黑榜：只列工具名称',
+      '测试员工丁：需改进：有测试场景，缺工具和效果',
+      '测试员工戊：未使用：明确填无'
     ])
   })
 })

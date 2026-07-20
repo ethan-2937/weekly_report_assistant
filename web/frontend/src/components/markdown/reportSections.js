@@ -81,9 +81,8 @@ export function buildSections(reportBlocks, variant, people = []) {
   const personDetails = collectPersonDetails(grouped)
   const redEvidence = collectAiEvidence(grouped, 'red', personDetails, people)
   const blackEvidence = collectAiEvidence(grouped, 'black', personDetails, people)
-  const focusText = blocksText(focusBlocks)
 
-  if (redEvidence.length && !/红榜|可复用|AI亮点/.test(focusText)) {
+  if (redEvidence.length && !hasAiRankingHeading(focusBlocks, 'red')) {
     const firstBlackSection = focusSections.findIndex(section => section.focusType === 'black')
     const firstBlackBlock = firstBlackSection < 0
       ? focusBlocks.length
@@ -97,7 +96,7 @@ export function buildSections(reportBlocks, variant, people = []) {
       { type: 'list', items: redEvidence }
     )
   }
-  if (blackEvidence.length && !/黑榜|未使用|无AI/.test(blocksText(focusBlocks))) {
+  if (blackEvidence.length && !hasAiRankingHeading(focusBlocks, 'black')) {
     focusBlocks.push(
       { type: 'heading', level: 3, text: 'AI 黑榜' },
       { type: 'list', items: blackEvidence }
@@ -170,9 +169,15 @@ function composeAiRankings(blocks) {
 
 function aiHeadingTone(block) {
   if (block?.type !== 'heading') return ''
-  if (/红榜|AI亮点/.test(block.text || '')) return 'red'
-  if (/黑榜|未使用|无AI/.test(block.text || '')) return 'black'
+  const text = block.text || ''
+  if (/红黑榜/.test(text)) return ''
+  if (/红榜|AI亮点/.test(text)) return 'red'
+  if (/黑榜|未使用|无AI/.test(text)) return 'black'
   return ''
+}
+
+function hasAiRankingHeading(blocks, tone) {
+  return blocks.some(block => aiHeadingTone(block) === tone)
 }
 
 function createSection(index, title) {
@@ -193,10 +198,7 @@ function isCollapsibleTitle(title) {
 
 function replaceAiEvidence(blocks, tone, evidence) {
   if (!evidence.length) return
-  const headingPattern = tone === 'red'
-    ? /红榜|AI亮点/
-    : /黑榜|未使用|无AI/
-  const headingIndex = blocks.findIndex(block => block.type === 'heading' && headingPattern.test(block.text || ''))
+  const headingIndex = blocks.findIndex(block => aiHeadingTone(block) === tone)
   if (headingIndex < 0) return
   const nextHeadingIndex = blocks.findIndex((block, index) => index > headingIndex && block.type === 'heading')
   const contentIndex = blocks.findIndex((block, index) => (
@@ -209,10 +211,6 @@ function replaceAiEvidence(blocks, tone, evidence) {
     return
   }
   blocks[contentIndex] = { ...blocks[contentIndex], items: evidence }
-}
-
-function blocksText(blocks) {
-  return blocks.map(block => `${block.text || ''} ${(block.items || []).join(' ')} ${(block.rows || []).flat().join(' ')}`).join(' ')
 }
 
 function sectionFocusType(title) {
