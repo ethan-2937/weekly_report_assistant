@@ -109,6 +109,8 @@ class EvaluationFeedbackServiceTest {
         assertThat(notices.getValue().get(0).markdown())
             .contains(
                 "示例员工甲",
+                "周报模板符合度",
+                "87%",
                 "做得好的地方",
                 "建议重点改进",
                 "感谢您本周通过形成明确交付物推动工作落地",
@@ -117,6 +119,8 @@ class EvaluationFeedbackServiceTest {
             )
             .satisfies(message -> assertThat(message.indexOf("做得好的地方"))
                 .isLessThan(message.indexOf("建议重点改进")))
+            .satisfies(message -> assertThat(message.indexOf("周报模板符合度"))
+                .isLessThan(message.indexOf("做得好的地方")))
             .satisfies(message -> assertThat(message.indexOf("建议重点改进"))
                 .isLessThan(message.indexOf("感谢您")))
             .satisfies(message -> assertThat(message.indexOf("感谢您"))
@@ -226,15 +230,30 @@ class EvaluationFeedbackServiceTest {
             .doesNotContain("test-user-001", "示例员工甲", "示例HR联系人");
     }
 
+    @Test
+    void formatsZeroAndFullComplianceRatesWithoutTreatingZeroAsUnknown() {
+        EvaluationFeedbackProperties properties = new EvaluationFeedbackProperties();
+        properties.setHrContactName("示例HR联系人");
+        EvaluationFeedbackMessageFormatter formatter = new EvaluationFeedbackMessageFormatter(properties);
+
+        assertThat(formatter.format("2026-W29", feedbackWithRate(0))).contains("0%");
+        assertThat(formatter.format("2026-W29", feedbackWithRate(100))).contains("100%");
+    }
+
     private EvaluationFeedbackSnapshot snapshot() {
         return new EvaluationFeedbackSnapshot("2026-W29", List.of(
-            new EmployeeFeedback(
-                "test-user-001",
-                "示例员工甲",
-                "本周形成了明确的虚构交付物。",
-                "建议补充量化效果和明确日期。",
-                "感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。"
-            )
+            feedbackWithRate(87)
         ));
+    }
+
+    private EmployeeFeedback feedbackWithRate(int rate) {
+        return new EmployeeFeedback(
+            "test-user-001",
+            "示例员工甲",
+            rate,
+            "本周形成了明确的虚构交付物。",
+            "建议补充量化效果和明确日期。",
+            "感谢您本周通过形成明确交付物推动工作落地。团队因您的认真投入而更加稳健，也更有力量。"
+        );
     }
 }

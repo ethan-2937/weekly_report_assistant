@@ -65,6 +65,7 @@ class EvaluationFeedbackPreviewServiceImplTest {
             assertThat(notification.title()).isEqualTo("工程师");
             assertThat(notification.markdown())
                 .contains("### 示例员工甲，您的 2026-W29 周报评价")
+                .contains("周报模板符合度", "63%")
                 .contains("感谢您本周形成了明确交付物")
                 .contains("如有疑问请联系HR示例HR联系人")
                 .doesNotContain("test-user-001");
@@ -142,6 +143,7 @@ class EvaluationFeedbackPreviewServiceImplTest {
                 "示例员工甲",
                 "虚构研发部",
                 "工程师",
+                63,
                 "本周形成了明确的虚构交付物。",
                 "建议补充量化效果和明确日期。",
                 "感谢您本周形成了明确交付物。团队因您的认真投入而更加稳健，也更有力量。"

@@ -3,6 +3,7 @@ package com.yzzhang.weeklyreport;
 import com.yzzhang.weeklyreport.config.WeeklyReportProperties;
 import com.yzzhang.weeklyreport.config.SubmissionReminderProperties;
 import com.yzzhang.weeklyreport.config.EvaluationFeedbackProperties;
+import com.yzzhang.weeklyreport.config.FeedbackPersonalMessageProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,7 +14,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties({
     WeeklyReportProperties.class,
     SubmissionReminderProperties.class,
-    EvaluationFeedbackProperties.class
+    EvaluationFeedbackProperties.class,
+    FeedbackPersonalMessageProperties.class
 })
 public class WeeklyReportApplication {
     public static void main(String[] args) {

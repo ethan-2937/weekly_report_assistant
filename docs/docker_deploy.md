@@ -120,6 +120,15 @@ docker compose up -d --build --force-recreate weekly-report
 3. 钉钉应用可见范围覆盖全部已提交人员，现有 `WEEKLY_FEEDBACK_DINGTALK_*` 工作通知凭据有效。
 4. HR 联系人只写入服务器未跟踪的根 `.env`，不要写回源码或 `.env.example`。
 
+默认 `WEEKLY_FEEDBACK_PERSONAL_MESSAGE_MODE=WORK_NOTICE`。如需让周一 Feedback 进入员工聊天列表，必须先在钉钉开放平台为企业内部应用配置机器人并申请“企业内机器人发送消息权限”，再让每位员工主动与机器人发起一次单聊以建立有效会话。完成后先只对配置的单一测试接收人验证“测试周一评价”，确认无误再设置：
+
+```text
+WEEKLY_FEEDBACK_PERSONAL_MESSAGE_MODE=ROBOT_OTO
+WEEKLY_FEEDBACK_DINGTALK_ROBOT_CODE=<企业机器人 RobotCode；通常为机器人应用 AppKey>
+```
+
+`ROBOT_OTO` 调用钉钉 `POST /v1.0/robot/oToMessages/batchSend`，每位员工仍单独发送个性化正文。无有效机器人单聊会话、无效 userid、限流或远程结果不确定时任务失败关闭，不会自动回退到工作通知，以免同一员工收到两次。周日提醒和管理员执行结果仍使用工作通知。
+
 服务器根 `.env` 配置：
 
 ```text

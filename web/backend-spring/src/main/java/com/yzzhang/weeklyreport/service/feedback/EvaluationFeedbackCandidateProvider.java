@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yzzhang.weeklyreport.mapper.SubmissionStatusMapper;
 import com.yzzhang.weeklyreport.mapper.WeekFileMapper;
 import com.yzzhang.weeklyreport.po.SubmissionStatusPO;
+import com.yzzhang.weeklyreport.service.TemplateComplianceService;
 import com.yzzhang.weeklyreport.service.feedback.EvaluationFeedbackSnapshot.EmployeeFeedback;
 import com.yzzhang.weeklyreport.util.WeekLabelUtils;
 import org.springframework.stereotype.Component;
@@ -41,22 +42,28 @@ public class EvaluationFeedbackCandidateProvider {
     private final SubmissionStatusMapper submissionStatusMapper;
     private final WeekFileMapper weekFileMapper;
     private final ObjectMapper objectMapper;
+    private final TemplateComplianceService templateComplianceService;
 
     public EvaluationFeedbackCandidateProvider(
         SubmissionStatusMapper submissionStatusMapper,
         WeekFileMapper weekFileMapper,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        TemplateComplianceService templateComplianceService
     ) {
         this.submissionStatusMapper = submissionStatusMapper;
         this.weekFileMapper = weekFileMapper;
         this.objectMapper = objectMapper;
+        this.templateComplianceService = templateComplianceService;
     }
 
     public EvaluationFeedbackSnapshot collect(String weekLabel) {
         if (!WeekLabelUtils.isValid(weekLabel)) {
             throw new EvaluationFeedbackException("评价反馈周次无效");
         }
-        List<SubmissionStatusPO> rows = submissionStatusMapper.selectByWeek(weekLabel);
+        List<SubmissionStatusPO> rows = templateComplianceService.enrich(
+            weekLabel,
+            submissionStatusMapper.selectByWeek(weekLabel)
+        );
         List<SubmissionStatusPO> submitted = rows.stream()
             .filter(row -> "已提交".equals(row.getStatus()))
             .toList();
@@ -93,6 +100,7 @@ public class EvaluationFeedbackCandidateProvider {
                 row.getName(),
                 row.getDept(),
                 row.getTitle(),
+                row.getTemplateComplianceRate(),
                 praise,
                 improvement,
                 thanks
@@ -111,6 +119,10 @@ public class EvaluationFeedbackCandidateProvider {
         for (SubmissionStatusPO row : submitted) {
             if (!hasText(row.getUserid()) || !hasText(row.getName()) || !seen.add(row.getUserid())) {
                 throw new EvaluationFeedbackException("已提交人员缺少稳定唯一身份");
+            }
+            Integer rate = row.getTemplateComplianceRate();
+            if (rate == null || rate < 0 || rate > 100) {
+                throw new EvaluationFeedbackException("已提交人员模板符合度不可用");
             }
         }
     }

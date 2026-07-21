@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yzzhang.weeklyreport.mapper.SubmissionStatusMapper;
 import com.yzzhang.weeklyreport.mapper.WeekFileMapper;
 import com.yzzhang.weeklyreport.po.SubmissionStatusPO;
+import com.yzzhang.weeklyreport.service.TemplateComplianceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -20,6 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class EvaluationFeedbackCandidateProviderTest {
@@ -30,6 +32,7 @@ class EvaluationFeedbackCandidateProviderTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private SubmissionStatusMapper submissionStatusMapper;
+    private TemplateComplianceService templateComplianceService;
     private EvaluationFeedbackCandidateProvider provider;
     private Path weekRoot;
     private Path report;
@@ -37,6 +40,7 @@ class EvaluationFeedbackCandidateProviderTest {
     @BeforeEach
     void setUp() throws IOException {
         submissionStatusMapper = mock(SubmissionStatusMapper.class);
+        templateComplianceService = mock(TemplateComplianceService.class);
         WeekFileMapper weekFileMapper = mock(WeekFileMapper.class);
         weekRoot = tempDir.resolve(WEEK);
         report = weekRoot.resolve("summary/manager_report.md");
@@ -44,10 +48,19 @@ class EvaluationFeedbackCandidateProviderTest {
         Files.writeString(report, "虚构正式管理评价", StandardCharsets.UTF_8);
         when(weekFileMapper.weekDir(WEEK)).thenReturn(weekRoot);
         when(weekFileMapper.managerReportPath(WEEK)).thenReturn(report);
+        when(templateComplianceService.enrich(org.mockito.ArgumentMatchers.eq(WEEK), org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(invocation -> {
+                List<SubmissionStatusPO> rows = invocation.getArgument(1);
+                rows.stream()
+                    .filter(row -> "已提交".equals(row.getStatus()) && row.getTemplateComplianceRate() == null)
+                    .forEach(row -> row.setTemplateComplianceRate(75));
+                return rows;
+            });
         provider = new EvaluationFeedbackCandidateProvider(
             submissionStatusMapper,
             weekFileMapper,
-            objectMapper
+            objectMapper,
+            templateComplianceService
         );
     }
 
@@ -69,10 +82,50 @@ class EvaluationFeedbackCandidateProviderTest {
             assertThat(item.name()).isEqualTo("示例员工甲");
             assertThat(item.department()).isEqualTo("虚构研发部");
             assertThat(item.title()).isEqualTo("工程师");
+            assertThat(item.templateComplianceRate()).isEqualTo(75);
             assertThat(item.praise()).contains("虚构交付物");
             assertThat(item.improvement()).contains("量化效果");
             assertThat(item.thanks()).contains("团队因您");
         });
+        verify(templateComplianceService).enrich(org.mockito.ArgumentMatchers.eq(WEEK), org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
+    void preservesOverviewComplianceRatesIncludingZeroPartialAndFull() throws Exception {
+        List<SubmissionStatusPO> rows = List.of(
+            rowWithRate("示例员工甲", "test-user-001", 0),
+            rowWithRate("示例员工乙", "test-user-002", 47),
+            rowWithRate("示例员工丙", "test-user-003", 100)
+        );
+        when(submissionStatusMapper.selectByWeek(WEEK)).thenReturn(rows);
+        writeArtifacts(2, List.of(
+            feedback("test-user-001"),
+            feedback("test-user-002"),
+            feedback("test-user-003")
+        ), digest(report));
+
+        EvaluationFeedbackSnapshot snapshot = provider.collect(WEEK);
+
+        assertThat(snapshot.employees())
+            .extracting(EvaluationFeedbackSnapshot.EmployeeFeedback::templateComplianceRate)
+            .containsExactly(0, 47, 100);
+    }
+
+    @Test
+    void rejectsMissingOrOutOfRangeComplianceRate() {
+        SubmissionStatusPO missing = row("示例员工甲", "test-user-001", "已提交");
+        when(submissionStatusMapper.selectByWeek(WEEK)).thenReturn(List.of(missing));
+        when(templateComplianceService.enrich(org.mockito.ArgumentMatchers.eq(WEEK), org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(invocation -> invocation.getArgument(1));
+
+        assertThatThrownBy(() -> provider.collect(WEEK))
+            .isInstanceOf(EvaluationFeedbackException.class)
+            .hasMessage("已提交人员模板符合度不可用");
+
+        missing.setTemplateComplianceRate(101);
+        assertThatThrownBy(() -> provider.collect(WEEK))
+            .isInstanceOf(EvaluationFeedbackException.class)
+            .hasMessage("已提交人员模板符合度不可用");
     }
 
     @Test
@@ -181,6 +234,12 @@ class EvaluationFeedbackCandidateProviderTest {
         row.setStatus(status);
         row.setDept("虚构研发部");
         row.setTitle("工程师");
+        return row;
+    }
+
+    private SubmissionStatusPO rowWithRate(String name, String userId, int rate) {
+        SubmissionStatusPO row = row(name, userId, "已提交");
+        row.setTemplateComplianceRate(rate);
         return row;
     }
 

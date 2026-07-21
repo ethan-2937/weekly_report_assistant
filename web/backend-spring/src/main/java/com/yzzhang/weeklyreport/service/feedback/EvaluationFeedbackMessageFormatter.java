@@ -22,6 +22,10 @@ public class EvaluationFeedbackMessageFormatter {
         return """
             ### %s，您的 %s 周报评价
 
+            #### 周报模板符合度
+
+            %d%%
+
             #### 做得好的地方
 
             %s
@@ -38,6 +42,7 @@ public class EvaluationFeedbackMessageFormatter {
             """.formatted(
                 employee.name(),
                 weekLabel,
+                employee.templateComplianceRate(),
                 employee.praise(),
                 employee.improvement(),
                 employee.thanks(),

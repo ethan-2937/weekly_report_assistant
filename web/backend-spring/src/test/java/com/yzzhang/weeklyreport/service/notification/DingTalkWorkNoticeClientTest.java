@@ -1,5 +1,6 @@
 package com.yzzhang.weeklyreport.service.notification;
 
+import com.yzzhang.weeklyreport.config.FeedbackPersonalMessageProperties;
 import com.yzzhang.weeklyreport.config.ProjectPathConfig;
 import com.yzzhang.weeklyreport.config.WeeklyReportProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 class DingTalkWorkNoticeClientTest {
     private static final String TOKEN_URL = "https://example.invalid/token";
     private static final String SEND_URL = "https://example.invalid/send";
+    private static final String ROBOT_SEND_URL = "https://example.invalid/robot-send";
     private static final String ACCESS_TOKEN = "fictional-access-token";
 
     @TempDir
@@ -34,20 +37,29 @@ class DingTalkWorkNoticeClientTest {
 
     private MockRestServiceServer server;
     private DingTalkWorkNoticeClient client;
+    private WeeklyReportProperties.Feedback feedback;
+    private FeedbackPersonalMessageProperties personalMessageProperties;
 
     @BeforeEach
     void setUp() {
         WeeklyReportProperties properties = new WeeklyReportProperties();
         properties.setProjectRoot(tempDir.toString());
-        WeeklyReportProperties.Feedback feedback = properties.getFeedback();
+        feedback = properties.getFeedback();
         feedback.setDingtalkAppKey("fictional-app-key");
         feedback.setDingtalkAppSecret("fictional-app-secret");
         feedback.setDingtalkAgentId("12345");
         feedback.setAccessTokenUrl(TOKEN_URL);
         feedback.setAsyncSendUrl(SEND_URL);
+        personalMessageProperties = new FeedbackPersonalMessageProperties();
+        personalMessageProperties.setRobotSendUrl(ROBOT_SEND_URL);
         RestTemplate restTemplate = new RestTemplate();
         server = MockRestServiceServer.bindTo(restTemplate).build();
-        client = new DingTalkWorkNoticeClient(properties, new ProjectPathConfig(properties), restTemplate);
+        client = new DingTalkWorkNoticeClient(
+            properties,
+            new ProjectPathConfig(properties),
+            personalMessageProperties,
+            restTemplate
+        );
     }
 
     @Test
@@ -95,6 +107,70 @@ class DingTalkWorkNoticeClientTest {
         ), delivered::set);
 
         assertThat(delivered.get()).isEqualTo(2);
+        server.verify();
+    }
+
+    @Test
+    void robotOtoModeSendsPersonalMarkdownIntoChatWithoutWorkNoticeFallback() {
+        personalMessageProperties.setMode("ROBOT_OTO");
+        personalMessageProperties.setRobotCode("fictional-robot-code");
+        server.expect(once(), requestTo(TOKEN_URL))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{\"accessToken\":\"" + ACCESS_TOKEN + "\"}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo(ROBOT_SEND_URL))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(header("x-acs-dingtalk-access-token", ACCESS_TOKEN))
+            .andExpect(content().json("""
+                {
+                  "robotCode": "fictional-robot-code",
+                  "userIds": ["test-user-001"],
+                  "msgKey": "sampleMarkdown"
+                }
+                """, false))
+            .andRespond(withSuccess(
+                "{\"processQueryKey\":\"fictional-process-key\",\"invalidStaffIdList\":[],\"flowControlledStaffIdList\":[]}",
+                MediaType.APPLICATION_JSON
+            ));
+        AtomicInteger delivered = new AtomicInteger();
+
+        client.sendPersonalMarkdown(List.of(
+            new DingTalkWorkNoticeClient.PersonalNotice("虚构评价", "虚构正文", "test-user-001")
+        ), delivered::set);
+
+        assertThat(delivered.get()).isEqualTo(1);
+        server.verify();
+    }
+
+    @Test
+    void robotOtoModeFailsClosedForInvalidOrFlowControlledRecipients() {
+        personalMessageProperties.setMode("ROBOT_OTO");
+        server.expect(once(), requestTo(TOKEN_URL))
+            .andRespond(withSuccess("{\"accessToken\":\"" + ACCESS_TOKEN + "\"}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo(ROBOT_SEND_URL))
+            .andRespond(withSuccess(
+                "{\"processQueryKey\":\"fictional-process-key\",\"invalidStaffIdList\":[\"sensitive-user\"]}",
+                MediaType.APPLICATION_JSON
+            ));
+
+        assertThatThrownBy(() -> client.sendPersonalMarkdown(List.of(
+            new DingTalkWorkNoticeClient.PersonalNotice("虚构评价", "虚构正文", "test-user-001")
+        ), ignored -> { }))
+            .isInstanceOf(WorkNoticeException.class)
+            .hasMessage("钉钉机器人单聊包含无效或受限接收人")
+            .hasMessageNotContaining("sensitive-user")
+            .hasMessageNotContaining("test-user-001");
+        server.verify();
+    }
+
+    @Test
+    void invalidPersonalMessageModeMakesNoRemoteRequest() {
+        personalMessageProperties.setMode("UNSUPPORTED");
+
+        assertThatThrownBy(() -> client.sendPersonalMarkdown(List.of(
+            new DingTalkWorkNoticeClient.PersonalNotice("虚构评价", "虚构正文", "test-user-001")
+        ), ignored -> { }))
+            .isInstanceOf(WorkNoticeException.class)
+            .hasMessage("钉钉个性化通知通道配置无效");
         server.verify();
     }
 

@@ -24,6 +24,7 @@ public record EvaluationFeedbackSnapshot(
         String name,
         String department,
         String title,
+        int templateComplianceRate,
         String praise,
         String improvement,
         String thanks
@@ -31,11 +32,12 @@ public record EvaluationFeedbackSnapshot(
         public EmployeeFeedback(
             String userId,
             String name,
+            int templateComplianceRate,
             String praise,
             String improvement,
             String thanks
         ) {
-            this(userId, name, "", "", praise, improvement, thanks);
+            this(userId, name, "", "", templateComplianceRate, praise, improvement, thanks);
         }
     }
 }
